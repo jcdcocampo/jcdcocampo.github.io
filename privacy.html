@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/jpeg" href="assets/favicon.jpg" />
+  <link rel="apple-touch-icon" href="assets/favicon.jpg" />
+  <title>Privacy Policy — Engr. Jose Carlo David Ocampo</title>
+  <script>
+    (function(){
+      try {
+        if (localStorage.getItem('theme') === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch(e){}
+    })();
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sf: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+            'Helvetica Neue', Arial, sans-serif;
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --sub-card: #f0f0f5;
+      --sub-hover: #e5e5ea;
+      --text-primary: #1c1c1e;
+      --text-secondary: #636366;
+      --text-tertiary: #aeaeb2;
+      --accent: #007aff;
+      --separator: #e5e5ea;
+      --radius-inner: 14px;
+      --radius-outer: 18px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.07);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.12);
+      --transition: 0.18s ease;
+    }
+
+    [data-theme="dark"] {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --sub-card: #1c1c1e;
+      --sub-hover: #2c2c2e;
+      --text-primary: #ffffff;
+      --text-secondary: #aeaeb2;
+      --text-tertiary: #636366;
+      --separator: #38383a;
+      --shadow: 0 2px 12px rgba(0,0,0,0.4);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.6);
+    }
+
+    html {
+      font-family: var(--sf);
+      background: var(--bg);
+      color: var(--text-primary);
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+    body { min-height: 100vh; background: var(--bg); transition: background 0.4s ease; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .fade-up {
+      opacity: 0;
+      transform: translateY(24px);
+      animation: fadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+    .fade-up.delay-0 { animation-delay: 0.00s; }
+    .fade-up.delay-1 { animation-delay: 0.10s; }
+    .fade-up.delay-2 { animation-delay: 0.20s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-up { animation: none; opacity: 1; transform: none; }
+    }
+
+    .page-wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 40px 40px 40px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 32px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--sub-card);
+      color: var(--text-primary);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
+    }
+    .back-link:hover {
+      background: var(--sub-hover);
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-1px);
+      text-decoration: none;
+    }
+    .back-link:active { transform: scale(0.94); }
+    .back-link svg { width: 20px; height: 20px; }
+
+    .page-title {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .last-updated {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .content-card {
+      background: var(--card);
+      border-radius: var(--radius-outer);
+      box-shadow: var(--shadow);
+      padding: 36px 40px;
+      transition: background 0.4s ease;
+    }
+
+    .content-card h2 {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      margin-top: 28px;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+    }
+    .content-card h2:first-child { margin-top: 0; }
+
+    .content-card p,
+    .content-card li {
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--text-primary);
+    }
+    .content-card p { margin-bottom: 14px; }
+    .content-card p:last-child { margin-bottom: 0; }
+
+    .content-card ul {
+      padding-left: 22px;
+      margin-bottom: 14px;
+    }
+    .content-card li { margin-bottom: 6px; }
+
+    .callout {
+      background: var(--sub-card);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-inner);
+      padding: 16px 20px;
+      margin: 18px 0;
+      font-size: 14.5px;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+
+    /* Let's Connect CTA */
+    .connect-cta {
+      margin-top: 40px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 10px;
+    }
+    .connect-heading {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: var(--text-primary);
+    }
+    .connect-email {
+      font-size: 15px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+    .send-email-btn {
+      display: inline-flex;
+      align-items: center;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 980px;
+      padding: 9px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: var(--sf);
+      cursor: pointer;
+      margin-top: 6px;
+      transition: opacity var(--transition), transform var(--transition);
+    }
+    .send-email-btn:hover { opacity: 0.85; transform: scale(1.02); }
+    .send-email-btn:active { transform: scale(0.97); }
+
+    /* Footer */
+    .site-footer {
+      margin-top: auto;
+      padding-top: 40px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .footer-links a {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+    .footer-links a:hover { color: var(--accent); text-decoration: none; }
+
+    @media (max-width: 767px) {
+      .page-wrap { padding: 24px 20px 30px; }
+      .top-bar { margin-bottom: 24px; gap: 14px; }
+      .back-link { width: 26px; height: 26px; }
+      .back-link svg { width: 18px; height: 18px; }
+      .page-title { font-size: 20px; }
+
+      .last-updated { padding-left: 0; }
+      .content-card {
+        padding: 24px 20px;
+        border-radius: 16px;
+      }
+      .content-card h2 { font-size: 17px; }
+      .content-card p, .content-card li { font-size: 14.5px; }
+
+      .footer-links { gap: 14px; font-size: 12px; }
+
+      .connect-cta { padding: 20px 12px 10px; margin-top: 20px; }
+      .connect-heading { font-size: 18px; }
+      .connect-email { font-size: 14px; }
+      .send-email-btn { font-size: 14px; padding: 8px 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <div class="top-bar fade-up delay-0">
+    <a class="back-link" href="index.html" aria-label="Back to Home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="19" y1="12" x2="5" y2="12"/>
+        <polyline points="12 19 5 12 12 5"/>
+      </svg>
+    </a>
+    <span class="page-title">Privacy Policy</span>
+  </div>
+
+  <div class="last-updated fade-up delay-0">Last updated: April 2026</div>
+
+  <div class="content-card fade-up delay-1">
+
+    <h2>Overview</h2>
+    <p>This is the personal website of Engr. Jose Carlo David Ocampo (referred to below as "JC" or "the site owner"). This Privacy Policy explains what happens — and what does not happen — to information when you visit this site or interact with the AI assistant ("Mian") embedded on it.</p>
+
+    <h2>Data Collection by the Site Owner</h2>
+    <p>The site owner does not collect, store, or sell any personal data from visitors. There are no analytics trackers, no advertising cookies, no email sign-up lists, and no user accounts on this website.</p>
+    <p>The only piece of information stored locally on your own device is your light/dark mode preference, which is saved in your browser's <code>localStorage</code> so the site remembers how you like to view it. This preference never leaves your device.</p>
+
+    <h2>The AI Chatbot ("Mian")</h2>
+    <p>Mian is an AI assistant whose responses are generated by a third-party large language model accessed through an external API. The site owner did not build, train, or develop the underlying AI model — it is a borrowed service.</p>
+
+    <div class="callout">
+      Important: Because Mian's replies come from a third-party AI service, the site owner has no control over the model's output. Anything Mian says should be independently verified before you act on it. Mian can make mistakes, misremember details, or generate inaccurate information, even when she sounds confident.
+    </div>
+
+    <h2>What Happens to Your Chat Messages</h2>
+    <p>When you send a message to Mian, the message is forwarded through a secure proxy to the third-party AI service so that a reply can be generated. By using the chatbot, you understand and agree that:</p>
+    <ul>
+      <li>Your messages are transmitted to a third-party AI provider in order to generate a response.</li>
+      <li>The third-party provider may process, log, or use your messages according to their own privacy and data-usage policies, which are outside the site owner's control.</li>
+      <li>The site owner does not personally save, read, or store your conversations on this website.</li>
+      <li>You should treat anything you type into Mian the same way you would treat a public message: assume it could be processed or retained by the AI provider.</li>
+    </ul>
+
+    <h2>Please Do Not Share Sensitive Information</h2>
+    <p>Do not enter sensitive personal information into the chatbot. This includes, but is not limited to: passwords, government identification numbers, financial account details, medical records, private contact information of other people, or any confidential business information.</p>
+    <p>If you have a private matter to discuss with JC directly, please email him at <a href="mailto:jcdcocampo@gmail.com">jcdcocampo@gmail.com</a> instead of sending it through the chatbot.</p>
+
+    <h2>External Links</h2>
+    <p>This site contains links to third-party websites such as LinkedIn, GitHub, Coursera, IEEE Xplore, and others. The site owner is not responsible for the privacy practices or content of those external sites. Please review their privacy policies before sharing any information with them.</p>
+
+    <h2>Changes to This Policy</h2>
+    <p>This Privacy Policy may be updated from time to time. The "Last updated" date at the top of this page reflects the most recent revision.</p>
+
+    <h2>Contact</h2>
+    <p>For any questions about this Privacy Policy, please email <a href="mailto:jcdcocampo@gmail.com">jcdcocampo@gmail.com</a>.</p>
+
+  </div>
+
+  <div class="connect-cta fade-up delay-2">
+    <div class="connect-heading">Let's Connect</div>
+    <div class="connect-email">jcdcocampo@gmail.com</div>
+    <button class="send-email-btn" onclick="window.location.href='mailto:jcdcocampo@gmail.com'">
+      Send Email
+    </button>
+  </div>
+
+  <footer class="site-footer fade-up delay-2">
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms and Conditions</a>
+    </div>
+    &copy; 2026 Engr. Jose Carlo David Ocampo. All rights reserved.
+  </footer>
+
+</div>
+
+<script src="chatbot.js" defer></script>
+
+</body>
+</html>

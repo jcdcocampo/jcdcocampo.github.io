@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/jpeg" href="assets/favicon.jpg" />
+  <link rel="apple-touch-icon" href="assets/favicon.jpg" />
+  <title>PinkSonic: Stair-Climbing Robot — Engr. Jose Carlo David Ocampo</title>
+  <script>
+    (function(){
+      try {
+        if (localStorage.getItem('theme') === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch(e){}
+    })();
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sf: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+            'Helvetica Neue', Arial, sans-serif;
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --sub-card: #f0f0f5;
+      --sub-hover: #e5e5ea;
+      --text-primary: #1c1c1e;
+      --text-secondary: #636366;
+      --text-tertiary: #aeaeb2;
+      --accent: #007aff;
+      --separator: #e5e5ea;
+      --radius-inner: 14px;
+      --radius-outer: 18px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.07);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.12);
+      --transition: 0.18s ease;
+    }
+
+    [data-theme="dark"] {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --sub-card: #1c1c1e;
+      --sub-hover: #2c2c2e;
+      --text-primary: #ffffff;
+      --text-secondary: #aeaeb2;
+      --text-tertiary: #636366;
+      --separator: #38383a;
+      --shadow: 0 2px 12px rgba(0,0,0,0.4);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.6);
+    }
+
+    html {
+      font-family: var(--sf);
+      background: var(--bg);
+      color: var(--text-primary);
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+    body { min-height: 100vh; background: var(--bg); transition: background 0.4s ease; }
+
+    a { color: inherit; text-decoration: none; }
+
+    .fade-up {
+      opacity: 0;
+      transform: translateY(24px);
+      animation: fadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+    .fade-up.delay-0 { animation-delay: 0.00s; }
+    .fade-up.delay-1 { animation-delay: 0.10s; }
+    .fade-up.delay-2 { animation-delay: 0.20s; }
+    .fade-up.delay-3 { animation-delay: 0.30s; }
+    .fade-up.delay-4 { animation-delay: 0.40s; }
+    .fade-up.delay-5 { animation-delay: 0.50s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-up { animation: none; opacity: 1; transform: none; }
+    }
+
+    .top-bar {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 40px 0;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--sub-card);
+      color: var(--text-primary);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
+    }
+    .back-link:hover {
+      background: var(--sub-hover);
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-1px);
+    }
+    .back-link:active { transform: scale(0.94); }
+    .back-link svg { width: 20px; height: 20px; }
+
+    .breadcrumb {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+    }
+
+    .article {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 60px 40px 40px;
+    }
+
+    .article-eyebrow {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 18px;
+    }
+
+    .article-title {
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -1.2px;
+      line-height: 1.05;
+      margin-bottom: 24px;
+      color: var(--text-primary);
+    }
+
+    .article-subtitle {
+      font-size: 22px;
+      font-weight: 400;
+      line-height: 1.4;
+      color: var(--text-secondary);
+      letter-spacing: -0.3px;
+      margin-bottom: 48px;
+      max-width: 820px;
+    }
+
+    .hero-image {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: var(--radius-outer);
+      overflow: hidden;
+      background: var(--sub-card);
+      box-shadow: var(--shadow);
+      margin-bottom: 56px;
+    }
+    .hero-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .article-body {
+      max-width: 720px;
+      margin: 0 auto;
+      font-size: 19px;
+      line-height: 1.65;
+      color: var(--text-primary);
+      letter-spacing: -0.1px;
+    }
+
+    .article-body p { margin-bottom: 24px; }
+
+    .article-body p.lead {
+      font-size: 21px;
+      font-weight: 500;
+      letter-spacing: -0.2px;
+      margin-bottom: 32px;
+    }
+
+    .article-body h2 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-top: 48px;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+    }
+
+    .article-meta {
+      max-width: 720px;
+      margin: 56px auto 0;
+      padding-top: 32px;
+      border-top: 1px solid var(--separator);
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+    .article-meta strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .connect-cta {
+      max-width: 720px;
+      margin: 80px auto 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 10px;
+    }
+
+    .connect-heading {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: var(--text-primary);
+    }
+    .connect-email {
+      font-size: 15px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+    .send-email-btn {
+      display: inline-flex;
+      align-items: center;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 980px;
+      padding: 9px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: var(--sf);
+      cursor: pointer;
+      margin-top: 6px;
+      transition: opacity var(--transition), transform var(--transition);
+    }
+    .send-email-btn:hover { opacity: 0.85; transform: scale(1.02); }
+    .send-email-btn:active { transform: scale(0.97); }
+
+    footer {
+      text-align: center;
+      padding: 40px 20px 30px;
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .footer-links a {
+      color: var(--text-secondary);
+      font-size: 13px;
+      transition: color var(--transition);
+    }
+    .footer-links a:hover { color: var(--accent); }
+
+    @media (max-width: 767px) {
+      .top-bar { padding: 24px 20px 0; gap: 14px; }
+      .back-link { width: 26px; height: 26px; }
+      .back-link svg { width: 18px; height: 18px; }
+      .breadcrumb { font-size: 20px; }
+
+      .article { padding: 32px 20px 20px; }
+
+      .article-eyebrow { font-size: 12px; margin-bottom: 12px; }
+      .article-title { font-size: 32px; letter-spacing: -0.6px; margin-bottom: 16px; }
+      .article-subtitle { font-size: 17px; margin-bottom: 32px; }
+
+      .hero-image { border-radius: 14px; margin-bottom: 36px; }
+
+      .article-body { font-size: 17px; }
+      .article-body p.lead { font-size: 18px; }
+      .article-body h2 { font-size: 22px; margin-top: 36px; }
+
+      .article-meta { font-size: 14px; margin-top: 40px; padding-top: 24px; }
+
+      .connect-cta { margin-top: 56px; padding: 20px 12px 10px; }
+      .connect-heading { font-size: 18px; }
+      .connect-email { font-size: 14px; }
+      .send-email-btn { font-size: 14px; padding: 8px 22px; }
+
+      footer { padding: 30px 16px 24px; }
+      .footer-links { gap: 14px; margin-bottom: 8px; }
+      .footer-links a { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar fade-up delay-0">
+    <a class="back-link" href="projects.html" aria-label="Back to Projects">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="19" y1="12" x2="5" y2="12"/>
+        <polyline points="12 19 5 12 12 5"/>
+      </svg>
+    </a>
+    <span class="breadcrumb">Projects</span>
+  </div>
+
+  <article class="article">
+
+    <div class="article-eyebrow fade-up delay-1">Electronics Design</div>
+
+    <h1 class="article-title fade-up delay-1">
+      PinkSonic: Stair-Climbing Robot With Distance Sensing using Ultrasonic Sensor
+    </h1>
+
+    <p class="article-subtitle fade-up delay-2">
+      A remote-controlled robot built to go where standard wheeled machines cannot — climbing stairs, sensing obstacles, and proving an idea worth pursuing for under three thousand pesos.
+    </p>
+
+    <div class="hero-image fade-up delay-2">
+      <img src="assets/projects/pinksonic-hero.jpg" alt="PinkSonic stair-climbing robot" />
+    </div>
+
+    <div class="article-body">
+
+      <p class="lead fade-up delay-3">
+        Stairs are something most people never have to think twice about. But for someone with limited mobility, or someone who simply cannot see what is ahead of them, a staircase can be a real barrier.
+      </p>
+
+      <p class="fade-up delay-3">
+        That was the problem my co-researcher Audrey Shaleen G. Garcia and I wanted to address. The result was PinkSonic, a remote-controlled robot that can climb stairs and sense its surroundings.
+      </p>
+
+      <p class="fade-up delay-3">
+        We wanted to build something that could go where standard robots cannot, using parts affordable enough that the concept could actually be taken further. The robot reads how close it is to any obstacle in its path and signals back through colored lights and sound. Green means clear, yellow means something is near, and red means it is very close. A joystick controller handles all the movement, and the whole system communicates wirelessly between the controller and the robot.
+      </p>
+
+      <p class="fade-up delay-3">
+        Distance sensing worked flawlessly across every test we ran. Stair climbing landed at an 80% success rate, and the two failures pointed us clearly toward what needed to be improved next.
+      </p>
+
+      <p class="fade-up delay-3">
+        It was not a perfect machine. But it was a working one, built for under three thousand pesos, and it proved that the idea was worth pursuing.
+      </p>
+
+      <div class="article-meta fade-up delay-4">
+        <p><strong>Proponents:</strong> Audrey Shaleen G. Garcia, Jose Carlo David C. Ocampo</p>
+        <p><strong>Research Adviser:</strong> Engr. Glenn V. Magwili</p>
+        <p><strong>Institution:</strong> Mapua University — School of Electrical, Electronics, and Computer Engineering</p>
+      </div>
+
+    </div>
+
+  </article>
+
+  <div class="connect-cta fade-up delay-5">
+    <div class="connect-heading">Let's Connect</div>
+    <div class="connect-email">jcdcocampo@gmail.com</div>
+    <button class="send-email-btn" onclick="window.location.href='mailto:jcdcocampo@gmail.com'">
+      Send Email
+    </button>
+  </div>
+
+  <footer class="fade-up delay-5">
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms and Conditions</a>
+    </div>
+    &copy; 2026 Engr. Jose Carlo David Ocampo. All rights reserved.
+  </footer>
+
+  <script src="chatbot.js" defer></script>
+
+</body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/jpeg" href="assets/favicon.jpg" />
+  <link rel="apple-touch-icon" href="assets/favicon.jpg" />
+  <title>Certifications and Licenses — Engr. Jose Carlo David Ocampo</title>
+  <script>
+    (function(){
+      try {
+        if (localStorage.getItem('theme') === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch(e){}
+    })();
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sf: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+            'Helvetica Neue', Arial, sans-serif;
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --sub-card: #f0f0f5;
+      --sub-hover: #e5e5ea;
+      --text-primary: #1c1c1e;
+      --text-secondary: #636366;
+      --text-tertiary: #aeaeb2;
+      --accent: #007aff;
+      --radius-inner: 14px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.07);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.12);
+      --transition: 0.18s ease;
+    }
+
+    [data-theme="dark"] {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --sub-card: #1c1c1e;
+      --sub-hover: #2c2c2e;
+      --text-primary: #ffffff;
+      --text-secondary: #aeaeb2;
+      --text-tertiary: #636366;
+      --shadow: 0 2px 12px rgba(0,0,0,0.4);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.6);
+    }
+
+    html {
+      font-family: var(--sf);
+      background: var(--bg);
+      color: var(--text-primary);
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+    body { min-height: 100vh; background: var(--bg); transition: background 0.4s ease; }
+
+    a { text-decoration: none; color: inherit; }
+
+    /* ---------- FADE-UP ANIMATION ---------- */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(24px);
+      animation: fadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up.delay-0 { animation-delay: 0.00s; }
+    .fade-up.delay-1 { animation-delay: 0.10s; }
+    .fade-up.delay-2 { animation-delay: 0.20s; }
+    .fade-up.delay-3 { animation-delay: 0.30s; }
+    .fade-up.delay-4 { animation-delay: 0.40s; }
+    .fade-up.delay-5 { animation-delay: 0.50s; }
+    .fade-up.delay-6 { animation-delay: 0.60s; }
+    .fade-up.delay-7 { animation-delay: 0.70s; }
+    .fade-up.delay-8 { animation-delay: 0.80s; }
+    .fade-up.delay-9 { animation-delay: 0.90s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-up { animation: none; opacity: 1; transform: none; }
+    }
+
+    .page-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 40px 40px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---------- HEADER BAR ---------- */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 40px;
+    }
+
+    /* Circular back button */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--sub-card);
+      color: var(--text-primary);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition:
+        background var(--transition),
+        box-shadow var(--transition),
+        transform var(--transition),
+        opacity var(--transition);
+    }
+    .back-link:hover {
+      background: var(--sub-hover);
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-1px);
+    }
+    .back-link:active {
+      transform: scale(0.94);
+      background: var(--sub-hover);
+    }
+    .back-link svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .page-title {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    /* ---------- CERT LIST (single column, constrained width) ---------- */
+    .cert-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 520px;
+      padding-left: 46px;
+    }
+
+    .cert-category {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-top: 18px;
+      margin-bottom: 2px;
+      padding-left: 4px;
+    }
+    .cert-category:first-child { margin-top: 0; }
+
+    .cert-item {
+      display: block;
+      background: var(--sub-card);
+      border-radius: var(--radius-inner);
+      padding: 18px 22px;
+      color: inherit;
+      transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
+    }
+    .cert-item:hover {
+      background: var(--sub-hover);
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-1px);
+    }
+
+    .cert-name {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+    .cert-issuer {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* ---------- CONNECT CTA ---------- */
+    .connect-cta {
+      margin-top: auto;
+      padding-top: 60px;
+      padding-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 10px;
+    }
+
+    .connect-heading {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: var(--text-primary);
+    }
+
+    .connect-email {
+      font-size: 15px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .send-email-btn {
+      display: inline-flex;
+      align-items: center;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 980px;
+      padding: 9px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: var(--sf);
+      cursor: pointer;
+      margin-top: 6px;
+      transition: opacity var(--transition), transform var(--transition);
+    }
+    .send-email-btn:hover { opacity: 0.85; transform: scale(1.02); }
+    .send-email-btn:active { transform: scale(0.97); }
+
+    /* ---------- FOOTER ---------- */
+    footer {
+      text-align: center;
+      padding-top: 20px;
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .footer-links a {
+      color: var(--text-secondary);
+      font-size: 13px;
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+    .footer-links a:hover { color: var(--accent); }
+
+    /* ---------- MOBILE ---------- */
+    @media (max-width: 767px) {
+      .page-wrap { padding: 24px 20px 30px; max-width: 100%; }
+      .top-bar { margin-bottom: 28px; gap: 14px; }
+      .back-link { width: 26px; height: 26px; }
+      .back-link svg { width: 18px; height: 18px; }
+      .page-title { font-size: 20px; }
+
+      .cert-list { max-width: 100%; gap: 12px; padding-left: 40px; }
+      .cert-item { padding: 16px 18px; }
+      .cert-name { font-size: 15px; }
+      .cert-issuer { font-size: 12px; }
+      .cert-category { font-size: 12px; margin-top: 14px; }
+
+      .connect-cta { padding-top: 40px; }
+      .connect-heading { font-size: 18px; }
+      .connect-email { font-size: 14px; }
+      .send-email-btn { font-size: 14px; padding: 8px 22px; }
+
+      footer { padding-top: 24px; }
+      .footer-links { gap: 14px; margin-bottom: 8px; }
+      .footer-links a { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <div class="top-bar fade-up delay-0">
+    <a class="back-link" href="index.html" aria-label="Back to Home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="19" y1="12" x2="5" y2="12"/>
+        <polyline points="12 19 5 12 12 5"/>
+      </svg>
+    </a>
+    <span class="page-title">Certifications and Licenses</span>
+  </div>
+
+  <div class="cert-list">
+
+    <div class="cert-category fade-up delay-1">Licenses</div>
+
+    <a class="cert-item fade-up delay-1" href="https://www.prcboard.com/eele-results-march-2026-electronics-engineering-licensure-exam-list-of-passers" target="_blank" rel="noopener">
+      <div class="cert-name">Electronics Engineer License</div>
+      <div class="cert-issuer">Philippine Professional Regulation Commission</div>
+    </a>
+
+    <a class="cert-item fade-up delay-2" href="https://www.prcboard.com/etle-results-march-2026-electronics-technician-licensure-exam-list-of-passers" target="_blank" rel="noopener">
+      <div class="cert-name">Electronics Technician License</div>
+      <div class="cert-issuer">Philippine Professional Regulation Commission</div>
+    </a>
+
+    <div class="cert-category fade-up delay-3">Networking</div>
+
+    <a class="cert-item fade-up delay-3" href="https://www.coursera.org/account/accomplishments/specialization/666CM1P8M9AJ" target="_blank" rel="noopener">
+      <div class="cert-name">Network Fundamentals</div>
+      <div class="cert-issuer">Cisco Learning and Certifications</div>
+    </a>
+
+    <a class="cert-item fade-up delay-4" href="https://drive.google.com/file/d/1Rb07RrG52IYeNGnzPzjFkWZtVKmgKpCZ/view?usp=sharing" target="_blank" rel="noopener">
+      <div class="cert-name">CCNA: Enterprise Networking, Security, and Automation</div>
+      <div class="cert-issuer">Cisco Networking Academy</div>
+    </a>
+
+    <a class="cert-item fade-up delay-5" href="https://drive.google.com/file/d/1HB3AstXyinvABZoDOFTtwENa4HQhVvTq/view?usp=sharing" target="_blank" rel="noopener">
+      <div class="cert-name">CCNA: Switching, Routing, and Wireless Essentials</div>
+      <div class="cert-issuer">Cisco Networking Academy</div>
+    </a>
+
+    <div class="cert-category fade-up delay-6">Cloud Computing</div>
+
+    <a class="cert-item fade-up delay-6" href="https://www.coursera.org/account/accomplishments/records/5MYY152OQTWD" target="_blank" rel="noopener">
+      <div class="cert-name">Google Cloud Fundamentals</div>
+      <div class="cert-issuer">Google Cloud Training Online</div>
+    </a>
+
+    <div class="cert-category fade-up delay-7">Cybersecurity</div>
+
+    <a class="cert-item fade-up delay-7" href="https://www.netacad.com/" target="_blank" rel="noopener">
+      <div class="cert-name">Network Security</div>
+      <div class="cert-issuer">Cisco Networking Academy</div>
+    </a>
+
+    <a class="cert-item fade-up delay-8" href="https://www.coursera.org/account/accomplishments/records/B8HXJVXNMB0A" target="_blank" rel="noopener">
+      <div class="cert-name">Foundations of Cybersecurity</div>
+      <div class="cert-issuer">Google</div>
+    </a>
+
+    <div class="cert-category fade-up delay-9">Artificial Intelligence</div>
+
+    <a class="cert-item fade-up delay-9" href="https://drive.google.com/file/d/1a6OVOcEiIxe8mjzDlIcJgeiYT9-yNMXM/view?usp=sharing" target="_blank" rel="noopener">
+      <div class="cert-name">Huawei HCIA-AI</div>
+      <div class="cert-issuer">Huawei ICT Academy</div>
+    </a>
+
+  </div>
+
+  <div class="connect-cta fade-up delay-9">
+    <div class="connect-heading">Let's Connect</div>
+    <div class="connect-email">jcdcocampo@gmail.com</div>
+    <button class="send-email-btn" onclick="window.location.href='mailto:jcdcocampo@gmail.com'">
+      Send Email
+    </button>
+  </div>
+
+  <footer class="fade-up delay-9">
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms and Conditions</a>
+    </div>
+    &copy; 2026 Engr. Jose Carlo David Ocampo. All rights reserved.
+  </footer>
+
+</div>
+
+<script src="chatbot.js" defer></script>
+
+</body>
+</html>
