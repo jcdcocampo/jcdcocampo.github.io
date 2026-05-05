@@ -634,15 +634,13 @@
       setTimeout(() => textarea.focus(), 250);
       if (!welcomeShown) {
         welcomeShown = true;
-        const { bubble } = addBotBubbleForTyping();
-        setTimeout(async () => {
-          await typeIntoBubble(bubble, CONFIG.welcomeMessage);
-          // Slide chips in one by one after typing finishes
-          const chips = chipsRow.querySelectorAll('.cb-chip');
-          chips.forEach((chip, i) => {
-            setTimeout(() => chip.classList.add('cb-chip-in'), i * 120);
-          });
-        }, 280);
+        // Welcome message appears instantly — no typing animation
+        addMessage('bot', CONFIG.welcomeMessage);
+        // Chips slide in immediately, staggered
+        const chips = chipsRow.querySelectorAll('.cb-chip');
+        chips.forEach((chip, i) => {
+          setTimeout(() => chip.classList.add('cb-chip-in'), i * 120);
+        });
       }
     }
     function closePanel() {
