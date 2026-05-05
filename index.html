@@ -476,7 +476,7 @@
     .cert-name { font-size: 14px; font-weight: 600; }
     .cert-issuer { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
 
-    .bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    .bottom-row { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
     .bottom-stack { display: flex; flex-direction: column; gap: 20px; }
 
     .reference-item {
@@ -752,7 +752,6 @@
       .bottom-stack {
         display: contents;
       }
-
       .section-card {
         border-radius: 16px;
         box-shadow: var(--shadow);
@@ -786,7 +785,40 @@
 
     @media (min-width: 768px) and (max-width: 960px) {
       .main-grid { grid-template-columns: 1fr 280px; }
+      .bottom-row { grid-template-columns: 1fr 280px; }
     }
+
+    /* ── Tech Stack ── */
+    .tech-category {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      margin-top: 16px;
+    }
+    .tech-category:first-child { margin-top: 0; }
+
+    .tech-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tech-pill {
+      display: inline-flex;
+      align-items: center;
+      background: var(--sub-card);
+      border-radius: 980px;
+      padding: 5px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      transition: background var(--transition), box-shadow var(--transition);
+      white-space: nowrap;
+    }
+    .tech-pill:hover { background: var(--sub-hover); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
   </style>
 </head>
 <body>
@@ -928,15 +960,25 @@
       <div class="bottom-row mob-order-bottom fade-up delay-6">
 
         <div class="bottom-stack">
+
           <div class="section-card">
-            <div class="section-title" style="font-size:15px; margin-bottom:12px;">A member of</div>
-            <a class="member-item" href="https://iecepnational.com/" target="_blank" rel="noopener">
-              <span class="member-org-name">Institute of Electronics Engineers<br>of the Philippines (IECEP)</span>
-              <svg class="member-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <line x1="7" y1="17" x2="17" y2="7"/>
-                <polyline points="8 7 17 7 17 16"/>
-              </svg>
-            </a>
+            <div class="section-title" style="font-size:15px; margin-bottom:12px;">Tech Stack</div>
+
+            <div class="tech-category">Networking</div>
+            <div class="tech-pills" style="margin-bottom:10px;">
+              <span class="tech-pill">Cisco</span>
+              <span class="tech-pill">Switching &amp; Routing</span>
+              <span class="tech-pill">Enterprise Networking</span>
+            </div>
+
+            <div class="tech-category">Cloud Computing</div>
+            <div class="tech-pills" style="margin-bottom:14px;">
+              <span class="tech-pill">Google Cloud Platform</span>
+              <span class="tech-pill">Railway</span>
+              <span class="tech-pill">MongoDB Atlas</span>
+            </div>
+
+            <a class="see-more-btn" href="tech-stack.html">See more</a>
           </div>
 
           <div class="section-card">
@@ -957,22 +999,38 @@
               <div class="reference-position">Mapua University, School of EECE</div>
             </a>
           </div>
+
         </div>
 
-        <div class="section-card">
-          <div class="section-title" style="font-size:15px; margin-bottom:12px;">Social Links</div>
+        <div class="bottom-stack">
 
-          <a class="social-item" href="https://www.linkedin.com/in/jcdcocampo" target="_blank" rel="noopener">
-            <img class="social-logo logo-light" src="assets/linkedin-logo.png" alt="LinkedIn logo">
-            <img class="social-logo logo-dark" src="assets/linkedin-logo-white.png" alt="LinkedIn logo">
-            <span class="social-name">LinkedIn</span>
-          </a>
+          <div class="section-card">
+            <div class="section-title" style="font-size:15px; margin-bottom:12px;">A member of</div>
+            <a class="member-item" href="https://iecepnational.com/" target="_blank" rel="noopener">
+              <span class="member-org-name">Institute of Electronics Engineers<br>of the Philippines (IECEP)</span>
+              <svg class="member-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="7" y1="17" x2="17" y2="7"/>
+                <polyline points="8 7 17 7 17 16"/>
+              </svg>
+            </a>
+          </div>
 
-          <a class="social-item" href="https://github.com/jcdcocampo" target="_blank" rel="noopener">
-            <img class="social-logo logo-light" src="assets/github-logo.png" alt="GitHub logo">
-            <img class="social-logo logo-dark" src="assets/github-logo-white.png" alt="GitHub logo">
-            <span class="social-name">GitHub</span>
-          </a>
+          <div class="section-card">
+            <div class="section-title" style="font-size:15px; margin-bottom:12px;">Social Links</div>
+
+            <a class="social-item" href="https://www.linkedin.com/in/jcdcocampo" target="_blank" rel="noopener">
+              <img class="social-logo logo-light" src="assets/linkedin-logo.png" alt="LinkedIn logo">
+              <img class="social-logo logo-dark" src="assets/linkedin-logo-white.png" alt="LinkedIn logo">
+              <span class="social-name">LinkedIn</span>
+            </a>
+
+            <a class="social-item" href="https://github.com/jcdcocampo" target="_blank" rel="noopener">
+              <img class="social-logo logo-light" src="assets/github-logo.png" alt="GitHub logo">
+              <img class="social-logo logo-dark" src="assets/github-logo-white.png" alt="GitHub logo">
+              <span class="social-name">GitHub</span>
+            </a>
+          </div>
+
         </div>
 
       </div>
