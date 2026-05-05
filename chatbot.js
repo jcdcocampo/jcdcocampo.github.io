@@ -881,4 +881,22 @@
   } else {
     init();
   }
+
+  // -------------------- BFCACHE FIX --------------------
+  // When the browser restores a page from the back-forward cache
+  // (pressing the browser back/forward button or mouse buttons),
+  // it reuses a frozen snapshot of the page — so CSS animations
+  // that already finished won't replay. This listener detects that
+  // case and resets all .fade-up elements so the animations play again.
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted) {
+      document.querySelectorAll('.fade-up').forEach(function (el) {
+        el.style.animation = 'none';
+        // Force a reflow so the browser registers the reset before
+        // we clear the override and let the CSS animation retrigger.
+        void el.offsetHeight;
+        el.style.animation = '';
+      });
+    }
+  });
 })();
