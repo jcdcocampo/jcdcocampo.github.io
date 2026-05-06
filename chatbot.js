@@ -810,7 +810,7 @@
     // Chip click: fill textarea and send, then hide all chips
     chipsRow.querySelectorAll('.cb-chip').forEach(chip => {
       chip.addEventListener('click', () => {
-        if (isSending) return;
+        if (!panelReady || isSending) return;
         textarea.value = chip.textContent.trim();
         updateUI();
         // Hide chips before sending
@@ -822,17 +822,20 @@
     const cardCloseBtn = overlay.querySelector('.cb-card-close');
 
     // ---- Panel open/close ----
+    let panelReady = false; // interaction lock — prevents FAB tap bleeding into panel
+
     function openPanel() {
       panel.classList.add('cb-open');
       fab.classList.add('cb-hidden');
-      // Play the Siri-style inner breathing glow every time the chat is opened
       showSiriGlow(panel);
+      // Block all panel interactions for 450 ms so the touch event that
+      // opened the panel (FAB tap) cannot bleed through to buttons inside.
+      panelReady = false;
+      setTimeout(() => { panelReady = true; }, 450);
       setTimeout(() => textarea.focus(), 250);
       if (!welcomeShown) {
         welcomeShown = true;
-        // Welcome message appears instantly — no typing animation
         addMessage('bot', CONFIG.welcomeMessage);
-        // Chips slide in immediately, staggered
         const chips = chipsRow.querySelectorAll('.cb-chip');
         chips.forEach((chip, i) => {
           setTimeout(() => chip.classList.add('cb-chip-in'), i * 120);
@@ -1013,8 +1016,9 @@
     let isListening = false;
 
     micBtn.addEventListener('click', () => {
-      // Stop if already listening
-      if (isListening) {
+      // Hard guard: ignore if panel isn't open or still within the
+      // tap-through lock window after opening (mobile Brave fix)
+      if (!panel.classList.contains('cb-open') || !panelReady) return;
         if (recognition) recognition.stop();
         return;
       }
@@ -1083,7 +1087,7 @@
         send();
       }
     });
-    sendBtn.addEventListener('click', send);
+    sendBtn.addEventListener('click', () => { if (panelReady) send(); });
 
     async function send() {
       const text = textarea.value.trim();
