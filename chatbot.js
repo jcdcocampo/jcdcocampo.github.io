@@ -125,7 +125,7 @@
     }
     .cb-fab:hover  { transform: scale(1.06); box-shadow: 0 6px 22px rgba(0,0,0,0.28); }
     .cb-fab:active { transform: scale(0.94); }
-    .cb-fab svg    { width: 32px; height: 32px; display: block; }
+    .cb-fab svg    { width: 32px; height: 32px; display: block; pointer-events: none; }
     .cb-fab.cb-hidden { opacity: 0; transform: scale(0.6); pointer-events: none; }
 
     /* Panel */
@@ -1021,6 +1021,7 @@
 
       // Stop if already listening
       if (isListening) {
+        isListening = false;  // set first so onend doesn't auto-restart
         if (recognition) recognition.stop();
         return;
       }
@@ -1036,7 +1037,7 @@
       // Build the recognition object once, reuse on subsequent clicks
       if (!recognition) {
         recognition = new SR();
-        recognition.continuous    = false;
+        recognition.continuous     = true;  // keep listening until user taps stop
         recognition.interimResults = true;
         recognition.lang           = 'en-US';
 
@@ -1047,23 +1048,31 @@
             if (e.results[i].isFinal) final += t;
             else interim += t;
           }
-          // Show live transcript so user sees it forming in real time
           textarea.value = final || interim;
           updateUI();
         };
 
         recognition.onend = () => {
-          isListening = false;
+          // On mobile, continuous mode can still fire onend unexpectedly.
+          // If we're still supposed to be listening, restart automatically.
+          if (isListening) {
+            try { recognition.start(); } catch (_) {}
+            return;
+          }
           micBtn.classList.remove('cb-recording');
           micBtn.setAttribute('aria-label', 'Voice input');
           textarea.placeholder = 'Ask about JC…';
           const text = textarea.value.trim();
-          if (text) setTimeout(() => send(), 320); // brief pause before auto-send
+          if (text) setTimeout(() => send(), 320);
           else updateUI();
         };
 
         recognition.onerror = (e) => {
-          if (e.error === 'aborted') return; // fired by our own stop() call
+          // 'aborted' = we called stop() ourselves — ignore
+          if (e.error === 'aborted') return;
+          // 'no-speech' = silence timeout — just restart so user keeps hearing the indicator
+          if (e.error === 'no-speech') return;
+          // Real error — stop cleanly
           isListening = false;
           micBtn.classList.remove('cb-recording');
           micBtn.setAttribute('aria-label', 'Voice input');
