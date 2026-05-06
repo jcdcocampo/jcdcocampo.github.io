@@ -66,17 +66,21 @@
       pointer-events: none;
       background:
         /* top-left — warm orange */
-        radial-gradient(ellipse 70% 50% at 0% 0%,   #ff8c00 0%, transparent 65%),
-        /* left edge — orange-yellow */
-        radial-gradient(ellipse 45% 55% at 0% 50%,  #ffb700 0%, transparent 62%),
-        /* bottom-left — sky blue / cyan */
-        radial-gradient(ellipse 65% 48% at 0% 100%, #00c2e0 0%, transparent 65%),
-        /* top-right — hot pink / red */
-        radial-gradient(ellipse 70% 50% at 100% 0%,   #ff2d55 0%, transparent 65%),
+        radial-gradient(ellipse 72% 55% at 0%   0%,   #ff8c00 0%, transparent 65%),
+        /* top center — coral / red-orange bridge */
+        radial-gradient(ellipse 70% 48% at 50%  0%,   #ff3c50 0%, transparent 65%),
+        /* top-right — hot pink */
+        radial-gradient(ellipse 72% 55% at 100% 0%,   #ff2d55 0%, transparent 65%),
         /* right edge — magenta */
-        radial-gradient(ellipse 45% 55% at 100% 50%,  #e8187a 0%, transparent 62%),
+        radial-gradient(ellipse 50% 58% at 100% 50%,  #e0187a 0%, transparent 62%),
         /* bottom-right — violet / lavender */
-        radial-gradient(ellipse 65% 48% at 100% 100%, #9b59f5 0%, transparent 65%);
+        radial-gradient(ellipse 72% 55% at 100% 100%, #9b59f5 0%, transparent 65%),
+        /* bottom center — blue / indigo bridge */
+        radial-gradient(ellipse 70% 48% at 50%  100%, #4060ff 0%, transparent 65%),
+        /* bottom-left — sky blue / cyan */
+        radial-gradient(ellipse 72% 55% at 0%   100%, #00c2e0 0%, transparent 65%),
+        /* left edge — yellow-orange */
+        radial-gradient(ellipse 50% 58% at 0%   50%,  #ffb700 0%, transparent 62%);
       filter: blur(16px);
       animation: cbGlowBreathe 3s ease forwards;
     }
