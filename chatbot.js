@@ -35,50 +35,76 @@
 
   // -------------------- STYLES --------------------
   const css = `
-    /* ── Siri iOS 26-style inner breathing glow ─────────────────
-       The glow lives INSIDE the panel as an absolutely-positioned
-       overlay. Inset box-shadows feather the aurora colors from
-       all four edges inward, leaving the center transparent so
-       chat content shows through unobstructed.
+    /* ── Siri iPhone 17-style thin inner edge glow ──────────────
+       Technique: a conic-gradient (for per-edge color distribution)
+       is masked by a radial-gradient that punches out the center,
+       leaving only a thin colored strip right at the panel border.
+       filter:blur softens the strip into a feathered light bleed.
+       The parent panel's overflow:hidden clips any outward spill.
 
-       A single keyframe drives both the fade-in/out envelope and
-       the slow organic breathing — no spinning, no harsh edges. */
+       Colors match the iOS 17 Siri palette seen on the lock screen:
+       electric blue (top-left) → cobalt → violet → hot magenta
+       (bottom) → warm amber (bottom-right) → red/coral (right).
+
+       Animation: a single opacity keyframe that fades in, breathes
+       twice slowly like real Siri, then fades out — no rotation. */
 
     @keyframes cbGlowBreathe {
-      0%   { opacity: 0;    }   /* invisible on entry              */
-      12%  { opacity: 0.65; }   /* breathe in — first inhale       */
-      28%  { opacity: 1;    }   /* full glow                       */
-      46%  { opacity: 0.45; }   /* exhale                          */
-      64%  { opacity: 0.95; }   /* second inhale                   */
-      80%  { opacity: 0.5;  }   /* exhale again                    */
-      91%  { opacity: 0.75; }   /* last soft pulse before fade     */
-      100% { opacity: 0;    }   /* fade out cleanly                */
+      0%   { opacity: 0;    }   /* silent on entry                 */
+      8%   { opacity: 0.7;  }   /* snap in                         */
+      25%  { opacity: 1;    }   /* full brightness                 */
+      44%  { opacity: 0.38; }   /* exhale — dim down               */
+      62%  { opacity: 1;    }   /* inhale — back to full           */
+      80%  { opacity: 0.42; }   /* exhale again                    */
+      91%  { opacity: 0.7;  }   /* last gentle rise before fade    */
+      100% { opacity: 0;    }   /* fade out                        */
     }
 
-    /* Inner glow overlay — inserted as last child of .cb-panel
-       so it renders above the chat content but pointer-events:none
-       means it never blocks taps/clicks. The inset box-shadows
-       bloom from all four edges with a very large blur radius,
-       which is what creates the high-feather softness.
-       Colors are deliberately de-saturated so they read as a
-       gentle aurora rather than garish neon. */
+    /* Conic gradient: colors distributed around the perimeter.
+       Radial mask: transparent center → opaque ring at edges.
+       filter:blur: feathers the ring inward so it glows softly
+       rather than looking like a hard colored border. */
     .cb-siri-ring {
       position: absolute;
       inset: 0;
-      border-radius: 18px;      /* matches .cb-panel border-radius  */
+      border-radius: 18px;
       pointer-events: none;
       z-index: 9;
-      box-shadow:
-        /* Primary violet bloom — centre-weighted */
-        inset 0    0   110px 40px rgba(109, 58, 210, 0.38),
-        /* Indigo wash from the top edge */
-        inset 0    50px 80px  8px rgba(99, 102, 241, 0.28),
-        /* Soft blue from the left */
-        inset 50px 0   80px  8px rgba(56, 115, 235, 0.22),
-        /* Dusty rose from the right */
-        inset -50px 0  80px  8px rgba(210, 70, 155, 0.20),
-        /* Deep purple bloom from the bottom */
-        inset 0  -50px 80px  8px rgba(120, 45, 200, 0.25);
+      background: conic-gradient(
+        from 148deg at 50% 50%,
+        #1a60ff  0%,    /* electric blue    — top-left            */
+        #4422cc 18%,    /* cobalt/indigo    — left                */
+        #8810bb 32%,    /* deep violet      — bottom-left         */
+        #cc1888 44%,    /* hot magenta      — bottom              */
+        #dd6412 54%,    /* warm amber       — bottom-right        */
+        #cc1a1a 67%,    /* red              — right               */
+        #cc1050 82%,    /* coral/rose       — top-right           */
+        #1a60ff 100%    /* back to blue                           */
+      );
+      /* Radial mask: punch out the center, keep only the perimeter strip.
+         The gradient goes transparent → semi → opaque → transparent so
+         both the inner and outer edges of the ring are feathered. */
+      mask-image: radial-gradient(
+        ellipse 86% 88% at 50% 50%,
+        transparent  0%,
+        transparent 66%,
+        rgba(0,0,0,0.25) 76%,
+        black        85%,
+        rgba(0,0,0,0.6)  93%,
+        transparent 100%
+      );
+      -webkit-mask-image: radial-gradient(
+        ellipse 86% 88% at 50% 50%,
+        transparent  0%,
+        transparent 66%,
+        rgba(0,0,0,0.25) 76%,
+        black        85%,
+        rgba(0,0,0,0.6)  93%,
+        transparent 100%
+      );
+      /* Moderate blur softens the ring into a feathered light bleed.
+         The panel's overflow:hidden clips any outward spread cleanly. */
+      filter: blur(9px);
       animation: cbGlowBreathe 6.5s ease forwards;
     }
 
@@ -520,7 +546,7 @@
         max-width: none;
         border-radius: 16px;
       }
-      .cb-siri-ring { border-radius: 16px; } /* match mobile panel radius */
+      .cb-siri-ring { border-radius: 16px; } /* match mobile panel's smaller radius */
       .cb-fab { bottom: 16px; right: 16px; width: 56px; height: 56px; }
       .cb-fab svg { width: 30px; height: 30px; }
 
