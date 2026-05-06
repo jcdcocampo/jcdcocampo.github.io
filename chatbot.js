@@ -64,24 +64,23 @@
       border-radius: 18px;
       z-index: 9998;
       pointer-events: none;
-      background:
-        /* top-left — warm orange */
-        radial-gradient(ellipse 72% 55% at 0%   0%,   #ff8c00 0%, transparent 65%),
-        /* top center — coral / red-orange bridge */
-        radial-gradient(ellipse 70% 48% at 50%  0%,   #ff3c50 0%, transparent 65%),
-        /* top-right — hot pink */
-        radial-gradient(ellipse 72% 55% at 100% 0%,   #ff2d55 0%, transparent 65%),
-        /* right edge — magenta */
-        radial-gradient(ellipse 50% 58% at 100% 50%,  #e0187a 0%, transparent 62%),
-        /* bottom-right — violet / lavender */
-        radial-gradient(ellipse 72% 55% at 100% 100%, #9b59f5 0%, transparent 65%),
-        /* bottom center — blue / indigo bridge */
-        radial-gradient(ellipse 70% 48% at 50%  100%, #4060ff 0%, transparent 65%),
-        /* bottom-left — sky blue / cyan */
-        radial-gradient(ellipse 72% 55% at 0%   100%, #00c2e0 0%, transparent 65%),
-        /* left edge — yellow-orange */
-        radial-gradient(ellipse 50% 58% at 0%   50%,  #ffb700 0%, transparent 62%);
-      filter: blur(16px);
+      /* Single conic-gradient = zero gaps, mathematically continuous.
+         Colors flow clockwise from top-left matching the Siri palette.
+         The panel (z-index 9999) covers the center — only the outer
+         blur-bleed strip is visible, giving a seamless border glow. */
+      background: conic-gradient(
+        from -45deg at 50% 50%,
+        #ff8c00  0%,      /* top-left   — warm orange           */
+        #ff3c50  12.5%,   /* top        — coral / red-orange    */
+        #ff2d55  25%,     /* top-right  — hot pink              */
+        #e8187a  37.5%,   /* right      — magenta               */
+        #9b59f5  50%,     /* bot-right  — violet / lavender     */
+        #4060ff  62.5%,   /* bottom     — indigo / blue         */
+        #00c2e0  75%,     /* bot-left   — sky blue / cyan       */
+        #ffb700  87.5%,   /* left       — yellow-orange         */
+        #ff8c00  100%     /* back to top-left                   */
+      );
+      filter: blur(18px);
       animation: cbGlowBreathe 3s ease forwards;
     }
 
@@ -407,6 +406,95 @@
     .cb-send:disabled { opacity: 0.4; cursor: not-allowed; }
     .cb-send svg { width: 16px; height: 16px; }
 
+    /* Mic button — shown when textarea is empty (iMessage pattern).
+       Swaps with the send button via opacity+pointer-events so the
+       layout never shifts. Recording state turns it red with a
+       breathing pulse ring that mimics the iOS voice memo indicator. */
+    .cb-mic {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--sub-card, #f0f0f5);
+      color: var(--text-secondary, #636366);
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+      transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    }
+    .cb-mic:hover  { transform: scale(1.05); }
+    .cb-mic:active { transform: scale(0.92); }
+    .cb-mic svg { width: 15px; height: 15px; }
+
+    /* Recording state */
+    .cb-mic.cb-recording {
+      background: #ff3b30;
+      color: #fff;
+    }
+    /* Pulse ring that expands outward while recording */
+    .cb-mic.cb-recording::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 59, 48, 0.55);
+      animation: cbMicPulse 1.2s ease-out infinite;
+    }
+    @keyframes cbMicPulse {
+      0%   { inset: -1px;  opacity: 0.8; }
+      100% { inset: -9px;  opacity: 0;   }
+    }
+
+    /* Swap: mic visible when empty, send visible when typing.
+       Both stay in the DOM so layout is stable. */
+    .cb-btn-wrap {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+    .cb-btn-wrap .cb-send,
+    .cb-btn-wrap .cb-mic {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    /* Default: mic visible, send hidden */
+    .cb-btn-wrap .cb-send {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.7);
+    }
+    .cb-btn-wrap .cb-mic {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+    /* Has-text state: send visible, mic hidden */
+    .cb-btn-wrap.cb-has-text .cb-send {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+    .cb-btn-wrap.cb-has-text .cb-mic {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.7);
+    }
+    /* If speech not supported, never show mic */
+    .cb-btn-wrap.cb-no-speech .cb-mic { display: none; }
+    .cb-btn-wrap.cb-no-speech .cb-send {
+      position: static;
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+
     .cb-meta-row {
       display: flex;
       justify-content: space-between;
@@ -644,12 +732,22 @@
       <div class="cb-input-area">
         <div class="cb-input-row">
           <textarea class="cb-textarea" rows="1" placeholder="Ask about JC..." maxlength="${CONFIG.maxChars}"></textarea>
-          <button class="cb-send" aria-label="Send message" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="19" x2="12" y2="5"/>
-              <polyline points="5 12 12 5 19 12"/>
-            </svg>
-          </button>
+          <div class="cb-btn-wrap">
+            <button class="cb-send" aria-label="Send message" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"/>
+                <polyline points="5 12 12 5 19 12"/>
+              </svg>
+            </button>
+            <button class="cb-mic" type="button" aria-label="Voice input">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="2" width="6" height="11" rx="3"/>
+                <path d="M5 10a7 7 0 0 0 14 0"/>
+                <line x1="12" y1="19" x2="12" y2="22"/>
+                <line x1="9"  y1="22" x2="15" y2="22"/>
+              </svg>
+            </button>
+          </div>
         </div>
         <div class="cb-meta-row">
           <span class="cb-disclaimer-inline">AI responses may be inaccurate. Please verify.</span>
@@ -691,6 +789,8 @@
     const messagesEl   = panel.querySelector('.cb-messages');
     const textarea     = panel.querySelector('.cb-textarea');
     const sendBtn      = panel.querySelector('.cb-send');
+    const micBtn       = panel.querySelector('.cb-mic');
+    const btnWrap      = panel.querySelector('.cb-btn-wrap');
     const closeBtn     = panel.querySelector('.cb-close');
     const counterEl    = panel.querySelector('.cb-counter');
     const chipsRow     = panel.querySelector('.cb-chips');
@@ -881,9 +981,84 @@
       counterEl.classList.toggle('cb-near-limit', len > CONFIG.maxChars * 0.8 && len < CONFIG.maxChars);
       counterEl.classList.toggle('cb-at-limit', len >= CONFIG.maxChars);
       sendBtn.disabled = len === 0 || isSending;
+      // iMessage swap: show send when typing, mic when empty
+      btnWrap.classList.toggle('cb-has-text', len > 0 || isSending);
 
       textarea.style.height = 'auto';
       textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
+    }
+
+    // ---- Speech-to-text (Web Speech API) ----
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isListening = false;
+
+    if (!SpeechRecognition) {
+      // Browser doesn't support it — hide mic gracefully
+      btnWrap.classList.add('cb-no-speech');
+    } else {
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      function startListening() {
+        if (isListening || isSending) return;
+        isListening = true;
+        micBtn.classList.add('cb-recording');
+        micBtn.setAttribute('aria-label', 'Stop recording');
+        textarea.placeholder = 'Listening…';
+        textarea.value = '';
+        updateUI();
+        recognition.start();
+      }
+
+      function stopListening() {
+        if (!isListening) return;
+        recognition.stop();
+      }
+
+      recognition.onresult = (e) => {
+        let interim = '';
+        let final = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const t = e.results[i][0].transcript;
+          if (e.results[i].isFinal) final += t;
+          else interim += t;
+        }
+        // Show interim in textarea so user sees it forming in real time
+        textarea.value = final || interim;
+        updateUI();
+      };
+
+      recognition.onend = () => {
+        isListening = false;
+        micBtn.classList.remove('cb-recording');
+        micBtn.setAttribute('aria-label', 'Voice input');
+        textarea.placeholder = 'Ask about JC…';
+        const text = textarea.value.trim();
+        if (text) {
+          // Auto-send after a brief moment so user can see the final transcript
+          setTimeout(() => send(), 320);
+        } else {
+          updateUI();
+        }
+      };
+
+      recognition.onerror = (e) => {
+        // 'aborted' fires when we call stop() intentionally — ignore it
+        if (e.error === 'aborted') return;
+        isListening = false;
+        micBtn.classList.remove('cb-recording');
+        micBtn.setAttribute('aria-label', 'Voice input');
+        textarea.placeholder = 'Ask about JC…';
+        updateUI();
+      };
+
+      micBtn.addEventListener('click', () => {
+        if (isListening) stopListening();
+        else startListening();
+      });
     }
 
     textarea.addEventListener('input', updateUI);
