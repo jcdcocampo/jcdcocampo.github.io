@@ -997,10 +997,51 @@
       // Browser doesn't support it — hide mic gracefully
       btnWrap.classList.add('cb-no-speech');
     } else {
-      recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      // Recognition is created lazily on first mic click so the browser
+      // never asks for microphone permission until the user requests it.
+      function getRecognition() {
+        if (recognition) return recognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onresult = (e) => {
+          let interim = '';
+          let final = '';
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            const t = e.results[i][0].transcript;
+            if (e.results[i].isFinal) final += t;
+            else interim += t;
+          }
+          textarea.value = final || interim;
+          updateUI();
+        };
+
+        recognition.onend = () => {
+          isListening = false;
+          micBtn.classList.remove('cb-recording');
+          micBtn.setAttribute('aria-label', 'Voice input');
+          textarea.placeholder = 'Ask about JC…';
+          const text = textarea.value.trim();
+          if (text) {
+            setTimeout(() => send(), 320);
+          } else {
+            updateUI();
+          }
+        };
+
+        recognition.onerror = (e) => {
+          if (e.error === 'aborted') return;
+          isListening = false;
+          micBtn.classList.remove('cb-recording');
+          micBtn.setAttribute('aria-label', 'Voice input');
+          textarea.placeholder = 'Ask about JC…';
+          updateUI();
+        };
+
+        return recognition;
+      }
 
       function startListening() {
         if (isListening || isSending) return;
@@ -1010,50 +1051,13 @@
         textarea.placeholder = 'Listening…';
         textarea.value = '';
         updateUI();
-        recognition.start();
+        getRecognition().start();  // permission prompt only fires here
       }
 
       function stopListening() {
         if (!isListening) return;
         recognition.stop();
       }
-
-      recognition.onresult = (e) => {
-        let interim = '';
-        let final = '';
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          const t = e.results[i][0].transcript;
-          if (e.results[i].isFinal) final += t;
-          else interim += t;
-        }
-        // Show interim in textarea so user sees it forming in real time
-        textarea.value = final || interim;
-        updateUI();
-      };
-
-      recognition.onend = () => {
-        isListening = false;
-        micBtn.classList.remove('cb-recording');
-        micBtn.setAttribute('aria-label', 'Voice input');
-        textarea.placeholder = 'Ask about JC…';
-        const text = textarea.value.trim();
-        if (text) {
-          // Auto-send after a brief moment so user can see the final transcript
-          setTimeout(() => send(), 320);
-        } else {
-          updateUI();
-        }
-      };
-
-      recognition.onerror = (e) => {
-        // 'aborted' fires when we call stop() intentionally — ignore it
-        if (e.error === 'aborted') return;
-        isListening = false;
-        micBtn.classList.remove('cb-recording');
-        micBtn.setAttribute('aria-label', 'Voice input');
-        textarea.placeholder = 'Ask about JC…';
-        updateUI();
-      };
 
       micBtn.addEventListener('click', () => {
         if (isListening) stopListening();
