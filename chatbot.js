@@ -1016,9 +1016,11 @@
     let isListening = false;
 
     micBtn.addEventListener('click', () => {
-      // Hard guard: ignore if panel isn't open or still within the
-      // tap-through lock window after opening (mobile Brave fix)
+      // Guard: ignore if panel isn't open or still in the tap-through lock window
       if (!panel.classList.contains('cb-open') || !panelReady) return;
+
+      // Stop if already listening
+      if (isListening) {
         if (recognition) recognition.stop();
         return;
       }
