@@ -35,6 +35,53 @@
 
   // -------------------- STYLES --------------------
   const css = `
+    /* ── Siri iOS 26-style inner breathing glow ─────────────────
+       The glow lives INSIDE the panel as an absolutely-positioned
+       overlay. Inset box-shadows feather the aurora colors from
+       all four edges inward, leaving the center transparent so
+       chat content shows through unobstructed.
+
+       A single keyframe drives both the fade-in/out envelope and
+       the slow organic breathing — no spinning, no harsh edges. */
+
+    @keyframes cbGlowBreathe {
+      0%   { opacity: 0;    }   /* invisible on entry              */
+      12%  { opacity: 0.65; }   /* breathe in — first inhale       */
+      28%  { opacity: 1;    }   /* full glow                       */
+      46%  { opacity: 0.45; }   /* exhale                          */
+      64%  { opacity: 0.95; }   /* second inhale                   */
+      80%  { opacity: 0.5;  }   /* exhale again                    */
+      91%  { opacity: 0.75; }   /* last soft pulse before fade     */
+      100% { opacity: 0;    }   /* fade out cleanly                */
+    }
+
+    /* Inner glow overlay — inserted as last child of .cb-panel
+       so it renders above the chat content but pointer-events:none
+       means it never blocks taps/clicks. The inset box-shadows
+       bloom from all four edges with a very large blur radius,
+       which is what creates the high-feather softness.
+       Colors are deliberately de-saturated so they read as a
+       gentle aurora rather than garish neon. */
+    .cb-siri-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;      /* matches .cb-panel border-radius  */
+      pointer-events: none;
+      z-index: 9;
+      box-shadow:
+        /* Primary violet bloom — centre-weighted */
+        inset 0    0   110px 40px rgba(109, 58, 210, 0.38),
+        /* Indigo wash from the top edge */
+        inset 0    50px 80px  8px rgba(99, 102, 241, 0.28),
+        /* Soft blue from the left */
+        inset 50px 0   80px  8px rgba(56, 115, 235, 0.22),
+        /* Dusty rose from the right */
+        inset -50px 0  80px  8px rgba(210, 70, 155, 0.20),
+        /* Deep purple bloom from the bottom */
+        inset 0  -50px 80px  8px rgba(120, 45, 200, 0.25);
+      animation: cbGlowBreathe 6.5s ease forwards;
+    }
+
     /* Floating action button (iMessage-style balloon) */
     .cb-fab {
       position: fixed;
@@ -47,35 +94,19 @@
       color: #fff;
       border: none;
       cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.22);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 9998;
-      transition: transform 0.22s ease, opacity 0.22s ease;
-      animation: cbSiriBreathe 4s ease-in-out infinite;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease;
       font-family: var(--sf, -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif);
       padding: 0;
     }
-    .cb-fab:hover  { transform: scale(1.06); }
+    .cb-fab:hover  { transform: scale(1.06); box-shadow: 0 6px 22px rgba(0,0,0,0.28); }
     .cb-fab:active { transform: scale(0.94); }
     .cb-fab svg    { width: 32px; height: 32px; display: block; }
     .cb-fab.cb-hidden { opacity: 0; transform: scale(0.6); pointer-events: none; }
-    @keyframes cbSiriBreathe {
-      0%, 100% {
-        box-shadow:
-          0 4px 16px rgba(0,0,0,0.22),
-          inset 0 0 18px  6px rgba(180, 220, 255, 0.18),
-          inset 0 0 40px 16px rgba(150,  90, 255, 0.11),
-          inset 5px -5px 32px 10px rgba(80, 225, 205, 0.08);
-      }
-      50% {
-        box-shadow:
-          0 4px 20px rgba(0,0,0,0.26),
-          inset 0 0 28px 11px rgba(180, 220, 255, 0.62),
-          inset 0 0 55px 22px rgba(150,  90, 255, 0.42),
-          inset 5px -5px 42px 15px rgba(80, 225, 205, 0.28);
-      }
-    }
 
     /* Panel */
     .cb-panel {
@@ -115,6 +146,8 @@
       gap: 12px;
       border-bottom: 1px solid var(--separator, #e5e5ea);
       flex-shrink: 0;
+      position: relative; /* sit above the glow overlay */
+      z-index: 10;
     }
     .cb-avatar {
       width: 48px;
@@ -189,6 +222,8 @@
       flex-direction: column;
       gap: 10px;
       scroll-behavior: smooth;
+      position: relative; /* sit above the glow overlay */
+      z-index: 10;
     }
     .cb-messages::-webkit-scrollbar { width: 6px; }
     .cb-messages::-webkit-scrollbar-thumb {
@@ -283,6 +318,8 @@
       align-items: flex-end;
       gap: 7px;
       padding: 4px 16px 8px;
+      position: relative; /* sit above the glow overlay */
+      z-index: 10;
     }
     .cb-chip {
       display: inline-flex;
@@ -316,6 +353,8 @@
       padding: 10px 12px 8px;
       flex-shrink: 0;
       background: var(--card, #ffffff);
+      position: relative; /* sit above the glow overlay */
+      z-index: 10;
     }
     .cb-input-row {
       display: flex;
@@ -481,6 +520,7 @@
         max-width: none;
         border-radius: 16px;
       }
+      .cb-siri-ring { border-radius: 16px; } /* match mobile panel radius */
       .cb-fab { bottom: 16px; right: 16px; width: 56px; height: 56px; }
       .cb-fab svg { width: 30px; height: 30px; }
 
@@ -523,6 +563,29 @@
       .replace(/~~([^~]+?)~~/g, '$1')
       .replace(/^#{1,6}\s+/gm, '')
       .replace(/  +/g, ' ');
+  }
+
+  // ── Siri iOS 26-style inner breathing glow ─────────────────────
+  // Inserts an absolutely-positioned overlay INSIDE the panel.
+  // The overlay has no background — only inset box-shadows that
+  // bloom softly from every edge inward. The panel's overflow:hidden
+  // clips the blur naturally at the rounded corners.
+  // Pointer-events: none means it never intercepts taps or clicks.
+  // The element self-destructs after the animation completes.
+  function showSiriGlow(panel) {
+    // Remove any leftover ring from a rapid re-open
+    const old = panel.querySelector('.cb-siri-ring');
+    if (old) old.remove();
+
+    const ring = document.createElement('div');
+    ring.className = 'cb-siri-ring';
+
+    // Append as last child so it layers above panel content visually,
+    // while pointer-events:none keeps it fully non-interactive.
+    panel.appendChild(ring);
+
+    // 6.5 s animation + small buffer before DOM cleanup
+    setTimeout(() => ring.remove(), 6700);
   }
 
   const IMESSAGE_ICON = `
@@ -647,6 +710,8 @@
     function openPanel() {
       panel.classList.add('cb-open');
       fab.classList.add('cb-hidden');
+      // Play the Siri-style inner breathing glow every time the chat is opened
+      showSiriGlow(panel);
       setTimeout(() => textarea.focus(), 250);
       if (!welcomeShown) {
         welcomeShown = true;
