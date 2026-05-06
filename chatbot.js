@@ -47,36 +47,34 @@
       color: #fff;
       border: none;
       cursor: pointer;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.22);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 9998;
-      transition: transform 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease;
+      transition: transform 0.22s ease, opacity 0.22s ease;
+      animation: cbSiriBreathe 4s ease-in-out infinite;
       font-family: var(--sf, -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif);
       padding: 0;
     }
-    .cb-fab:hover  { transform: scale(1.06); box-shadow: 0 6px 22px rgba(0,0,0,0.28); }
+    .cb-fab:hover  { transform: scale(1.06); }
     .cb-fab:active { transform: scale(0.94); }
-    .cb-fab svg    { width: 32px; height: 32px; display: block; position: relative; z-index: 1; }
+    .cb-fab svg    { width: 32px; height: 32px; display: block; }
     .cb-fab.cb-hidden { opacity: 0; transform: scale(0.6); pointer-events: none; }
-
-    /* Siri-style inner breathing glow */
-    .cb-fab::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      pointer-events: none;
-      box-shadow:
-        inset 0 0 32px 12px rgba(180, 220, 255, 0.55),
-        inset 0 0 55px 22px rgba(150, 90, 255, 0.35),
-        inset 6px -6px 40px 14px rgba(80, 225, 205, 0.25);
-      animation: cbSiriBreathe 4s ease-in-out infinite;
-    }
     @keyframes cbSiriBreathe {
-      0%, 100% { opacity: 0.28; }
-      50%       { opacity: 1;   }
+      0%, 100% {
+        box-shadow:
+          0 4px 16px rgba(0,0,0,0.22),
+          inset 0 0 18px  6px rgba(180, 220, 255, 0.18),
+          inset 0 0 40px 16px rgba(150,  90, 255, 0.11),
+          inset 5px -5px 32px 10px rgba(80, 225, 205, 0.08);
+      }
+      50% {
+        box-shadow:
+          0 4px 20px rgba(0,0,0,0.26),
+          inset 0 0 28px 11px rgba(180, 220, 255, 0.62),
+          inset 0 0 55px 22px rgba(150,  90, 255, 0.42),
+          inset 5px -5px 42px 15px rgba(80, 225, 205, 0.28);
+      }
     }
 
     /* Panel */
