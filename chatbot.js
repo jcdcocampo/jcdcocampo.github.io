@@ -35,73 +35,6 @@
 
   // -------------------- STYLES --------------------
   const css = `
-    /* ── Siri-style opening glow ─────────────────────────────────
-       @property lets the browser interpolate the custom angle,
-       which makes the conic-gradient actually animate smoothly.
-       Supported: Chrome 85+, Edge 85+, Safari 15.4+, FF 128+.
-       On older browsers the ring simply won't spin (graceful). */
-    @property --cb-glow-angle {
-      syntax: '<angle>';
-      initial-value: 0deg;
-      inherits: false;
-    }
-    @keyframes cbGlowSpin {
-      to { --cb-glow-angle: 360deg; }
-    }
-    /* Fade in → hold → fade out so the glow is a one-shot greeting. */
-    @keyframes cbGlowFade {
-      0%   { opacity: 0; }
-      14%  { opacity: 1; }
-      72%  { opacity: 1; }
-      100% { opacity: 0; }
-    }
-
-    /* The ring sits just behind the panel (z-index 9998 vs panel 9999).
-       It is 4 px larger on each side, so only its outer border strip is
-       visible — the panel covers the rest. That 4 px strip is the glow. */
-    .cb-siri-ring {
-      position: fixed;
-      /* 4 px less than the panel's bottom/right so it peeks out evenly */
-      bottom: 20px;
-      right: 20px;
-      /* 8 px wider/taller than the panel (4 px per side) */
-      width: 388px;
-      max-width: calc(100vw - 26px);
-      height: 568px;
-      max-height: calc(100vh - 42px);
-      /* 3 px more than the panel's 18 px radius (plus the 4 px inset = 22 px ≈ 21 px) */
-      border-radius: 22px;
-      z-index: 9998;
-      pointer-events: none;
-      /* Spinning Siri aurora gradient — Apple's signature palette:
-         deep indigo → violet → purple → pink/magenta → teal → blue → back.
-         No orange, yellow, or green — only the soft cool tones Siri uses. */
-      background: conic-gradient(
-        from var(--cb-glow-angle, 0deg),
-        #4f46e5, #7c3aed, #a855f7,
-        #ec4899, #06b6d4, #3b82f6,
-        #4f46e5
-      );
-      /* Soft blur makes it look like a glowing aura rather than a hard edge */
-      filter: blur(2px);
-      animation:
-        cbGlowSpin  2s  linear infinite,
-        cbGlowFade  3.6s ease   forwards;
-    }
-    @media (max-width: 480px) {
-      .cb-siri-ring {
-        bottom: 8px;
-        right: 4px;
-        left: 4px;
-        width: auto;
-        max-width: none;
-        height: calc(100vh - 72px);
-        height: calc(100dvh - 72px);
-        max-height: none;
-        border-radius: 20px;
-      }
-    }
-
     /* Floating action button (iMessage-style balloon) */
     .cb-fab {
       position: fixed;
@@ -125,8 +58,26 @@
     }
     .cb-fab:hover  { transform: scale(1.06); box-shadow: 0 6px 22px rgba(0,0,0,0.28); }
     .cb-fab:active { transform: scale(0.94); }
-    .cb-fab svg    { width: 32px; height: 32px; display: block; }
+    .cb-fab svg    { width: 32px; height: 32px; display: block; position: relative; z-index: 1; }
     .cb-fab.cb-hidden { opacity: 0; transform: scale(0.6); pointer-events: none; }
+
+    /* Siri-style inner breathing glow */
+    .cb-fab::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      pointer-events: none;
+      box-shadow:
+        inset 0 0 32px 12px rgba(180, 220, 255, 0.55),
+        inset 0 0 55px 22px rgba(150, 90, 255, 0.35),
+        inset 6px -6px 40px 14px rgba(80, 225, 205, 0.25);
+      animation: cbSiriBreathe 4s ease-in-out infinite;
+    }
+    @keyframes cbSiriBreathe {
+      0%, 100% { opacity: 0.28; }
+      50%       { opacity: 1;   }
+    }
 
     /* Panel */
     .cb-panel {
@@ -576,27 +527,6 @@
       .replace(/  +/g, ' ');
   }
 
-  // ── Siri opening glow ──────────────────────────────────────────
-  // Creates a sibling div that sits just behind the panel (z-index 9998).
-  // Only its outer 4 px strip is visible; the panel covers the center.
-  // The div self-destructs after the fade-out animation completes.
-  function showSiriGlow(panel) {
-    // Remove any ring left over from a rapid re-open
-    const old = document.querySelector('.cb-siri-ring');
-    if (old) old.remove();
-
-    const ring = document.createElement('div');
-    ring.className = 'cb-siri-ring';
-
-    // Insert the ring before the panel in the DOM so it renders behind it.
-    // (The panel's z-index 9999 > ring's z-index 9998 regardless of order,
-    // but matching DOM order too avoids any stacking-context edge cases.)
-    panel.parentNode.insertBefore(ring, panel);
-
-    // Animation duration is 3.6 s (cbGlowFade). Add a small buffer.
-    setTimeout(() => ring.remove(), 3700);
-  }
-
   const IMESSAGE_ICON = `
     <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <path fill="#ffffff" d="M16 5.2c-7 0-12.5 4.6-12.5 10.6 0 3.4 1.8 6.5 4.7 8.5.2.2.3.4.3.7 0 .8-.7 2.3-1.4 3.3-.2.3 0 .7.4.6 2.4-.4 4.5-1.4 5.7-2.1.2-.1.5-.2.8-.1 1.3.3 2.7.5 4 .5 7 0 12.5-4.6 12.5-10.6S23 5.2 16 5.2z"/>
@@ -719,8 +649,6 @@
     function openPanel() {
       panel.classList.add('cb-open');
       fab.classList.add('cb-hidden');
-      // Play the Siri-style colorful glow every time the chat is opened
-      showSiriGlow(panel);
       setTimeout(() => textarea.focus(), 250);
       if (!welcomeShown) {
         welcomeShown = true;
