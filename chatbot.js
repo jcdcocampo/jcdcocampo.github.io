@@ -73,12 +73,14 @@
       border-radius: 22px;
       z-index: 9998;
       pointer-events: none;
-      /* Spinning Siri gradient — Apple's palette: blue → indigo → purple → pink → orange → yellow → green */
+      /* Spinning Siri aurora gradient — Apple's signature palette:
+         deep indigo → violet → purple → pink/magenta → teal → blue → back.
+         No orange, yellow, or green — only the soft cool tones Siri uses. */
       background: conic-gradient(
         from var(--cb-glow-angle, 0deg),
-        #007aff, #5e5ce6, #bf5af2,
-        #ff375f, #ff9f0a, #ffd60a,
-        #34c759, #007aff
+        #4f46e5, #7c3aed, #a855f7,
+        #ec4899, #06b6d4, #3b82f6,
+        #4f46e5
       );
       /* Soft blur makes it look like a glowing aura rather than a hard edge */
       filter: blur(2px);
