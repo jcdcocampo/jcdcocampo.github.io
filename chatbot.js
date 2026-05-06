@@ -118,6 +118,10 @@
       transition: transform 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease;
       font-family: var(--sf, -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif);
       padding: 0;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
     }
     .cb-fab:hover  { transform: scale(1.06); box-shadow: 0 6px 22px rgba(0,0,0,0.28); }
     .cb-fab:active { transform: scale(0.94); }
@@ -222,6 +226,8 @@
       justify-content: center;
       transition: background 0.18s ease, transform 0.18s ease;
       flex-shrink: 0;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
     .cb-close:hover  { background: var(--sub-hover, #e5e5ea); }
     .cb-close:active { transform: scale(0.92); }
@@ -346,6 +352,8 @@
       opacity: 0;
       transform: translateX(20px);
       transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
     .cb-chip.cb-chip-in {
       animation: cbChipSlideIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -400,6 +408,8 @@
       justify-content: center;
       flex-shrink: 0;
       transition: opacity 0.18s ease, transform 0.18s ease;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
     .cb-send:hover:not(:disabled)  { transform: scale(1.05); }
     .cb-send:active:not(:disabled) { transform: scale(0.92); }
@@ -424,6 +434,8 @@
       flex-shrink: 0;
       position: relative;
       transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
     .cb-mic:hover  { transform: scale(1.05); }
     .cb-mic:active { transform: scale(0.92); }
@@ -830,6 +842,9 @@
     function closePanel() {
       panel.classList.remove('cb-open');
       fab.classList.remove('cb-hidden');
+      // Kill the glow ring immediately if animation is still running
+      const ring = document.querySelector('.cb-siri-ring');
+      if (ring) ring.remove();
     }
     function isPanelOpen() { return panel.classList.contains('cb-open'); }
 
@@ -989,31 +1004,44 @@
     }
 
     // ---- Speech-to-text (Web Speech API) ----
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    // IMPORTANT: zero speech API access happens at init time.
+    // Feature detection, object creation, and permission all live
+    // inside the click handler — the only guaranteed user gesture.
+    // This is what prevents Brave / Chrome from showing the mic
+    // permission prompt the moment the widget opens.
     let recognition = null;
     let isListening = false;
 
-    if (!SpeechRecognition) {
-      // Browser doesn't support it — hide mic gracefully
-      btnWrap.classList.add('cb-no-speech');
-    } else {
-      // Recognition is created lazily on first mic click so the browser
-      // never asks for microphone permission until the user requests it.
-      function getRecognition() {
-        if (recognition) return recognition;
-        recognition = new SpeechRecognition();
-        recognition.continuous = false;
+    micBtn.addEventListener('click', () => {
+      // Stop if already listening
+      if (isListening) {
+        if (recognition) recognition.stop();
+        return;
+      }
+
+      // Feature detect only now, inside a real user-gesture
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        // Not supported — hide mic so it never misleads the user
+        btnWrap.classList.add('cb-no-speech');
+        return;
+      }
+
+      // Build the recognition object once, reuse on subsequent clicks
+      if (!recognition) {
+        recognition = new SR();
+        recognition.continuous    = false;
         recognition.interimResults = true;
-        recognition.lang = 'en-US';
+        recognition.lang           = 'en-US';
 
         recognition.onresult = (e) => {
-          let interim = '';
-          let final = '';
+          let interim = '', final = '';
           for (let i = e.resultIndex; i < e.results.length; i++) {
             const t = e.results[i][0].transcript;
             if (e.results[i].isFinal) final += t;
             else interim += t;
           }
+          // Show live transcript so user sees it forming in real time
           textarea.value = final || interim;
           updateUI();
         };
@@ -1024,46 +1052,29 @@
           micBtn.setAttribute('aria-label', 'Voice input');
           textarea.placeholder = 'Ask about JC…';
           const text = textarea.value.trim();
-          if (text) {
-            setTimeout(() => send(), 320);
-          } else {
-            updateUI();
-          }
+          if (text) setTimeout(() => send(), 320); // brief pause before auto-send
+          else updateUI();
         };
 
         recognition.onerror = (e) => {
-          if (e.error === 'aborted') return;
+          if (e.error === 'aborted') return; // fired by our own stop() call
           isListening = false;
           micBtn.classList.remove('cb-recording');
           micBtn.setAttribute('aria-label', 'Voice input');
           textarea.placeholder = 'Ask about JC…';
           updateUI();
         };
-
-        return recognition;
       }
 
-      function startListening() {
-        if (isListening || isSending) return;
-        isListening = true;
-        micBtn.classList.add('cb-recording');
-        micBtn.setAttribute('aria-label', 'Stop recording');
-        textarea.placeholder = 'Listening…';
-        textarea.value = '';
-        updateUI();
-        getRecognition().start();  // permission prompt only fires here
-      }
-
-      function stopListening() {
-        if (!isListening) return;
-        recognition.stop();
-      }
-
-      micBtn.addEventListener('click', () => {
-        if (isListening) stopListening();
-        else startListening();
-      });
-    }
+      // Start listening — permission prompt fires here and only here
+      isListening = true;
+      micBtn.classList.add('cb-recording');
+      micBtn.setAttribute('aria-label', 'Stop recording');
+      textarea.placeholder = 'Listening…';
+      textarea.value = '';
+      updateUI();
+      recognition.start();
+    });
 
     textarea.addEventListener('input', updateUI);
     textarea.addEventListener('keydown', (e) => {
