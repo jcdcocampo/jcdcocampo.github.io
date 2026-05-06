@@ -125,7 +125,8 @@
     }
     .cb-fab:hover  { transform: scale(1.06); box-shadow: 0 6px 22px rgba(0,0,0,0.28); }
     .cb-fab:active { transform: scale(0.94); }
-    .cb-fab svg    { width: 32px; height: 32px; display: block; pointer-events: none; }
+    .cb-fab *      { pointer-events: none; } /* ALL children pass touches to the button */
+    .cb-fab svg    { width: 32px; height: 32px; display: block; }
     .cb-fab.cb-hidden { opacity: 0; transform: scale(0.6); pointer-events: none; }
 
     /* Panel */
@@ -845,13 +846,19 @@
     function closePanel() {
       panel.classList.remove('cb-open');
       fab.classList.remove('cb-hidden');
-      // Kill the glow ring immediately if animation is still running
       const ring = document.querySelector('.cb-siri-ring');
       if (ring) ring.remove();
+      if (isListening) stopSpeech(false); // abort mic if panel closed mid-recording
     }
     function isPanelOpen() { return panel.classList.contains('cb-open'); }
 
+    // Click handles desktop. touchend handles mobile browsers (Brave etc.)
+    // that sometimes miss click on buttons with SVG children.
     fab.addEventListener('click', openPanel);
+    fab.addEventListener('touchend', (e) => {
+      e.preventDefault(); // prevent the ghost click that follows touchend
+      openPanel();
+    });
     closeBtn.addEventListener('click', closePanel);
 
     // ---- ID card popup ----
@@ -1006,89 +1013,84 @@
       textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
     }
 
-    // ---- Speech-to-text (Web Speech API) ----
-    // IMPORTANT: zero speech API access happens at init time.
-    // Feature detection, object creation, and permission all live
-    // inside the click handler — the only guaranteed user gesture.
-    // This is what prevents Brave / Chrome from showing the mic
-    // permission prompt the moment the widget opens.
-    let recognition = null;
-    let isListening = false;
+    // ---- Speech-to-text ----
+    let recognition  = null;
+    let isListening  = false;
+    let speechTimer  = null;
+    const MAX_SPEECH = 30000; // 30 second hard limit
+
+    function stopSpeech(andSend) {
+      isListening = false;
+      clearTimeout(speechTimer);
+      speechTimer = null;
+      if (recognition) {
+        try { recognition.abort(); } catch (_) {}
+        recognition = null; // discard — create fresh next time
+      }
+      micBtn.classList.remove('cb-recording');
+      micBtn.setAttribute('aria-label', 'Voice input');
+      textarea.placeholder = 'Ask about JC…';
+      if (andSend && textarea.value.trim()) {
+        setTimeout(() => send(), 320);
+      } else {
+        updateUI();
+      }
+    }
 
     micBtn.addEventListener('click', () => {
-      // Guard: ignore if panel isn't open or still in the tap-through lock window
       if (!panel.classList.contains('cb-open') || !panelReady) return;
 
-      // Stop if already listening
-      if (isListening) {
-        isListening = false;  // set first so onend doesn't auto-restart
-        if (recognition) recognition.stop();
-        return;
-      }
+      // Already listening → stop and send
+      if (isListening) { stopSpeech(true); return; }
 
-      // Feature detect only now, inside a real user-gesture
+      // Feature-detect inside the click (user gesture) so no early prompt
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) {
-        // Not supported — hide mic so it never misleads the user
-        btnWrap.classList.add('cb-no-speech');
-        return;
-      }
+      if (!SR) { btnWrap.classList.add('cb-no-speech'); return; }
 
-      // Build the recognition object once, reuse on subsequent clicks
-      if (!recognition) {
-        recognition = new SR();
-        recognition.continuous     = true;  // keep listening until user taps stop
-        recognition.interimResults = true;
-        recognition.lang           = 'en-US';
+      // Fresh instance every session — avoids mobile state bugs on reuse
+      recognition = new SR();
+      recognition.continuous     = true;
+      recognition.interimResults = true;
+      recognition.lang           = 'en-US';
 
-        recognition.onresult = (e) => {
-          let interim = '', final = '';
-          for (let i = e.resultIndex; i < e.results.length; i++) {
-            const t = e.results[i][0].transcript;
-            if (e.results[i].isFinal) final += t;
-            else interim += t;
-          }
-          textarea.value = final || interim;
-          updateUI();
-        };
+      // Accumulate ALL results so the full sentence builds up in the field
+      recognition.onresult = (e) => {
+        let transcript = '';
+        for (let i = 0; i < e.results.length; i++) {
+          transcript += e.results[i][0].transcript;
+        }
+        textarea.value = transcript;
+        updateUI();
+      };
 
-        recognition.onend = () => {
-          // On mobile, continuous mode can still fire onend unexpectedly.
-          // If we're still supposed to be listening, restart automatically.
-          if (isListening) {
-            try { recognition.start(); } catch (_) {}
-            return;
-          }
-          micBtn.classList.remove('cb-recording');
-          micBtn.setAttribute('aria-label', 'Voice input');
-          textarea.placeholder = 'Ask about JC…';
-          const text = textarea.value.trim();
-          if (text) setTimeout(() => send(), 320);
-          else updateUI();
-        };
+      // Mobile fires onend mid-session — restart automatically if still listening
+      recognition.onend = () => {
+        if (!isListening) return;
+        try { recognition.start(); } catch (_) { stopSpeech(true); }
+      };
 
-        recognition.onerror = (e) => {
-          // 'aborted' = we called stop() ourselves — ignore
-          if (e.error === 'aborted') return;
-          // 'no-speech' = silence timeout — just restart so user keeps hearing the indicator
-          if (e.error === 'no-speech') return;
-          // Real error — stop cleanly
-          isListening = false;
-          micBtn.classList.remove('cb-recording');
-          micBtn.setAttribute('aria-label', 'Voice input');
-          textarea.placeholder = 'Ask about JC…';
-          updateUI();
-        };
-      }
+      recognition.onerror = (e) => {
+        if (e.error === 'aborted' || e.error === 'no-speech') return;
+        stopSpeech(true);
+      };
 
-      // Start listening — permission prompt fires here and only here
+      // Start
       isListening = true;
       micBtn.classList.add('cb-recording');
       micBtn.setAttribute('aria-label', 'Stop recording');
       textarea.placeholder = 'Listening…';
       textarea.value = '';
       updateUI();
-      recognition.start();
+
+      try {
+        recognition.start();
+      } catch (_) {
+        stopSpeech(false);
+        return;
+      }
+
+      // 30-second hard limit — auto-stop and send whatever was captured
+      speechTimer = setTimeout(() => stopSpeech(true), MAX_SPEECH);
     });
 
     textarea.addEventListener('input', updateUI);
