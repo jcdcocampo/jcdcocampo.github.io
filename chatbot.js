@@ -36,28 +36,20 @@
   // -------------------- STYLES --------------------
   const css = `
     /* ── Siri-style outer border glow ────────────────────────────
-       The ring is a SIBLING positioned behind the panel (z-index
-       9998 vs panel's 9999). It is the exact same size and position
-       as the panel. filter:blur makes the colored edges bleed ~18px
-       outward — that outer strip is all that's visible, because the
-       panel covers the center completely.
-
-       Panel content is 100% untouched. No overlay, no tinting.
-
-       Colors (from the iPhone Siri bezel reference):
-         top-left  → electric blue
-         left      → indigo / violet
-         bottom-left  → deep purple
-         top-right → hot pink / rose
-         right     → crimson
-         bottom-right → warm amber
-         bottom    → magenta                                     */
+       Sibling div behind the panel (z-index 9998, panel is 9999).
+       Colors match the full Siri logo palette:
+         top-left     → orange / warm yellow
+         left edge    → orange fading to yellow-white
+         bottom-left  → cyan / sky blue
+         top-right    → hot pink / red-pink
+         right edge   → magenta / pink
+         bottom-right → violet / lavender                        */
 
     @keyframes cbGlowBreathe {
       0%   { opacity: 0;   }
       12%  { opacity: 1;   }
-      65%  { opacity: 0.8; }
-      80%  { opacity: 1;   }
+      60%  { opacity: 0.82;}
+      78%  { opacity: 1;   }
       100% { opacity: 0;   }
     }
 
@@ -70,25 +62,22 @@
       height: 560px;
       max-height: calc(100vh - 48px);
       border-radius: 18px;
-      z-index: 9998;          /* sits just behind the panel       */
+      z-index: 9998;
       pointer-events: none;
       background:
-        /* top-left — electric blue */
-        radial-gradient(ellipse 65% 45% at 0%   0%,   #1244ff 0%, transparent 62%),
-        /* left edge — indigo */
-        radial-gradient(ellipse 42% 55% at 0%   48%,  #5018e0 0%, transparent 60%),
-        /* bottom-left — deep purple */
-        radial-gradient(ellipse 58% 42% at 0%   100%, #9010cc 0%, transparent 60%),
-        /* top-right — hot pink */
-        radial-gradient(ellipse 58% 42% at 100% 0%,   #e0208a 0%, transparent 60%),
-        /* right edge — crimson */
-        radial-gradient(ellipse 42% 55% at 100% 48%,  #cc1428 0%, transparent 60%),
-        /* bottom-right — warm amber */
-        radial-gradient(ellipse 58% 42% at 100% 100%, #dd7808 0%, transparent 60%),
-        /* bottom center — magenta bridge */
-        radial-gradient(ellipse 60% 32% at 50%  100%, #c01888 0%, transparent 58%);
-      /* blur pushes color outward so it glows around the panel edge */
-      filter: blur(18px);
+        /* top-left — warm orange */
+        radial-gradient(ellipse 70% 50% at 0% 0%,   #ff8c00 0%, transparent 65%),
+        /* left edge — orange-yellow */
+        radial-gradient(ellipse 45% 55% at 0% 50%,  #ffb700 0%, transparent 62%),
+        /* bottom-left — sky blue / cyan */
+        radial-gradient(ellipse 65% 48% at 0% 100%, #00c2e0 0%, transparent 65%),
+        /* top-right — hot pink / red */
+        radial-gradient(ellipse 70% 50% at 100% 0%,   #ff2d55 0%, transparent 65%),
+        /* right edge — magenta */
+        radial-gradient(ellipse 45% 55% at 100% 50%,  #e8187a 0%, transparent 62%),
+        /* bottom-right — violet / lavender */
+        radial-gradient(ellipse 65% 48% at 100% 100%, #9b59f5 0%, transparent 65%);
+      filter: blur(16px);
       animation: cbGlowBreathe 3s ease forwards;
     }
 
