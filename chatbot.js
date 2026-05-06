@@ -35,77 +35,76 @@
 
   // -------------------- STYLES --------------------
   const css = `
-    /* ── Siri iPhone 17-style thin inner edge glow ──────────────
-       Technique: a conic-gradient (for per-edge color distribution)
-       is masked by a radial-gradient that punches out the center,
-       leaving only a thin colored strip right at the panel border.
-       filter:blur softens the strip into a feathered light bleed.
-       The parent panel's overflow:hidden clips any outward spill.
+    /* ── Siri iPhone 17 inner-edge glow — rebuilt from scratch ───
+       The reference image shows large, soft color blobs anchored
+       at each edge/corner, bleeding inward and fading to nothing
+       in the center. Technique: stacked radial-gradient blobs,
+       each pinned to a specific edge/corner with a vivid hue.
+       They overlap and blend naturally. filter:blur fattens the
+       soft falloff further. The ring sits ABOVE all panel content
+       (z-index 11) but pointer-events:none keeps it non-blocking.
 
-       Colors match the iOS 17 Siri palette seen on the lock screen:
-       electric blue (top-left) → cobalt → violet → hot magenta
-       (bottom) → warm amber (bottom-right) → red/coral (right).
+       Color map (matching reference):
+         Top / top-left  → electric blue
+         Left            → deep indigo → purple
+         Bottom-left     → violet / hot magenta
+         Bottom          → magenta / purple
+         Bottom-right    → warm amber / orange
+         Right           → crimson red
+         Top-right       → deep red / wine
 
-       Animation: a single opacity keyframe that fades in, breathes
-       twice slowly like real Siri, then fades out — no rotation. */
+       Animation: 3 seconds total.
+         0 → 0.3s  : snap in
+         0.3 → 2.2s: hold at full glow with one gentle dip
+         2.2 → 3s  : dissolve out                               */
 
     @keyframes cbGlowBreathe {
-      0%   { opacity: 0;    }   /* silent on entry                 */
-      8%   { opacity: 0.7;  }   /* snap in                         */
-      25%  { opacity: 1;    }   /* full brightness                 */
-      44%  { opacity: 0.38; }   /* exhale — dim down               */
-      62%  { opacity: 1;    }   /* inhale — back to full           */
-      80%  { opacity: 0.42; }   /* exhale again                    */
-      91%  { opacity: 0.7;  }   /* last gentle rise before fade    */
-      100% { opacity: 0;    }   /* fade out                        */
+      0%   { opacity: 0;   }
+      10%  { opacity: 1;   }   /* snap to full in ~0.3 s          */
+      55%  { opacity: 0.78;}   /* one slow exhale mid-way          */
+      75%  { opacity: 1;   }   /* back to full                    */
+      100% { opacity: 0;   }   /* dissolve out                    */
     }
 
-    /* Conic gradient: colors distributed around the perimeter.
-       Radial mask: transparent center → opaque ring at edges.
-       filter:blur: feathers the ring inward so it glows softly
-       rather than looking like a hard colored border. */
+    /* Each radial-gradient blob is anchored at its edge/corner.
+       The ellipse axes are tuned so the blob bleeds well inward
+       but transparent reaches the center — so panel content in
+       the middle remains unobstructed beneath the glow.
+       filter:blur adds the final soft feathering.
+       panel overflow:hidden clips any bleed beyond the border. */
     .cb-siri-ring {
       position: absolute;
       inset: 0;
       border-radius: 18px;
       pointer-events: none;
-      z-index: 9;
-      background: conic-gradient(
-        from 148deg at 50% 50%,
-        #1a60ff  0%,    /* electric blue    — top-left            */
-        #4422cc 18%,    /* cobalt/indigo    — left                */
-        #8810bb 32%,    /* deep violet      — bottom-left         */
-        #cc1888 44%,    /* hot magenta      — bottom              */
-        #dd6412 54%,    /* warm amber       — bottom-right        */
-        #cc1a1a 67%,    /* red              — right               */
-        #cc1050 82%,    /* coral/rose       — top-right           */
-        #1a60ff 100%    /* back to blue                           */
-      );
-      /* Radial mask: punch out the center, keep only the perimeter strip.
-         The gradient goes transparent → semi → opaque → transparent so
-         both the inner and outer edges of the ring are feathered. */
-      mask-image: radial-gradient(
-        ellipse 86% 88% at 50% 50%,
-        transparent  0%,
-        transparent 66%,
-        rgba(0,0,0,0.25) 76%,
-        black        85%,
-        rgba(0,0,0,0.6)  93%,
-        transparent 100%
-      );
-      -webkit-mask-image: radial-gradient(
-        ellipse 86% 88% at 50% 50%,
-        transparent  0%,
-        transparent 66%,
-        rgba(0,0,0,0.25) 76%,
-        black        85%,
-        rgba(0,0,0,0.6)  93%,
-        transparent 100%
-      );
-      /* Moderate blur softens the ring into a feathered light bleed.
-         The panel's overflow:hidden clips any outward spread cleanly. */
-      filter: blur(9px);
-      animation: cbGlowBreathe 6.5s ease forwards;
+      z-index: 11;               /* above all panel content          */
+      background:
+        /* ① Electric blue — top-left corner + top edge */
+        radial-gradient(ellipse 75% 50% at 5% 0%,
+          rgba(15, 55, 255, 0.70) 0%, transparent 72%),
+        /* ② Deep indigo — left edge, upper half */
+        radial-gradient(ellipse 48% 55% at 0% 35%,
+          rgba(80, 10, 210, 0.65) 0%, transparent 68%),
+        /* ③ Violet / hot magenta — left edge, lower + bottom-left */
+        radial-gradient(ellipse 52% 48% at 0% 82%,
+          rgba(175, 10, 190, 0.68) 0%, transparent 68%),
+        /* ④ Magenta — bottom edge center */
+        radial-gradient(ellipse 65% 44% at 38% 100%,
+          rgba(185, 12, 175, 0.62) 0%, transparent 68%),
+        /* ⑤ Warm amber / orange — bottom-right corner */
+        radial-gradient(ellipse 50% 46% at 96% 96%,
+          rgba(210, 100, 8, 0.72) 0%, transparent 68%),
+        /* ⑥ Crimson red — right edge, mid-lower */
+        radial-gradient(ellipse 46% 60% at 100% 62%,
+          rgba(195, 15, 15, 0.72) 0%, transparent 68%),
+        /* ⑦ Deep red / wine — right edge, upper */
+        radial-gradient(ellipse 44% 50% at 100% 18%,
+          rgba(170, 10, 40, 0.60) 0%, transparent 65%),
+        /* ⑧ Indigo accent — top-right corner bridge */
+        radial-gradient(ellipse 48% 36% at 92% 2%,
+          rgba(100, 10, 160, 0.48) 0%, transparent 65%);
+      filter: blur(22px);        /* feathers blobs into light bleeds */
+      animation: cbGlowBreathe 3s ease forwards;
     }
 
     /* Floating action button (iMessage-style balloon) */
@@ -591,27 +590,21 @@
       .replace(/  +/g, ' ');
   }
 
-  // ── Siri iOS 26-style inner breathing glow ─────────────────────
-  // Inserts an absolutely-positioned overlay INSIDE the panel.
-  // The overlay has no background — only inset box-shadows that
-  // bloom softly from every edge inward. The panel's overflow:hidden
-  // clips the blur naturally at the rounded corners.
-  // Pointer-events: none means it never intercepts taps or clicks.
-  // The element self-destructs after the animation completes.
+  // ── Siri-style inner edge glow ────────────────────────────────
+  // Inserts a full-panel overlay of stacked radial-gradient blobs
+  // anchored at each edge. The blobs bleed inward and fade to
+  // transparent before the center, so content stays readable.
+  // Runs for exactly 3 seconds then self-destructs.
   function showSiriGlow(panel) {
-    // Remove any leftover ring from a rapid re-open
     const old = panel.querySelector('.cb-siri-ring');
     if (old) old.remove();
 
     const ring = document.createElement('div');
     ring.className = 'cb-siri-ring';
-
-    // Append as last child so it layers above panel content visually,
-    // while pointer-events:none keeps it fully non-interactive.
     panel.appendChild(ring);
 
-    // 6.5 s animation + small buffer before DOM cleanup
-    setTimeout(() => ring.remove(), 6700);
+    // 3 s animation + 150 ms buffer for the final fade frame
+    setTimeout(() => ring.remove(), 3150);
   }
 
   const IMESSAGE_ICON = `
