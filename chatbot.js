@@ -35,76 +35,75 @@
 
   // -------------------- STYLES --------------------
   const css = `
-    /* ── Siri iPhone 17 inner-edge glow — rebuilt from scratch ───
-       The reference image shows large, soft color blobs anchored
-       at each edge/corner, bleeding inward and fading to nothing
-       in the center. Technique: stacked radial-gradient blobs,
-       each pinned to a specific edge/corner with a vivid hue.
-       They overlap and blend naturally. filter:blur fattens the
-       soft falloff further. The ring sits ABOVE all panel content
-       (z-index 11) but pointer-events:none keeps it non-blocking.
+    /* ── Siri-style outer border glow ────────────────────────────
+       The ring is a SIBLING positioned behind the panel (z-index
+       9998 vs panel's 9999). It is the exact same size and position
+       as the panel. filter:blur makes the colored edges bleed ~18px
+       outward — that outer strip is all that's visible, because the
+       panel covers the center completely.
 
-       Color map (matching reference):
-         Top / top-left  → electric blue
-         Left            → deep indigo → purple
-         Bottom-left     → violet / hot magenta
-         Bottom          → magenta / purple
-         Bottom-right    → warm amber / orange
-         Right           → crimson red
-         Top-right       → deep red / wine
+       Panel content is 100% untouched. No overlay, no tinting.
 
-       Animation: 3 seconds total.
-         0 → 0.3s  : snap in
-         0.3 → 2.2s: hold at full glow with one gentle dip
-         2.2 → 3s  : dissolve out                               */
+       Colors (from the iPhone Siri bezel reference):
+         top-left  → electric blue
+         left      → indigo / violet
+         bottom-left  → deep purple
+         top-right → hot pink / rose
+         right     → crimson
+         bottom-right → warm amber
+         bottom    → magenta                                     */
 
     @keyframes cbGlowBreathe {
       0%   { opacity: 0;   }
-      10%  { opacity: 1;   }   /* snap to full in ~0.3 s          */
-      55%  { opacity: 0.78;}   /* one slow exhale mid-way          */
-      75%  { opacity: 1;   }   /* back to full                    */
-      100% { opacity: 0;   }   /* dissolve out                    */
+      12%  { opacity: 1;   }
+      65%  { opacity: 0.8; }
+      80%  { opacity: 1;   }
+      100% { opacity: 0;   }
     }
 
-    /* Each radial-gradient blob is anchored at its edge/corner.
-       The ellipse axes are tuned so the blob bleeds well inward
-       but transparent reaches the center — so panel content in
-       the middle remains unobstructed beneath the glow.
-       filter:blur adds the final soft feathering.
-       panel overflow:hidden clips any bleed beyond the border. */
     .cb-siri-ring {
-      position: absolute;
-      inset: 0;
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 380px;
+      max-width: calc(100vw - 32px);
+      height: 560px;
+      max-height: calc(100vh - 48px);
       border-radius: 18px;
+      z-index: 9998;          /* sits just behind the panel       */
       pointer-events: none;
-      z-index: 11;               /* above all panel content          */
       background:
-        /* ① Electric blue — top-left corner + top edge */
-        radial-gradient(ellipse 75% 50% at 5% 0%,
-          rgba(15, 55, 255, 0.70) 0%, transparent 72%),
-        /* ② Deep indigo — left edge, upper half */
-        radial-gradient(ellipse 48% 55% at 0% 35%,
-          rgba(80, 10, 210, 0.65) 0%, transparent 68%),
-        /* ③ Violet / hot magenta — left edge, lower + bottom-left */
-        radial-gradient(ellipse 52% 48% at 0% 82%,
-          rgba(175, 10, 190, 0.68) 0%, transparent 68%),
-        /* ④ Magenta — bottom edge center */
-        radial-gradient(ellipse 65% 44% at 38% 100%,
-          rgba(185, 12, 175, 0.62) 0%, transparent 68%),
-        /* ⑤ Warm amber / orange — bottom-right corner */
-        radial-gradient(ellipse 50% 46% at 96% 96%,
-          rgba(210, 100, 8, 0.72) 0%, transparent 68%),
-        /* ⑥ Crimson red — right edge, mid-lower */
-        radial-gradient(ellipse 46% 60% at 100% 62%,
-          rgba(195, 15, 15, 0.72) 0%, transparent 68%),
-        /* ⑦ Deep red / wine — right edge, upper */
-        radial-gradient(ellipse 44% 50% at 100% 18%,
-          rgba(170, 10, 40, 0.60) 0%, transparent 65%),
-        /* ⑧ Indigo accent — top-right corner bridge */
-        radial-gradient(ellipse 48% 36% at 92% 2%,
-          rgba(100, 10, 160, 0.48) 0%, transparent 65%);
-      filter: blur(22px);        /* feathers blobs into light bleeds */
+        /* top-left — electric blue */
+        radial-gradient(ellipse 65% 45% at 0%   0%,   #1244ff 0%, transparent 62%),
+        /* left edge — indigo */
+        radial-gradient(ellipse 42% 55% at 0%   48%,  #5018e0 0%, transparent 60%),
+        /* bottom-left — deep purple */
+        radial-gradient(ellipse 58% 42% at 0%   100%, #9010cc 0%, transparent 60%),
+        /* top-right — hot pink */
+        radial-gradient(ellipse 58% 42% at 100% 0%,   #e0208a 0%, transparent 60%),
+        /* right edge — crimson */
+        radial-gradient(ellipse 42% 55% at 100% 48%,  #cc1428 0%, transparent 60%),
+        /* bottom-right — warm amber */
+        radial-gradient(ellipse 58% 42% at 100% 100%, #dd7808 0%, transparent 60%),
+        /* bottom center — magenta bridge */
+        radial-gradient(ellipse 60% 32% at 50%  100%, #c01888 0%, transparent 58%);
+      /* blur pushes color outward so it glows around the panel edge */
+      filter: blur(18px);
       animation: cbGlowBreathe 3s ease forwards;
+    }
+
+    @media (max-width: 480px) {
+      .cb-siri-ring {
+        bottom: 12px;
+        right: 8px;
+        left: 8px;
+        width: auto;
+        max-width: none;
+        height: calc(100vh - 80px);
+        height: calc(100dvh - 80px);
+        max-height: none;
+        border-radius: 16px;
+      }
     }
 
     /* Floating action button (iMessage-style balloon) */
@@ -171,8 +170,6 @@
       gap: 12px;
       border-bottom: 1px solid var(--separator, #e5e5ea);
       flex-shrink: 0;
-      position: relative; /* sit above the glow overlay */
-      z-index: 10;
     }
     .cb-avatar {
       width: 48px;
@@ -247,8 +244,6 @@
       flex-direction: column;
       gap: 10px;
       scroll-behavior: smooth;
-      position: relative; /* sit above the glow overlay */
-      z-index: 10;
     }
     .cb-messages::-webkit-scrollbar { width: 6px; }
     .cb-messages::-webkit-scrollbar-thumb {
@@ -343,8 +338,6 @@
       align-items: flex-end;
       gap: 7px;
       padding: 4px 16px 8px;
-      position: relative; /* sit above the glow overlay */
-      z-index: 10;
     }
     .cb-chip {
       display: inline-flex;
@@ -378,8 +371,6 @@
       padding: 10px 12px 8px;
       flex-shrink: 0;
       background: var(--card, #ffffff);
-      position: relative; /* sit above the glow overlay */
-      z-index: 10;
     }
     .cb-input-row {
       display: flex;
@@ -545,7 +536,6 @@
         max-width: none;
         border-radius: 16px;
       }
-      .cb-siri-ring { border-radius: 16px; } /* match mobile panel's smaller radius */
       .cb-fab { bottom: 16px; right: 16px; width: 56px; height: 56px; }
       .cb-fab svg { width: 30px; height: 30px; }
 
@@ -590,20 +580,21 @@
       .replace(/  +/g, ' ');
   }
 
-  // ── Siri-style inner edge glow ────────────────────────────────
-  // Inserts a full-panel overlay of stacked radial-gradient blobs
-  // anchored at each edge. The blobs bleed inward and fade to
-  // transparent before the center, so content stays readable.
-  // Runs for exactly 3 seconds then self-destructs.
+  // ── Siri-style outer border glow ──────────────────────────────
+  // Inserts a sibling div BEFORE the panel in the DOM. The ring
+  // has the same fixed position/size as the panel but z-index 9998
+  // (panel is 9999), so the panel covers the center. Only the
+  // filter:blur bleed around the edges is visible — exactly like
+  // the iPhone Siri bezel glow. Panel content is never affected.
   function showSiriGlow(panel) {
-    const old = panel.querySelector('.cb-siri-ring');
+    const old = document.querySelector('.cb-siri-ring');
     if (old) old.remove();
 
     const ring = document.createElement('div');
     ring.className = 'cb-siri-ring';
-    panel.appendChild(ring);
+    // Insert before the panel so the panel's z-index covers the center
+    panel.parentNode.insertBefore(ring, panel);
 
-    // 3 s animation + 150 ms buffer for the final fade frame
     setTimeout(() => ring.remove(), 3150);
   }
 
