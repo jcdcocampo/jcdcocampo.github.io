@@ -64,21 +64,17 @@
       border-radius: 18px;
       z-index: 9998;
       pointer-events: none;
-      /* Single conic-gradient = zero gaps, mathematically continuous.
-         Colors flow clockwise from top-left matching the Siri palette.
-         The panel (z-index 9999) covers the center — only the outer
-         blur-bleed strip is visible, giving a seamless border glow. */
       background: conic-gradient(
         from -45deg at 50% 50%,
-        #ff8c00  0%,      /* top-left   — warm orange           */
-        #ff3c50  12.5%,   /* top        — coral / red-orange    */
-        #ff2d55  25%,     /* top-right  — hot pink              */
-        #e8187a  37.5%,   /* right      — magenta               */
-        #9b59f5  50%,     /* bot-right  — violet / lavender     */
-        #4060ff  62.5%,   /* bottom     — indigo / blue         */
-        #00c2e0  75%,     /* bot-left   — sky blue / cyan       */
-        #ffb700  87.5%,   /* left       — yellow-orange         */
-        #ff8c00  100%     /* back to top-left                   */
+        #ff8c00  0%,
+        #ff3c50  12.5%,
+        #ff2d55  25%,
+        #e8187a  37.5%,
+        #9b59f5  50%,
+        #4060ff  62.5%,
+        #00c2e0  75%,
+        #ffb700  87.5%,
+        #ff8c00  100%
       );
       filter: blur(18px);
       animation: cbGlowBreathe 3s ease forwards;
@@ -98,7 +94,7 @@
       }
     }
 
-    /* Floating action button (iMessage-style balloon) */
+    /* Floating action button */
     .cb-fab {
       position: fixed;
       bottom: 24px;
@@ -125,7 +121,7 @@
     }
     .cb-fab:hover  { transform: scale(1.06); box-shadow: 0 6px 22px rgba(0,0,0,0.28); }
     .cb-fab:active { transform: scale(0.94); }
-    .cb-fab *      { pointer-events: none; } /* ALL children pass touches to the button */
+    .cb-fab *      { pointer-events: none; }
     .cb-fab svg    { width: 32px; height: 32px; display: block; }
     .cb-fab.cb-hidden { opacity: 0; transform: scale(0.6); pointer-events: none; }
 
@@ -565,7 +561,6 @@
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
   }
-  const escapeAttr = escapeHtml;
 
   // Strip basic markdown that some models leak into responses.
   function stripMarkdown(s) {
@@ -583,21 +578,16 @@
       .replace(/  +/g, ' ');
   }
 
-  // ── Siri-style outer border glow ──────────────────────────────
-  // Inserts a sibling div BEFORE the panel in the DOM. The ring
-  // has the same fixed position/size as the panel but z-index 9998
-  // (panel is 9999), so the panel covers the center. Only the
-  // filter:blur bleed around the edges is visible — exactly like
-  // the iPhone Siri bezel glow. Panel content is never affected.
+  // Siri-style outer border glow — inserts a sibling div BEFORE the panel.
+  // The ring sits at z-index 9998; the panel (9999) covers the center.
+  // Only the filter:blur bleed around the edges is visible.
   function showSiriGlow(panel) {
     const old = document.querySelector('.cb-siri-ring');
     if (old) old.remove();
 
     const ring = document.createElement('div');
     ring.className = 'cb-siri-ring';
-    // Insert before the panel so the panel's z-index covers the center
     panel.parentNode.insertBefore(ring, panel);
-
     setTimeout(() => ring.remove(), 3150);
   }
 
@@ -614,89 +604,201 @@
     </svg>
   `;
 
-  function buildAvatarInner() {
-    return CONFIG.avatarUrl
-      ? `<img src="${escapeAttr(CONFIG.avatarUrl)}" alt="${escapeAttr(CONFIG.botName)}" onerror="this.replaceWith(document.createTextNode('M'))">`
-      : 'M';
+  // Build an <img> element for an avatar container programmatically.
+  // This avoids inline onerror attributes, which can be blocked by strict CSPs.
+  function buildAvatarImg(alt) {
+    if (!CONFIG.avatarUrl) return null;
+    const img = document.createElement('img');
+    img.src = CONFIG.avatarUrl;
+    img.alt = alt || CONFIG.botName;
+    img.onerror = function () {
+      // Replace broken image with text fallback without touching innerHTML.
+      const fallback = document.createTextNode('M');
+      if (img.parentNode) img.parentNode.replaceChild(fallback, img);
+    };
+    return img;
+  }
+
+  // Populate an avatar container element with either an img or a text fallback.
+  function populateAvatar(container, alt) {
+    container.textContent = '';
+    const img = buildAvatarImg(alt);
+    if (img) {
+      container.appendChild(img);
+    } else {
+      container.textContent = 'M';
+    }
   }
 
   // -------------------- DOM --------------------
   function createUI() {
+    // ── FAB ──────────────────────────────────────────────────────
     const fab = document.createElement('button');
     fab.className = 'cb-fab';
     fab.setAttribute('aria-label', 'Open chat with Mian');
     fab.innerHTML = IMESSAGE_ICON;
 
+    // ── Panel ────────────────────────────────────────────────────
+    // Built entirely with DOM APIs — no innerHTML with user-derived
+    // values, so no risk of HTML injection from config fields.
     const panel = document.createElement('div');
     panel.className = 'cb-panel';
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', CONFIG.botName);
-    panel.innerHTML = `
-      <div class="cb-header">
-        <button class="cb-avatar" type="button" aria-label="View ${escapeAttr(CONFIG.botName)}'s profile card">
-          ${buildAvatarInner()}
-        </button>
-        <div class="cb-header-info">
-          <div class="cb-header-name">
-            <span>${escapeHtml(CONFIG.botName)}</span>
-            <span class="cb-status-dot" aria-label="Online"></span>
-          </div>
-          <div class="cb-header-subtitle">${escapeHtml(CONFIG.botSubtitle)}</div>
-        </div>
-        <button class="cb-close" aria-label="Close chat">${CLOSE_ICON}</button>
-      </div>
-      <div class="cb-messages" role="log" aria-live="polite"></div>
-      <div class="cb-chips" id="cb-chips-row">
-        <button class="cb-chip" type="button">Tell me about JC</button>
-        <button class="cb-chip" type="button">Is he open to work?</button>
-        <button class="cb-chip" type="button">What's his experience?</button>
-      </div>
-      <div class="cb-input-area">
-        <div class="cb-input-row">
-          <textarea class="cb-textarea" rows="1" placeholder="Ask about JC..." maxlength="${CONFIG.maxChars}"></textarea>
-          <div class="cb-btn-wrap">
-            <button class="cb-send" aria-label="Send message" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="19" x2="12" y2="5"/>
-                <polyline points="5 12 12 5 19 12"/>
-              </svg>
-            </button>
-            <button class="cb-mic" type="button" aria-label="Voice input">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="2" width="6" height="11" rx="3"/>
-                <path d="M5 10a7 7 0 0 0 14 0"/>
-                <line x1="12" y1="19" x2="12" y2="22"/>
-                <line x1="9"  y1="22" x2="15" y2="22"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-        <div class="cb-meta-row">
-          <span class="cb-disclaimer-inline">AI responses may be inaccurate. Please verify.</span>
-          <span class="cb-counter">0 / ${CONFIG.maxChars}</span>
-        </div>
-      </div>
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'cb-header';
+
+    const avatarBtn = document.createElement('button');
+    avatarBtn.className = 'cb-avatar';
+    avatarBtn.type = 'button';
+    avatarBtn.setAttribute('aria-label', 'View ' + CONFIG.botName + "'s profile card");
+    populateAvatar(avatarBtn, CONFIG.botName);
+
+    const headerInfo = document.createElement('div');
+    headerInfo.className = 'cb-header-info';
+
+    const headerName = document.createElement('div');
+    headerName.className = 'cb-header-name';
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = CONFIG.botName;
+    const statusDot = document.createElement('span');
+    statusDot.className = 'cb-status-dot';
+    statusDot.setAttribute('aria-label', 'Online');
+    headerName.appendChild(nameSpan);
+    headerName.appendChild(statusDot);
+
+    const headerSubtitle = document.createElement('div');
+    headerSubtitle.className = 'cb-header-subtitle';
+    headerSubtitle.textContent = CONFIG.botSubtitle;
+
+    headerInfo.appendChild(headerName);
+    headerInfo.appendChild(headerSubtitle);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'cb-close';
+    closeBtn.setAttribute('aria-label', 'Close chat');
+    closeBtn.innerHTML = CLOSE_ICON; // SVG only — no user data
+
+    header.appendChild(avatarBtn);
+    header.appendChild(headerInfo);
+    header.appendChild(closeBtn);
+
+    // Messages area
+    const messagesEl = document.createElement('div');
+    messagesEl.className = 'cb-messages';
+    messagesEl.setAttribute('role', 'log');
+    messagesEl.setAttribute('aria-live', 'polite');
+
+    // Chips
+    const chipsRow = document.createElement('div');
+    chipsRow.className = 'cb-chips';
+    chipsRow.id = 'cb-chips-row';
+    const CHIPS = ['Tell me about JC', 'Is he open to work?', "What's his experience?"];
+    CHIPS.forEach(label => {
+      const chip = document.createElement('button');
+      chip.className = 'cb-chip';
+      chip.type = 'button';
+      chip.textContent = label; // textContent — safe
+      chipsRow.appendChild(chip);
+    });
+
+    // Input area
+    const inputArea = document.createElement('div');
+    inputArea.className = 'cb-input-area';
+
+    const inputRow = document.createElement('div');
+    inputRow.className = 'cb-input-row';
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'cb-textarea';
+    textarea.rows = 1;
+    textarea.placeholder = 'Ask about JC…';
+    textarea.maxLength = CONFIG.maxChars;
+
+    const sendBtn = document.createElement('button');
+    sendBtn.className = 'cb-send';
+    sendBtn.setAttribute('aria-label', 'Send message');
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="19" x2="12" y2="5"/>
+        <polyline points="5 12 12 5 19 12"/>
+      </svg>
     `;
 
+    inputRow.appendChild(textarea);
+    inputRow.appendChild(sendBtn);
+
+    const metaRow = document.createElement('div');
+    metaRow.className = 'cb-meta-row';
+
+    const disclaimer = document.createElement('span');
+    disclaimer.className = 'cb-disclaimer-inline';
+    disclaimer.textContent = 'AI responses may be inaccurate. Please verify.';
+
+    const counterEl = document.createElement('span');
+    counterEl.className = 'cb-counter';
+    counterEl.textContent = '0 / ' + CONFIG.maxChars;
+
+    metaRow.appendChild(disclaimer);
+    metaRow.appendChild(counterEl);
+
+    inputArea.appendChild(inputRow);
+    inputArea.appendChild(metaRow);
+
+    // Assemble panel
+    panel.appendChild(header);
+    panel.appendChild(messagesEl);
+    panel.appendChild(chipsRow);
+    panel.appendChild(inputArea);
+
+    // ── ID Card overlay ──────────────────────────────────────────
     const overlay = document.createElement('div');
     overlay.className = 'cb-card-overlay';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', `${CONFIG.botName} profile card`);
-    overlay.innerHTML = `
-      <div class="cb-card">
-        <button class="cb-card-close" aria-label="Close profile card">${CLOSE_ICON}</button>
-        <div class="cb-card-avatar">${buildAvatarInner()}</div>
-        <div class="cb-card-name">${escapeHtml(CONFIG.botName)}</div>
-        <div class="cb-card-role">${escapeHtml(CONFIG.botSubtitle)}</div>
-        <div class="cb-card-dedication">${escapeHtml(CONFIG.cardDedication)}</div>
-      </div>
-    `;
+    overlay.setAttribute('aria-label', CONFIG.botName + ' profile card');
 
+    const card = document.createElement('div');
+    card.className = 'cb-card';
+
+    const cardCloseBtn = document.createElement('button');
+    cardCloseBtn.className = 'cb-card-close';
+    cardCloseBtn.setAttribute('aria-label', 'Close profile card');
+    cardCloseBtn.innerHTML = CLOSE_ICON;
+
+    const cardAvatarEl = document.createElement('div');
+    cardAvatarEl.className = 'cb-card-avatar';
+    populateAvatar(cardAvatarEl, CONFIG.botName);
+
+    const cardName = document.createElement('div');
+    cardName.className = 'cb-card-name';
+    cardName.textContent = CONFIG.botName;
+
+    const cardRole = document.createElement('div');
+    cardRole.className = 'cb-card-role';
+    cardRole.textContent = CONFIG.botSubtitle;
+
+    const cardDedication = document.createElement('div');
+    cardDedication.className = 'cb-card-dedication';
+    cardDedication.textContent = CONFIG.cardDedication;
+
+    card.appendChild(cardCloseBtn);
+    card.appendChild(cardAvatarEl);
+    card.appendChild(cardName);
+    card.appendChild(cardRole);
+    card.appendChild(cardDedication);
+    overlay.appendChild(card);
+
+    // Mount everything
     document.body.appendChild(fab);
     document.body.appendChild(panel);
     document.body.appendChild(overlay);
-    return { fab, panel, overlay };
+
+    return { fab, panel, overlay, avatarBtn, closeBtn, messagesEl,
+             textarea, sendBtn, counterEl, chipsRow, cardCloseBtn };
   }
 
   // -------------------- STATE --------------------
@@ -706,16 +808,11 @@
 
   function init() {
     injectStyles();
-    const { fab, panel, overlay } = createUI();
-
-    const messagesEl   = panel.querySelector('.cb-messages');
-    const textarea     = panel.querySelector('.cb-textarea');
-    const sendBtn      = panel.querySelector('.cb-send');
-    const micBtn       = panel.querySelector('.cb-mic');
-    const btnWrap      = panel.querySelector('.cb-btn-wrap');
-    const closeBtn     = panel.querySelector('.cb-close');
-    const counterEl    = panel.querySelector('.cb-counter');
-    const chipsRow     = panel.querySelector('.cb-chips');
+    const {
+      fab, panel, overlay, avatarBtn, closeBtn,
+      messagesEl, textarea, sendBtn, counterEl,
+      chipsRow, cardCloseBtn,
+    } = createUI();
 
     // Chip click: fill textarea and send, then hide all chips
     chipsRow.querySelectorAll('.cb-chip').forEach(chip => {
@@ -723,23 +820,19 @@
         if (!panelReady || isSending) return;
         textarea.value = chip.textContent.trim();
         updateUI();
-        // Hide chips before sending
         chipsRow.querySelectorAll('.cb-chip').forEach(c => c.classList.add('cb-chip-gone'));
         send();
       });
     });
-    const avatarBtn    = panel.querySelector('.cb-avatar');
-    const cardCloseBtn = overlay.querySelector('.cb-card-close');
 
     // ---- Panel open/close ----
-    let panelReady = false; // interaction lock — prevents FAB tap bleeding into panel
+    let panelReady = false;
 
     function openPanel() {
       panel.classList.add('cb-open');
       fab.classList.add('cb-hidden');
       showSiriGlow(panel);
-      // Block all panel interactions for 450 ms so the touch event that
-      // opened the panel (FAB tap) cannot bleed through to buttons inside.
+      // Block panel interactions for 450ms to prevent FAB-tap bleed-through
       panelReady = false;
       setTimeout(() => { panelReady = true; }, 450);
       setTimeout(() => textarea.focus(), 250);
@@ -752,20 +845,19 @@
         });
       }
     }
+
     function closePanel() {
       panel.classList.remove('cb-open');
       fab.classList.remove('cb-hidden');
       const ring = document.querySelector('.cb-siri-ring');
       if (ring) ring.remove();
-      if (isListening) stopSpeech(false); // abort mic if panel closed mid-recording
     }
+
     function isPanelOpen() { return panel.classList.contains('cb-open'); }
 
-    // Click handles desktop. touchend handles mobile browsers (Brave etc.)
-    // that sometimes miss click on buttons with SVG children.
     fab.addEventListener('click', openPanel);
     fab.addEventListener('touchend', (e) => {
-      e.preventDefault(); // prevent the ghost click that follows touchend
+      e.preventDefault();
       openPanel();
     });
     closeBtn.addEventListener('click', closePanel);
@@ -792,15 +884,7 @@
     function buildSmallAvatar() {
       const av = document.createElement('div');
       av.className = 'cb-msg-avatar';
-      if (CONFIG.avatarUrl) {
-        const img = document.createElement('img');
-        img.src = CONFIG.avatarUrl;
-        img.alt = CONFIG.botName;
-        img.onerror = () => { av.textContent = 'M'; };
-        av.appendChild(img);
-      } else {
-        av.textContent = 'M';
-      }
+      populateAvatar(av, CONFIG.botName);
       return av;
     }
 
@@ -810,13 +894,11 @@
       });
     }
 
-    function addMessage(role, text, opts) {
-      opts = opts || {};
-
+    function addMessage(role, text) {
       if (role === 'user') {
         const div = document.createElement('div');
         div.className = 'cb-msg cb-msg-user';
-        div.textContent = text;
+        div.textContent = text; // textContent — safe
         messagesEl.appendChild(div);
         messagesEl.scrollTop = messagesEl.scrollHeight;
         return div;
@@ -829,8 +911,8 @@
 
       const avatar = buildSmallAvatar();
       const bubble = document.createElement('div');
-      bubble.className = 'cb-msg ' + (opts.error ? 'cb-msg-error' : 'cb-msg-bot');
-      bubble.textContent = text;
+      bubble.className = 'cb-msg cb-msg-bot';
+      bubble.textContent = text; // textContent — safe
 
       row.appendChild(avatar);
       row.appendChild(bubble);
@@ -839,7 +921,6 @@
       return { row, bubble };
     }
 
-    // Add an empty bot bubble that we'll type into character-by-character.
     function addBotBubbleForTyping(opts) {
       opts = opts || {};
       hideOlderBotAvatars();
@@ -859,28 +940,19 @@
       return { row, bubble };
     }
 
-    // Type text into a bubble one character at a time.
-    // Speed scales with length so very long messages don't take forever,
-    // and small natural pauses are added after sentence-ending punctuation.
     function typeIntoBubble(bubble, text) {
       return new Promise((resolve) => {
         const total = text.length;
-        // Faster per-char delay for longer messages, slower for short ones.
-        // Roughly: ~22ms for short replies, ~10ms for long ones.
         const baseDelay = total > 220 ? 10 : total > 120 ? 14 : total > 60 ? 18 : 22;
 
         let i = 0;
         function step() {
-          if (i >= total) {
-            resolve();
-            return;
-          }
+          if (i >= total) { resolve(); return; }
           const ch = text.charAt(i);
           bubble.textContent += ch;
           messagesEl.scrollTop = messagesEl.scrollHeight;
           i++;
 
-          // Small extra pause after sentence-ending punctuation for a natural rhythm.
           let extra = 0;
           if (ch === '.' || ch === '!' || ch === '?') extra = 140;
           else if (ch === ',' || ch === ';' || ch === ':') extra = 60;
@@ -900,8 +972,12 @@
       const avatar = buildSmallAvatar();
       const bubble = document.createElement('div');
       bubble.className = 'cb-msg cb-msg-bot';
-      bubble.innerHTML = '<span class="cb-typing"><span></span><span></span><span></span></span>';
 
+      const typing = document.createElement('span');
+      typing.className = 'cb-typing';
+      typing.innerHTML = '<span></span><span></span><span></span>';
+
+      bubble.appendChild(typing);
       row.appendChild(avatar);
       row.appendChild(bubble);
       messagesEl.appendChild(row);
@@ -915,92 +991,10 @@
       counterEl.classList.toggle('cb-near-limit', len > CONFIG.maxChars * 0.8 && len < CONFIG.maxChars);
       counterEl.classList.toggle('cb-at-limit', len >= CONFIG.maxChars);
       sendBtn.disabled = len === 0 || isSending;
-      // iMessage swap: show send when typing, mic when empty
-      btnWrap.classList.toggle('cb-has-text', len > 0 || isSending);
 
       textarea.style.height = 'auto';
       textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
     }
-
-    // ---- Speech-to-text ----
-    let recognition  = null;
-    let isListening  = false;
-    let speechTimer  = null;
-    const MAX_SPEECH = 30000; // 30 second hard limit
-
-    function stopSpeech(andSend) {
-      isListening = false;
-      clearTimeout(speechTimer);
-      speechTimer = null;
-      if (recognition) {
-        try { recognition.abort(); } catch (_) {}
-        recognition = null; // discard — create fresh next time
-      }
-      micBtn.classList.remove('cb-recording');
-      micBtn.setAttribute('aria-label', 'Voice input');
-      textarea.placeholder = 'Ask about JC…';
-      if (andSend && textarea.value.trim()) {
-        setTimeout(() => send(), 320);
-      } else {
-        updateUI();
-      }
-    }
-
-    micBtn.addEventListener('click', () => {
-      if (!panel.classList.contains('cb-open') || !panelReady) return;
-
-      // Already listening → stop and send
-      if (isListening) { stopSpeech(true); return; }
-
-      // Feature-detect inside the click (user gesture) so no early prompt
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) { btnWrap.classList.add('cb-no-speech'); return; }
-
-      // Fresh instance every session — avoids mobile state bugs on reuse
-      recognition = new SR();
-      recognition.continuous     = true;
-      recognition.interimResults = true;
-      recognition.lang           = 'en-US';
-
-      // Accumulate ALL results so the full sentence builds up in the field
-      recognition.onresult = (e) => {
-        let transcript = '';
-        for (let i = 0; i < e.results.length; i++) {
-          transcript += e.results[i][0].transcript;
-        }
-        textarea.value = transcript;
-        updateUI();
-      };
-
-      // Mobile fires onend mid-session — restart automatically if still listening
-      recognition.onend = () => {
-        if (!isListening) return;
-        try { recognition.start(); } catch (_) { stopSpeech(true); }
-      };
-
-      recognition.onerror = (e) => {
-        if (e.error === 'aborted' || e.error === 'no-speech') return;
-        stopSpeech(true);
-      };
-
-      // Start
-      isListening = true;
-      micBtn.classList.add('cb-recording');
-      micBtn.setAttribute('aria-label', 'Stop recording');
-      textarea.placeholder = 'Listening…';
-      textarea.value = '';
-      updateUI();
-
-      try {
-        recognition.start();
-      } catch (_) {
-        stopSpeech(false);
-        return;
-      }
-
-      // 30-second hard limit — auto-stop and send whatever was captured
-      speechTimer = setTimeout(() => stopSpeech(true), MAX_SPEECH);
-    });
 
     textarea.addEventListener('input', updateUI);
     textarea.addEventListener('keydown', (e) => {
@@ -1018,7 +1012,6 @@
       isSending = true;
       updateUI();
       addMessage('user', text);
-      // Hide chips once user sends any message
       chipsRow.querySelectorAll('.cb-chip').forEach(c => c.classList.add('cb-chip-gone'));
       history.push({ role: 'user', content: text });
       if (history.length > CONFIG.maxHistory) {
@@ -1035,7 +1028,6 @@
         const reply = stripMarkdown(rawReply);
         typingEl.remove();
 
-        // Reveal the reply letter-by-letter.
         const { bubble } = addBotBubbleForTyping();
         await typeIntoBubble(bubble, reply);
 
@@ -1083,20 +1075,17 @@
   }
 
   // -------------------- BFCACHE FIX --------------------
-  // When the browser restores a page from the back-forward cache
-  // (pressing the browser back/forward button or mouse buttons),
-  // it reuses a frozen snapshot of the page — so CSS animations
-  // that already finished won't replay. This listener detects that
-  // case and resets all .fade-up elements so the animations play again.
+  // When the browser restores a page from the back-forward cache,
+  // CSS animations that already finished won't replay. This resets
+  // all .fade-up elements so their animations play again.
   window.addEventListener('pageshow', function (event) {
     if (event.persisted) {
       document.querySelectorAll('.fade-up').forEach(function (el) {
         el.style.animation = 'none';
-        // Force a reflow so the browser registers the reset before
-        // we clear the override and let the CSS animation retrigger.
-        void el.offsetHeight;
+        void el.offsetHeight; // force reflow
         el.style.animation = '';
       });
     }
   });
+
 })();
