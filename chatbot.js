@@ -45,12 +45,16 @@
          right edge   → magenta / pink
          bottom-right → violet / lavender                        */
 
-    @keyframes cbGlowBreathe {
-      0%   { opacity: 0;   }
-      12%  { opacity: 1;   }
-      60%  { opacity: 0.82;}
-      78%  { opacity: 1;   }
-      100% { opacity: 0;   }
+    /* Continuous subtle pulse while active */
+    @keyframes cbGlowPulse {
+      0%   { opacity: 0.78; }
+      50%  { opacity: 1;    }
+      100% { opacity: 0.78; }
+    }
+    /* Fade in from zero */
+    @keyframes cbGlowFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
 
     .cb-siri-ring {
@@ -77,7 +81,13 @@
         #ff8c00  100%
       );
       filter: blur(18px);
-      animation: cbGlowBreathe 3s ease forwards;
+      opacity: 0;
+      transition: opacity 0.9s ease;
+    }
+    /* Active: fade in then pulse */
+    .cb-siri-ring.cb-glow-active {
+      opacity: 1;
+      animation: cbGlowPulse 3s ease-in-out infinite;
     }
 
     @media (max-width: 480px) {
@@ -578,17 +588,67 @@
       .replace(/  +/g, ' ');
   }
 
-  // Siri-style outer border glow — inserts a sibling div BEFORE the panel.
-  // The ring sits at z-index 9998; the panel (9999) covers the center.
-  // Only the filter:blur bleed around the edges is visible.
-  function showSiriGlow(panel) {
-    const old = document.querySelector('.cb-siri-ring');
-    if (old) old.remove();
+  // -------------------- SIRI GLOW MANAGER --------------------
+  // The glow stays active as long as the conversation is live.
+  // After IDLE_MS of no activity (no user message, no bot reply) it
+  // fades out smoothly. Any new activity brings it back instantly.
+  const IDLE_MS = 15000; // 15 s idle → glow fades out
 
-    const ring = document.createElement('div');
-    ring.className = 'cb-siri-ring';
-    panel.parentNode.insertBefore(ring, panel);
-    setTimeout(() => ring.remove(), 3150);
+  const glowManager = (function () {
+    let ring = null;
+    let idleTimer = null;
+
+    function _ensureRing(panel) {
+      if (ring && ring.isConnected) return ring;
+      // Remove any stale ring
+      const old = document.querySelector('.cb-siri-ring');
+      if (old) old.remove();
+
+      ring = document.createElement('div');
+      ring.className = 'cb-siri-ring';
+      panel.parentNode.insertBefore(ring, panel);
+      return ring;
+    }
+
+    function activate(panel) {
+      const r = _ensureRing(panel);
+      // Cancel any pending idle fade
+      clearTimeout(idleTimer);
+      // Force reflow so the transition runs even if we just created the element
+      void r.offsetWidth;
+      r.classList.add('cb-glow-active');
+      _scheduleIdle();
+    }
+
+    function _scheduleIdle() {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(_fadeOut, IDLE_MS);
+    }
+
+    function _fadeOut() {
+      if (!ring) return;
+      // Remove active class → CSS transition fades opacity to 0
+      ring.classList.remove('cb-glow-active');
+      // Remove the element after the transition finishes (0.9s)
+      setTimeout(() => {
+        if (ring && !ring.classList.contains('cb-glow-active')) {
+          ring.remove();
+          ring = null;
+        }
+      }, 950);
+    }
+
+    function destroy() {
+      clearTimeout(idleTimer);
+      if (ring) { ring.remove(); ring = null; }
+    }
+
+    return { activate, destroy };
+  })();
+
+  // Legacy shim so existing openPanel() call still works
+  function showSiriGlow(panel) {
+    glowManager.activate(panel);
   }
 
   const IMESSAGE_ICON = `
@@ -849,8 +909,7 @@
     function closePanel() {
       panel.classList.remove('cb-open');
       fab.classList.remove('cb-hidden');
-      const ring = document.querySelector('.cb-siri-ring');
-      if (ring) ring.remove();
+      glowManager.destroy();
     }
 
     function isPanelOpen() { return panel.classList.contains('cb-open'); }
@@ -1012,6 +1071,8 @@
       isSending = true;
       updateUI();
       addMessage('user', text);
+      // User just sent a message → wake / keep the glow alive
+      glowManager.activate(panel);
       chipsRow.querySelectorAll('.cb-chip').forEach(c => c.classList.add('cb-chip-gone'));
       history.push({ role: 'user', content: text });
       if (history.length > CONFIG.maxHistory) {
@@ -1030,6 +1091,8 @@
 
         const { bubble } = addBotBubbleForTyping();
         await typeIntoBubble(bubble, reply);
+        // Bot finished replying → keep glow alive (resets idle timer)
+        glowManager.activate(panel);
 
         history.push({ role: 'assistant', content: reply });
       } catch (err) {
@@ -1040,6 +1103,7 @@
           bubble,
           "Sorry, I'm having trouble connecting right now. Please try again in a moment, or reach JC directly at jcdcocampo@gmail.com."
         );
+        glowManager.activate(panel);
       } finally {
         isSending = false;
         updateUI();
