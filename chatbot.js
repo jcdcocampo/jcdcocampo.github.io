@@ -82,12 +82,14 @@
       );
       filter: blur(18px);
       opacity: 0;
-      transition: opacity 0.9s ease;
+      /* 2.5s seamless fade for both in and out */
+      transition: opacity 2.5s ease;
     }
-    /* Active: fade in then pulse */
+    /* Active: transition drives fade-in (2.5s), pulse begins after that */
     .cb-siri-ring.cb-glow-active {
       opacity: 1;
       animation: cbGlowPulse 3s ease-in-out infinite;
+      animation-delay: 2.5s;
     }
 
     @media (max-width: 480px) {
@@ -589,21 +591,20 @@
   }
 
   // -------------------- SIRI GLOW MANAGER --------------------
-  // The glow stays active as long as the conversation is live.
-  // After IDLE_MS of no activity (no user message, no bot reply) it
-  // fades out smoothly. Any new activity brings it back instantly.
-  const IDLE_MS = 15000; // 15 s idle → glow fades out
+  // Glow activates on first user send, stays alive while chatting.
+  // Idles out after 10 s of no activity; paused while bot is responding
+  // so Mian typing never triggers the fade.  Fade in/out: 2.5 s each.
+  const IDLE_MS = 10000; // 10 s idle → glow fades out
 
   const glowManager = (function () {
     let ring = null;
     let idleTimer = null;
+    let paused = false;   // true while bot is responding
 
     function _ensureRing(panel) {
       if (ring && ring.isConnected) return ring;
-      // Remove any stale ring
       const old = document.querySelector('.cb-siri-ring');
       if (old) old.remove();
-
       ring = document.createElement('div');
       ring.className = 'cb-siri-ring';
       panel.parentNode.insertBefore(ring, panel);
@@ -612,12 +613,14 @@
 
     function activate(panel) {
       const r = _ensureRing(panel);
-      // Cancel any pending idle fade
       clearTimeout(idleTimer);
-      // Force reflow so the transition runs even if we just created the element
-      void r.offsetWidth;
-      r.classList.add('cb-glow-active');
-      _scheduleIdle();
+      // One rAF so the element is painted at opacity:0 before we transition
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          r.classList.add('cb-glow-active');
+        });
+      });
+      if (!paused) _scheduleIdle();
     }
 
     function _scheduleIdle() {
@@ -625,17 +628,28 @@
       idleTimer = setTimeout(_fadeOut, IDLE_MS);
     }
 
+    // Call when bot starts responding — prevents idle from firing mid-reply
+    function pauseIdle() {
+      paused = true;
+      clearTimeout(idleTimer);
+    }
+
+    // Call when bot finishes — resets the idle clock cleanly
+    function resumeIdle() {
+      paused = false;
+      _scheduleIdle();
+    }
+
     function _fadeOut() {
       if (!ring) return;
-      // Remove active class → CSS transition fades opacity to 0
       ring.classList.remove('cb-glow-active');
-      // Remove the element after the transition finishes (0.9s)
+      // Remove from DOM after the 2.5s CSS transition finishes
       setTimeout(() => {
         if (ring && !ring.classList.contains('cb-glow-active')) {
           ring.remove();
           ring = null;
         }
-      }, 950);
+      }, 2600);
     }
 
     function destroy() {
@@ -643,10 +657,10 @@
       if (ring) { ring.remove(); ring = null; }
     }
 
-    return { activate, destroy };
+    return { activate, pauseIdle, resumeIdle, destroy };
   })();
 
-  // Legacy shim so existing openPanel() call still works
+  // showSiriGlow shim — kept for any future callers
   function showSiriGlow(panel) {
     glowManager.activate(panel);
   }
@@ -891,7 +905,6 @@
     function openPanel() {
       panel.classList.add('cb-open');
       fab.classList.add('cb-hidden');
-      showSiriGlow(panel);
       // Block panel interactions for 450ms to prevent FAB-tap bleed-through
       panelReady = false;
       setTimeout(() => { panelReady = true; }, 450);
@@ -1071,7 +1084,7 @@
       isSending = true;
       updateUI();
       addMessage('user', text);
-      // User just sent a message → wake / keep the glow alive
+      // User sent → wake / keep the glow alive and start idle clock
       glowManager.activate(panel);
       chipsRow.querySelectorAll('.cb-chip').forEach(c => c.classList.add('cb-chip-gone'));
       history.push({ role: 'user', content: text });
@@ -1083,6 +1096,8 @@
       updateUI();
 
       const typingEl = addTyping();
+      // Pause idle while bot is fetching + typing so glow never fades mid-reply
+      glowManager.pauseIdle();
 
       try {
         const rawReply = await sendToAI(history);
@@ -1091,8 +1106,6 @@
 
         const { bubble } = addBotBubbleForTyping();
         await typeIntoBubble(bubble, reply);
-        // Bot finished replying → keep glow alive (resets idle timer)
-        glowManager.activate(panel);
 
         history.push({ role: 'assistant', content: reply });
       } catch (err) {
@@ -1103,11 +1116,12 @@
           bubble,
           "Sorry, I'm having trouble connecting right now. Please try again in a moment, or reach JC directly at jcdcocampo@gmail.com."
         );
-        glowManager.activate(panel);
       } finally {
         isSending = false;
         updateUI();
         textarea.focus();
+        // Bot fully done → resume idle clock from now
+        glowManager.resumeIdle();
       }
     }
   }
