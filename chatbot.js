@@ -53,6 +53,20 @@
       100% { opacity: 0;   }
     }
 
+    @keyframes cbGlowSweep {
+      0%   { --cb-glow-angle: 135deg; opacity: 0;    }
+      10%  { opacity: 1;              }
+      60%  { --cb-glow-angle: -45deg; opacity: 0.88; }
+      78%  { opacity: 1;              }
+      100% { --cb-glow-angle: -135deg; opacity: 0;   }
+    }
+
+    @property --cb-glow-angle {
+      syntax: '<angle>';
+      inherits: false;
+      initial-value: 135deg;
+    }
+
     .cb-siri-ring {
       position: fixed;
       bottom: 24px;
@@ -65,19 +79,20 @@
       z-index: 9998;
       pointer-events: none;
       background: conic-gradient(
-        from -45deg at 50% 50%,
-        #ff8c00  0%,
-        #ff3c50  12.5%,
-        #ff2d55  25%,
-        #e8187a  37.5%,
-        #9b59f5  50%,
-        #4060ff  62.5%,
-        #00c2e0  75%,
-        #ffb700  87.5%,
-        #ff8c00  100%
+        from var(--cb-glow-angle, 135deg) at 100% 100%,
+        #9b59f5  0%,
+        #4060ff  10%,
+        #00c2e0  20%,
+        #00e5b0  30%,
+        #ffb700  42%,
+        #ff8c00  52%,
+        #ff3c50  62%,
+        #ff2d55  72%,
+        #e8187a  82%,
+        #9b59f5  100%
       );
-      filter: blur(18px);
-      animation: cbGlowBreathe 3s ease forwards;
+      filter: blur(20px);
+      animation: cbGlowSweep 3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     @media (max-width: 480px) {
