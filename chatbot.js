@@ -45,16 +45,11 @@
          right edge   → magenta / pink
          bottom-right → violet / lavender                        */
 
-    /* Continuous subtle pulse while active */
+    /* Pulse via brightness so opacity stays free for the 2.5s fade transition */
     @keyframes cbGlowPulse {
-      0%   { opacity: 0.78; }
-      50%  { opacity: 1;    }
-      100% { opacity: 0.78; }
-    }
-    /* Fade in from zero */
-    @keyframes cbGlowFadeIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
+      0%   { filter: blur(18px) brightness(0.88); }
+      50%  { filter: blur(18px) brightness(1.12); }
+      100% { filter: blur(18px) brightness(0.88); }
     }
 
     .cb-siri-ring {
@@ -907,6 +902,8 @@
       fab.classList.add('cb-hidden');
       // Block panel interactions for 450ms to prevent FAB-tap bleed-through
       panelReady = false;
+      // Wait for the panel open transition (220ms) to finish before showing glow
+      setTimeout(() => glowManager.activate(panel), 240);
       setTimeout(() => { panelReady = true; }, 450);
       setTimeout(() => textarea.focus(), 250);
       if (!welcomeShown) {
