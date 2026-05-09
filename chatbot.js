@@ -77,8 +77,19 @@
         #ff8c00  100%
       );
       filter: blur(18px);
+      /* Start hidden, same pose as the closed panel */
+      opacity: 0;
+      transform-origin: bottom right;
+      transform: translateY(16px) scale(0.96);
+      /* Mirror the panel's open transition exactly */
+      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    /* Open: same end-state as .cb-panel.cb-open, then pulse kicks in */
+    .cb-siri-ring.cb-glow-open {
       opacity: 1;
+      transform: translateY(0) scale(1);
       animation: cbGlowPulse 3.5s ease-in-out infinite;
+      animation-delay: 0.22s; /* pulse starts after the open transition finishes */
     }
     /* When fading out: transition opacity over 2.5s, no pulse */
     .cb-siri-ring.cb-glow-fading {
@@ -616,9 +627,15 @@
       return ring;
     }
 
-    // Called on panel open — glow appears instantly, no idle timer yet
+    // Called on panel open — ring appears in sync with the panel animation
     function show(panel) {
-      _ensureRing(panel);
+      const r = _ensureRing(panel);
+      // One rAF so the element is painted at its start state before transitioning
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          r.classList.add('cb-glow-open');
+        });
+      });
     }
 
     // Called when user sends a message — wakes glow if faded, arms idle clock
@@ -631,10 +648,10 @@
       if (r.classList.contains('cb-glow-fading')) {
         r.classList.remove('cb-glow-fading');
         r.classList.add('cb-glow-returning');
-        // After fade-in completes, remove returning class so pulse resumes
         setTimeout(() => {
           if (ring && ring.classList.contains('cb-glow-returning')) {
             ring.classList.remove('cb-glow-returning');
+            ring.classList.add('cb-glow-open');
           }
         }, 2550);
       }
@@ -660,6 +677,7 @@
 
     function _fadeOut() {
       if (!ring) return;
+      ring.classList.remove('cb-glow-open');
       ring.classList.remove('cb-glow-returning');
       ring.classList.add('cb-glow-fading');
     }
@@ -914,10 +932,9 @@
     function openPanel() {
       panel.classList.add('cb-open');
       fab.classList.add('cb-hidden');
+      glowManager.show(panel);
       // Block panel interactions for 450ms to prevent FAB-tap bleed-through
       panelReady = false;
-      // Wait for the panel open transition (220ms) to finish, then show glow instantly
-      setTimeout(() => glowManager.show(panel), 240);
       setTimeout(() => { panelReady = true; }, 450);
       setTimeout(() => textarea.focus(), 250);
       if (!welcomeShown) {
