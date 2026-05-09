@@ -45,11 +45,12 @@
          right edge   → magenta / pink
          bottom-right → violet / lavender                        */
 
-    /* Pulse via brightness so opacity stays free for the 2.5s fade transition */
+    /* Seamless pulse — starts and ends at brightness(1) so no jump on loop */
     @keyframes cbGlowPulse {
-      0%   { filter: blur(18px) brightness(0.88); }
-      50%  { filter: blur(18px) brightness(1.12); }
-      100% { filter: blur(18px) brightness(0.88); }
+      0%   { filter: blur(18px) brightness(1);    }
+      30%  { filter: blur(18px) brightness(1.18); }
+      60%  { filter: blur(18px) brightness(0.84); }
+      100% { filter: blur(18px) brightness(1);    }
     }
 
     .cb-siri-ring {
@@ -76,15 +77,22 @@
         #ff8c00  100%
       );
       filter: blur(18px);
+      opacity: 1;
+      animation: cbGlowPulse 3.5s ease-in-out infinite;
+    }
+    /* When fading out: transition opacity over 2.5s, no pulse */
+    .cb-siri-ring.cb-glow-fading {
       opacity: 0;
-      /* 2.5s seamless fade for both in and out */
+      animation: none;
+      filter: blur(18px);
       transition: opacity 2.5s ease;
     }
-    /* Active: transition drives fade-in (2.5s), pulse begins after that */
-    .cb-siri-ring.cb-glow-active {
+    /* When fading back in after idle: transition opacity over 2.5s, then pulse resumes */
+    .cb-siri-ring.cb-glow-returning {
       opacity: 1;
-      animation: cbGlowPulse 3s ease-in-out infinite;
-      animation-delay: 2.5s;
+      animation: none;
+      filter: blur(18px);
+      transition: opacity 2.5s ease;
     }
 
     @media (max-width: 480px) {
@@ -586,50 +594,65 @@
   }
 
   // -------------------- SIRI GLOW MANAGER --------------------
-  // Glow activates on first user send, stays alive while chatting.
-  // Idles out after 10 s of no activity; paused while bot is responding
-  // so Mian typing never triggers the fade.  Fade in/out: 2.5 s each.
-  const IDLE_MS = 10000; // 10 s idle → glow fades out
+  // Glow is instant when panel opens (no fade-in).
+  // Idle timer only starts after the user sends their first message.
+  // Fade-out and fade-back-in take 2.5s each via CSS transition.
+  // Idle is paused while bot is responding so glow never fades mid-reply.
+  const IDLE_MS = 10000;
 
   const glowManager = (function () {
     let ring = null;
     let idleTimer = null;
-    let paused = false;   // true while bot is responding
+    let paused = false;
+    let idleStarted = false; // idle clock only arms after first user send
 
     function _ensureRing(panel) {
       if (ring && ring.isConnected) return ring;
       const old = document.querySelector('.cb-siri-ring');
       if (old) old.remove();
       ring = document.createElement('div');
-      ring.className = 'cb-siri-ring';
+      ring.className = 'cb-siri-ring'; // instant opacity:1 + pulse, no transition
       panel.parentNode.insertBefore(ring, panel);
       return ring;
     }
 
+    // Called on panel open — glow appears instantly, no idle timer yet
+    function show(panel) {
+      _ensureRing(panel);
+    }
+
+    // Called when user sends a message — wakes glow if faded, arms idle clock
     function activate(panel) {
       const r = _ensureRing(panel);
+      idleStarted = true;
       clearTimeout(idleTimer);
-      // One rAF so the element is painted at opacity:0 before we transition
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          r.classList.add('cb-glow-active');
-        });
-      });
+
+      // If it was faded out, fade it back in then restore pulse
+      if (r.classList.contains('cb-glow-fading')) {
+        r.classList.remove('cb-glow-fading');
+        r.classList.add('cb-glow-returning');
+        // After fade-in completes, remove returning class so pulse resumes
+        setTimeout(() => {
+          if (ring && ring.classList.contains('cb-glow-returning')) {
+            ring.classList.remove('cb-glow-returning');
+          }
+        }, 2550);
+      }
+
       if (!paused) _scheduleIdle();
     }
 
     function _scheduleIdle() {
       clearTimeout(idleTimer);
+      if (!idleStarted) return;
       idleTimer = setTimeout(_fadeOut, IDLE_MS);
     }
 
-    // Call when bot starts responding — prevents idle from firing mid-reply
     function pauseIdle() {
       paused = true;
       clearTimeout(idleTimer);
     }
 
-    // Call when bot finishes — resets the idle clock cleanly
     function resumeIdle() {
       paused = false;
       _scheduleIdle();
@@ -637,28 +660,19 @@
 
     function _fadeOut() {
       if (!ring) return;
-      ring.classList.remove('cb-glow-active');
-      // Remove from DOM after the 2.5s CSS transition finishes
-      setTimeout(() => {
-        if (ring && !ring.classList.contains('cb-glow-active')) {
-          ring.remove();
-          ring = null;
-        }
-      }, 2600);
+      ring.classList.remove('cb-glow-returning');
+      ring.classList.add('cb-glow-fading');
     }
 
     function destroy() {
       clearTimeout(idleTimer);
+      idleStarted = false;
+      paused = false;
       if (ring) { ring.remove(); ring = null; }
     }
 
-    return { activate, pauseIdle, resumeIdle, destroy };
+    return { show, activate, pauseIdle, resumeIdle, destroy };
   })();
-
-  // showSiriGlow shim — kept for any future callers
-  function showSiriGlow(panel) {
-    glowManager.activate(panel);
-  }
 
   const IMESSAGE_ICON = `
     <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -902,8 +916,8 @@
       fab.classList.add('cb-hidden');
       // Block panel interactions for 450ms to prevent FAB-tap bleed-through
       panelReady = false;
-      // Wait for the panel open transition (220ms) to finish before showing glow
-      setTimeout(() => glowManager.activate(panel), 240);
+      // Wait for the panel open transition (220ms) to finish, then show glow instantly
+      setTimeout(() => glowManager.show(panel), 240);
       setTimeout(() => { panelReady = true; }, 450);
       setTimeout(() => textarea.focus(), 250);
       if (!welcomeShown) {
