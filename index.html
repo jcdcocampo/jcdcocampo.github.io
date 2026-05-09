@@ -1118,31 +1118,37 @@
   var ctx    = canvas.getContext('2d');
   var video  = document.getElementById('profileVideo');
 
-  // Scale canvas resolution for retina/high-DPI screens
-  var dpr     = window.devicePixelRatio || 1;
-  var cssSize = 140;
-  canvas.width        = cssSize * dpr;
-  canvas.height       = cssSize * dpr;
-  canvas.style.width  = cssSize + 'px';
-  canvas.style.height = cssSize + 'px';
-  ctx.scale(dpr, dpr);
+  // Scale canvas buffer for retina/high-DPI screens
+  var dpr = window.devicePixelRatio || 1;
+  canvas.width  = canvas.offsetWidth  * dpr;
+  canvas.height = canvas.offsetHeight * dpr;
 
   var rafId = null;
   var busy  = false;
 
-  // ── Light poster image (drawn to canvas in light mode) ───
+  // ── Cover-fit draw: mimics object-fit:cover ───────────────
+  function drawCover(src) {
+    var cw = canvas.width;
+    var ch = canvas.height;
+    var sw = src.videoWidth  || src.naturalWidth  || cw;
+    var sh = src.videoHeight || src.naturalHeight || ch;
+    var scale = Math.max(cw / sw, ch / sh);
+    var dw = sw * scale;
+    var dh = sh * scale;
+    var dx = (cw - dw) / 2;
+    var dy = (ch - dh) / 2;
+    try { ctx.drawImage(src, dx, dy, dw, dh); } catch (e) {}
+  }
+
+  // ── Light poster image ────────────────────────────────────
   var lightImg = new Image();
   lightImg.src = 'assets/profile-light.jpg';
 
-  // Paint whatever frame the video is currently on
-  function paintFrame() {
-    try { ctx.drawImage(video, 0, 0, canvas.width, canvas.height); } catch (e) {}
-  }
+  function paintFrame() { drawCover(video); }
 
-  // Paint the static light portrait
   function paintLight() {
     if (lightImg.complete && lightImg.naturalWidth) {
-      ctx.drawImage(lightImg, 0, 0, canvas.width, canvas.height);
+      drawCover(lightImg);
     }
   }
 
