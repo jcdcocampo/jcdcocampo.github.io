@@ -147,6 +147,7 @@
     .name-line-1 + .name-line-2::before { content: ' '; }
     .title-line-1 + .title-line-2::before { content: ' '; }
 
+    /* ── Profile picture + video overlay ── */
     .profile-pic {
       position: relative;
       width: 140px;
@@ -156,25 +157,14 @@
       flex-shrink: 0;
       background: #d1d1d6;
     }
-    .profile-pic .profile-poster,
-    .profile-pic video {
+
+    /* Canvas fills the container; video is hidden pixel-source only */
+    .profile-pic canvas {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
       display: block;
-    }
-    .profile-pic .profile-poster {
-      z-index: 1;
-    }
-    .profile-pic video {
-      z-index: 2;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-    .profile-pic.video-active video {
-      opacity: 1;
     }
 
     .header-info { flex: 1; min-width: 0; }
@@ -393,8 +383,6 @@
     }
     .exp-item:last-child { margin-bottom: 0; }
 
-    /* Line drawn per-item (between this item's dot and the next).
-       Last item gets no line, so nothing extends past the bottom dot. */
     .exp-item:not(:last-child)::after {
       content: '';
       position: absolute;
@@ -415,7 +403,7 @@
       height: 16px;
       border-radius: 50%;
       border: 2px solid var(--text-primary);
-      background: var(--card); /* solid card-color fill so any underlying line is hidden */
+      background: var(--card);
       transition: background var(--transition), border-color 0.4s ease;
       z-index: 1;
     }
@@ -545,9 +533,7 @@
       background: transparent;
       flex-shrink: 0;
     }
-    /* Light mode: show black logo, hide white */
     .social-logo.logo-dark { display: none; }
-    /* Dark mode: hide black logo, show white */
     [data-theme="dark"] .social-logo.logo-light { display: none; }
     [data-theme="dark"] .social-logo.logo-dark  { display: block; }
 
@@ -624,7 +610,6 @@
       }
       .header-corner .open-to-work { display: none; }
 
-      /* Big profile pic — ~50% of header width */
       .profile-pic {
         width: 50vw;
         max-width: 220px;
@@ -640,7 +625,6 @@
         padding-right: 0;
       }
 
-      /* Only the name row needs to clear the top-right toggle */
       .header-name-row {
         display: block;
         padding-right: 50px;
@@ -651,7 +635,6 @@
         font-weight: 700;
         display: block;
       }
-      /* Let name wrap naturally word-by-word to match reference style */
       .name-line-1, .name-line-2 { display: inline; }
       .name-line-1 + .name-line-2::before { content: ' '; white-space: normal; }
       .surname-badge { display: inline-flex; }
@@ -660,8 +643,6 @@
       .verified-badge-svg { width: 15px; height: 15px; }
       .verified-badge-svg svg { width: 9px; height: 9px; }
 
-      /* Title: indented so its text aligns with the icon-prefixed text below.
-         Icon slot (14px) + gap (5px) = 19px indent */
       .header-title {
         font-size: 13px;
         margin-top: 8px;
@@ -671,8 +652,6 @@
       .title-line-1, .title-line-2 { display: block; }
       .title-line-1 + .title-line-2::before { content: none; }
 
-      /* Location: pin (14px) + 5px gap + text. Sits at flex-natural position
-         where pin is at left edge, text starts at x=19 (matching title above) */
       .header-location {
         font-size: 13px;
         margin-top: 8px;
@@ -687,7 +666,6 @@
         height: 14px;
       }
 
-      /* Open to Work: same structure as location */
       .open-to-work-mobile {
         display: flex !important;
         align-items: center;
@@ -716,7 +694,6 @@
         padding: 7px 18px;
       }
 
-      /* Toggle — visible and tappable but compact enough to fit the corner */
       .theme-toggle {
         --track-w: 44px;
         --track-h: 24px;
@@ -828,17 +805,16 @@
   <div class="header-card fade-up delay-0">
 
     <div class="profile-pic" id="profilePic">
-      <img class="profile-poster" id="profilePoster"
-           src="assets/profile-light.jpg"
-           alt="Profile photo of Engr. Jose Carlo David Ocampo" />
+      <canvas id="profileCanvas"
+              width="140" height="140"
+              aria-label="Profile photo of Engr. Jose Carlo David Ocampo"
+              style="width:100%;height:100%;display:block;"></canvas>
       <video id="profileVideo"
              src="assets/profile-transition.mp4"
-             muted
-             playsinline
-             webkit-playsinline
-             preload="metadata"
-             disablepictureinpicture
-             aria-hidden="true"></video>
+             muted playsinline webkit-playsinline
+             preload="auto" disablepictureinpicture
+             aria-hidden="true"
+             style="position:absolute;visibility:hidden;pointer-events:none;width:1px;height:1px;"></video>
     </div>
 
     <div class="header-corner">
@@ -1135,130 +1111,168 @@
 </div>
 
 <script>
-  (function () {
-    var root = document.documentElement;
-    var btn = document.getElementById('themeToggle');
-    var profilePic = document.getElementById('profilePic');
-    var poster = document.getElementById('profilePoster');
-    var video = document.getElementById('profileVideo');
+(function () {
+  var root   = document.documentElement;
+  var btn    = document.getElementById('themeToggle');
+  var canvas = document.getElementById('profileCanvas');
+  var ctx    = canvas.getContext('2d');
+  var video  = document.getElementById('profileVideo');
 
-    // Dark mode on load: freeze video on last frame, show it over poster
-    function initDarkFrame() {
-      if (isFinite(video.duration) && video.duration > 0) {
-        try { video.currentTime = video.duration - 0.01; } catch (e) {}
-        profilePic.classList.add('video-active');
-      }
+  var rafId = null;
+  var busy  = false;
+
+  // ── Light poster image (drawn to canvas in light mode) ───
+  var lightImg = new Image();
+  lightImg.src = 'assets/profile-light.jpg';
+
+  // Paint whatever frame the video is currently on
+  function paintFrame() {
+    try { ctx.drawImage(video, 0, 0, canvas.width, canvas.height); } catch (e) {}
+  }
+
+  // Paint the static light portrait
+  function paintLight() {
+    if (lightImg.complete && lightImg.naturalWidth) {
+      ctx.drawImage(lightImg, 0, 0, canvas.width, canvas.height);
     }
+  }
 
-    var initialDark = root.getAttribute('data-theme') === 'dark';
-    if (initialDark) {
-      btn.setAttribute('aria-pressed', 'true');
-      if (video.readyState >= 1) {
-        initDarkFrame();
-      } else {
-        video.addEventListener('loadedmetadata', initDarkFrame, { once: true });
-      }
+  // Draw light image as soon as it loads (if we're in light mode)
+  lightImg.onload = function () {
+    if (root.getAttribute('data-theme') !== 'dark') paintLight();
+  };
+
+  // ── Seek helper: waits for `seeked` before calling cb ────
+  function seekTo(time, cb) {
+    video.pause();
+    var settled = false;
+    function done() {
+      if (settled) return;
+      settled = true;
+      video.removeEventListener('seeked', done);
+      paintFrame();
+      if (cb) cb();
     }
-    // Light mode on load: poster shows by default, video hidden. Nothing to do.
+    video.addEventListener('seeked', done);
+    setTimeout(done, 250); // fallback if `seeked` never fires
+    try { video.currentTime = time; } catch (e) { done(); }
+  }
 
-    var transitioning = false;
-    var rafId = null;
-
-    function showVideo() { profilePic.classList.add('video-active'); }
-    function hideVideo() { profilePic.classList.remove('video-active'); }
-
-    function ensureReady(cb) {
-      if (isFinite(video.duration) && video.duration > 0) {
-        cb();
-      } else {
-        video.addEventListener('loadedmetadata', cb, { once: true });
-        try { video.load(); } catch (e) {}
-      }
+  // ── Wait for video metadata ───────────────────────────────
+  function whenReady(cb) {
+    if (video.readyState >= 1 && isFinite(video.duration) && video.duration > 0) {
+      cb();
+    } else {
+      video.addEventListener('loadedmetadata', cb, { once: true });
     }
+  }
 
-    // Light → Dark: play forward, leave video visible on last frame
-    function playForward() {
-      if (transitioning) return;
-      transitioning = true;
-      cancelAnimationFrame(rafId);
+  // ── Init on page load ────────────────────────────────────
+  var initialDark = root.getAttribute('data-theme') === 'dark';
 
-      ensureReady(function () {
-        try { video.currentTime = 0; } catch (e) {}
-        showVideo();
+  if (initialDark) {
+    btn.setAttribute('aria-pressed', 'true');
+    whenReady(function () {
+      seekTo(video.duration - 0.01, function () {
+        paintFrame();
+      });
+    });
+  }
+  // Light mode: lightImg.onload above handles the initial paint
 
-        var onEnd = function () {
-          video.removeEventListener('ended', onEnd);
-          // Stay on last frame — video remains visible
-          try { video.currentTime = video.duration - 0.01; } catch (e) {}
-          transitioning = false;
-        };
-        video.addEventListener('ended', onEnd);
+  // ── Light → Dark: play forward ───────────────────────────
+  function playForward() {
+    if (busy) return;
+    busy = true;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
 
+    whenReady(function () {
+      seekTo(0, function () {
         var p = video.play();
-        if (p && typeof p.catch === 'function') {
-          p.catch(function () {
-            video.removeEventListener('ended', onEnd);
-            try { video.currentTime = video.duration - 0.01; } catch (e) {}
-            transitioning = false;
+        if (p && typeof p.then === 'function') {
+          p.then(watchForEnd).catch(function () {
+            // Autoplay blocked — jump to dark frame
+            seekTo(video.duration - 0.01, function () {
+              paintFrame();
+              busy = false;
+            });
           });
+        } else {
+          watchForEnd();
         }
       });
-    }
+    });
 
-    // Dark → Light: reverse video, then hide it to reveal light poster
-    function playReverse() {
-      if (transitioning) return;
-      transitioning = true;
-      cancelAnimationFrame(rafId);
-
-      ensureReady(function () {
-        if (!isFinite(video.duration)) {
-          hideVideo();
-          transitioning = false;
-          return;
+    function watchForEnd() {
+      function check() {
+        paintFrame(); // mirror each video frame onto canvas
+        if (!video.paused && video.currentTime < video.duration - 0.05) {
+          rafId = requestAnimationFrame(check);
+        } else {
+          video.pause();
+          try { video.currentTime = video.duration - 0.01; } catch (e) {}
+          paintFrame();
+          busy  = false;
+          rafId = null;
         }
+      }
+      rafId = requestAnimationFrame(check);
+    }
+  }
 
-        video.pause();
-        try { video.currentTime = video.duration - 0.01; } catch (e) {}
-        showVideo();
+  // ── Dark → Light: reverse scrub ──────────────────────────
+  function playReverse() {
+    if (busy) return;
+    busy = true;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
 
+    whenReady(function () {
+      seekTo(video.duration - 0.01, function () {
         var lastTs = null;
-        var step = function (ts) {
-          if (lastTs == null) lastTs = ts;
-          var dt = (ts - lastTs) / 1000;
-          lastTs = ts;
-          var next = video.currentTime - dt;
-          if (next <= 0) {
-            try { video.currentTime = 0; } catch (e) {}
-            requestAnimationFrame(function () {
-              hideVideo();
-              transitioning = false;
-              rafId = null;
-            });
+        var SPEED  = 1.0; // raise to scrub faster, e.g. 1.5
+
+        function step(ts) {
+          if (lastTs === null) lastTs = ts;
+          var dt   = (ts - lastTs) / 1000;
+          lastTs   = ts;
+          var next = video.currentTime - dt * SPEED;
+
+          if (next <= 0.01) {
+            // Done reversing — show the static light portrait
+            paintLight();
+            busy  = false;
+            rafId = null;
             return;
           }
-          try { video.currentTime = next; } catch (e) {}
+
+          if (!video.seeking) {
+            try { video.currentTime = next; } catch (e) {}
+            paintFrame();
+          }
           rafId = requestAnimationFrame(step);
-        };
+        }
+
         rafId = requestAnimationFrame(step);
       });
-    }
-
-    btn.addEventListener('click', function () {
-      var isDark = root.getAttribute('data-theme') === 'dark';
-      if (isDark) {
-        root.removeAttribute('data-theme');
-        btn.setAttribute('aria-pressed', 'false');
-        try { localStorage.setItem('theme', 'light'); } catch (e) {}
-        playReverse();
-      } else {
-        root.setAttribute('data-theme', 'dark');
-        btn.setAttribute('aria-pressed', 'true');
-        try { localStorage.setItem('theme', 'dark'); } catch (e) {}
-        playForward();
-      }
     });
-  })();
+  }
+
+  // ── Toggle click ─────────────────────────────────────────
+  btn.addEventListener('click', function () {
+    var isDark = root.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      root.removeAttribute('data-theme');
+      btn.setAttribute('aria-pressed', 'false');
+      try { localStorage.setItem('theme', 'light'); } catch (e) {}
+      playReverse();
+    } else {
+      root.setAttribute('data-theme', 'dark');
+      btn.setAttribute('aria-pressed', 'true');
+      try { localStorage.setItem('theme', 'dark'); } catch (e) {}
+      playForward();
+    }
+  });
+})();
 </script>
 
 <script src="chatbot.js" defer></script>
