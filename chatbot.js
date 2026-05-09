@@ -582,12 +582,6 @@
     document.head.appendChild(style);
   }
 
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[c]));
-  }
-
   // Strip basic markdown that some models leak into responses.
   function stripMarkdown(s) {
     if (!s) return s;
