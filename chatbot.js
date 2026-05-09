@@ -45,7 +45,15 @@
          right edge   → magenta / pink
          bottom-right → violet / lavender                        */
 
-    /* Seamless pulse — starts and ends at brightness(1) so no jump on loop */
+    /* Fade in then pulse — opacity starts at 0 so no flicker ever */
+    @keyframes cbGlowIn {
+      0%   { opacity: 0;    filter: blur(18px) brightness(1); }
+      20%  { opacity: 1;    filter: blur(18px) brightness(1); }
+      60%  { opacity: 0.95; filter: blur(18px) brightness(1.18); }
+      80%  { opacity: 1;    filter: blur(18px) brightness(0.84); }
+      100% { opacity: 1;    filter: blur(18px) brightness(1); }
+    }
+    /* Seamless looping pulse once fully visible */
     @keyframes cbGlowPulse {
       0%   { filter: blur(18px) brightness(1);    }
       30%  { filter: blur(18px) brightness(1.18); }
@@ -77,28 +85,20 @@
         #ff8c00  100%
       );
       filter: blur(18px);
-      /* Start hidden, same pose as the closed panel */
       opacity: 0;
-      transform-origin: bottom right;
-      transform: translateY(16px) scale(0.96);
-      /* Mirror the panel's open transition exactly */
-      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
     }
-    /* Open: same end-state as .cb-panel.cb-open, then pulse kicks in */
+    /* Startup: fade in via keyframe (always starts at opacity 0, no flicker) */
     .cb-siri-ring.cb-glow-open {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-      animation: cbGlowPulse 3.5s ease-in-out infinite;
-      animation-delay: 0.22s; /* pulse starts after the open transition finishes */
+      animation: cbGlowIn 2s ease forwards, cbGlowPulse 3.5s ease-in-out 2s infinite;
     }
-    /* When fading out: transition opacity over 2.5s, no pulse */
+    /* Idle fade-out */
     .cb-siri-ring.cb-glow-fading {
       opacity: 0;
       animation: none;
       filter: blur(18px);
       transition: opacity 2.5s ease;
     }
-    /* When fading back in after idle: transition opacity over 2.5s, then pulse resumes */
+    /* Fade back in after idle */
     .cb-siri-ring.cb-glow-returning {
       opacity: 1;
       animation: none;
@@ -618,10 +618,12 @@
       ring = ringEl;
     }
 
-    // Called on panel open — ring already exists at opacity:0, transition runs cleanly
+    // Called on panel open — keyframe always starts at opacity:0, no flicker possible
     function show() {
       if (!ring) return;
-      ring.classList.remove('cb-glow-fading', 'cb-glow-returning');
+      // Strip all state classes and force animation reset
+      ring.classList.remove('cb-glow-open', 'cb-glow-fading', 'cb-glow-returning');
+      void ring.offsetWidth; // reflow to reset animation
       ring.classList.add('cb-glow-open');
     }
 
