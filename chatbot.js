@@ -45,23 +45,12 @@
          right edge   → magenta / pink
          bottom-right → violet / lavender                        */
 
-    @property --cb-streak-x {
-      syntax: '<percentage>';
-      inherits: false;
-      initial-value: 160%;
-    }
-    @property --cb-streak-y {
-      syntax: '<percentage>';
-      inherits: false;
-      initial-value: 160%;
-    }
-
-    @keyframes cbStreakMove {
-      0%   { --cb-streak-x: 160%; --cb-streak-y: 160%; opacity: 0;   }
-      6%   { opacity: 1; }
-      55%  { --cb-streak-x: -60%; --cb-streak-y: -60%; opacity: 0.9; }
-      80%  { --cb-streak-x: -90%; --cb-streak-y: -90%; opacity: 0;   }
-      100% { --cb-streak-x: -90%; --cb-streak-y: -90%; opacity: 0;   }
+    @keyframes cbGlowBreathe {
+      0%   { opacity: 0;   }
+      12%  { opacity: 1;   }
+      60%  { opacity: 0.82;}
+      78%  { opacity: 1;   }
+      100% { opacity: 0;   }
     }
 
     .cb-siri-ring {
@@ -75,17 +64,20 @@
       border-radius: 18px;
       z-index: 9998;
       pointer-events: none;
-      background: radial-gradient(
-        ellipse 55% 30% at var(--cb-streak-x, 160%) var(--cb-streak-y, 160%),
-        #ff8c00 0%,
-        #ff3c50 22%,
-        #e8187a 42%,
-        #9b59f5 62%,
-        #4060ff 78%,
-        transparent 100%
+      background: conic-gradient(
+        from -45deg at 50% 50%,
+        #ff8c00  0%,
+        #ff3c50  12.5%,
+        #ff2d55  25%,
+        #e8187a  37.5%,
+        #9b59f5  50%,
+        #4060ff  62.5%,
+        #00c2e0  75%,
+        #ffb700  87.5%,
+        #ff8c00  100%
       );
-      filter: blur(22px);
-      animation: cbStreakMove 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      filter: blur(18px);
+      animation: cbGlowBreathe 3s ease forwards;
     }
 
     @media (max-width: 480px) {
