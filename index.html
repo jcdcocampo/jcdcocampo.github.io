@@ -1118,6 +1118,15 @@
   var ctx    = canvas.getContext('2d');
   var video  = document.getElementById('profileVideo');
 
+  // Scale canvas resolution for retina/high-DPI screens
+  var dpr     = window.devicePixelRatio || 1;
+  var cssSize = 140;
+  canvas.width        = cssSize * dpr;
+  canvas.height       = cssSize * dpr;
+  canvas.style.width  = cssSize + 'px';
+  canvas.style.height = cssSize + 'px';
+  ctx.scale(dpr, dpr);
+
   var rafId = null;
   var busy  = false;
 
