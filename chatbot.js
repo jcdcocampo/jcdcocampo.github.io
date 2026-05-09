@@ -45,26 +45,23 @@
          right edge   → magenta / pink
          bottom-right → violet / lavender                        */
 
-    @keyframes cbGlowBreathe {
-      0%   { opacity: 0;   }
-      12%  { opacity: 1;   }
-      60%  { opacity: 0.82;}
-      78%  { opacity: 1;   }
-      100% { opacity: 0;   }
-    }
-
-    @keyframes cbGlowSweep {
-      0%   { --cb-glow-angle: 135deg; opacity: 0;    }
-      10%  { opacity: 1;              }
-      60%  { --cb-glow-angle: -45deg; opacity: 0.88; }
-      78%  { opacity: 1;              }
-      100% { --cb-glow-angle: -135deg; opacity: 0;   }
-    }
-
-    @property --cb-glow-angle {
-      syntax: '<angle>';
+    @property --cb-streak-x {
+      syntax: '<percentage>';
       inherits: false;
-      initial-value: 135deg;
+      initial-value: 160%;
+    }
+    @property --cb-streak-y {
+      syntax: '<percentage>';
+      inherits: false;
+      initial-value: 160%;
+    }
+
+    @keyframes cbStreakMove {
+      0%   { --cb-streak-x: 160%; --cb-streak-y: 160%; opacity: 0;   }
+      6%   { opacity: 1; }
+      55%  { --cb-streak-x: -60%; --cb-streak-y: -60%; opacity: 0.9; }
+      80%  { --cb-streak-x: -90%; --cb-streak-y: -90%; opacity: 0;   }
+      100% { --cb-streak-x: -90%; --cb-streak-y: -90%; opacity: 0;   }
     }
 
     .cb-siri-ring {
@@ -78,21 +75,17 @@
       border-radius: 18px;
       z-index: 9998;
       pointer-events: none;
-      background: conic-gradient(
-        from var(--cb-glow-angle, 135deg) at 100% 100%,
-        #9b59f5  0%,
-        #4060ff  10%,
-        #00c2e0  20%,
-        #00e5b0  30%,
-        #ffb700  42%,
-        #ff8c00  52%,
-        #ff3c50  62%,
-        #ff2d55  72%,
-        #e8187a  82%,
-        #9b59f5  100%
+      background: radial-gradient(
+        ellipse 55% 30% at var(--cb-streak-x, 160%) var(--cb-streak-y, 160%),
+        #ff8c00 0%,
+        #ff3c50 22%,
+        #e8187a 42%,
+        #9b59f5 62%,
+        #4060ff 78%,
+        transparent 100%
       );
-      filter: blur(20px);
-      animation: cbGlowSweep 3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      filter: blur(22px);
+      animation: cbStreakMove 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     @media (max-width: 480px) {
