@@ -627,15 +627,10 @@
       return ring;
     }
 
-    // Called on panel open — ring appears in sync with the panel animation
+    // Called on panel open — ring is born in open state, transitions with the panel
     function show(panel) {
       const r = _ensureRing(panel);
-      // One rAF so the element is painted at its start state before transitioning
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          r.classList.add('cb-glow-open');
-        });
-      });
+      r.classList.add('cb-glow-open');
     }
 
     // Called when user sends a message — wakes glow if faded, arms idle clock
