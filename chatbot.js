@@ -605,44 +605,44 @@
   }
 
   // -------------------- SIRI GLOW MANAGER --------------------
-  // Glow is instant when panel opens (no fade-in).
-  // Idle timer only starts after the user sends their first message.
-  // Fade-out and fade-back-in take 2.5s each via CSS transition.
-  // Idle is paused while bot is responding so glow never fades mid-reply.
   const IDLE_MS = 10000;
 
   const glowManager = (function () {
     let ring = null;
     let idleTimer = null;
     let paused = false;
-    let idleStarted = false; // idle clock only arms after first user send
+    let idleStarted = false;
 
-    function _ensureRing(panel) {
-      if (ring && ring.isConnected) return ring;
-      const old = document.querySelector('.cb-siri-ring');
-      if (old) old.remove();
-      ring = document.createElement('div');
-      ring.className = 'cb-siri-ring'; // instant opacity:1 + pulse, no transition
-      panel.parentNode.insertBefore(ring, panel);
-      return ring;
+    // Called once after createUI — hands the pre-mounted ring element over
+    function init(ringEl) {
+      ring = ringEl;
     }
 
-    // Called on panel open — ring is born in open state, transitions with the panel
-    function show(panel) {
-      const r = _ensureRing(panel);
-      r.classList.add('cb-glow-open');
+    // Called on panel open — ring already exists at opacity:0, transition runs cleanly
+    function show() {
+      if (!ring) return;
+      ring.classList.remove('cb-glow-fading', 'cb-glow-returning');
+      ring.classList.add('cb-glow-open');
     }
 
-    // Called when user sends a message — wakes glow if faded, arms idle clock
-    function activate(panel) {
-      const r = _ensureRing(panel);
+    // Called on panel close — revert to hidden, reset all state
+    function hide() {
+      if (!ring) return;
+      clearTimeout(idleTimer);
+      idleStarted = false;
+      paused = false;
+      ring.classList.remove('cb-glow-open', 'cb-glow-returning', 'cb-glow-fading');
+    }
+
+    // Called when user sends — arms idle clock, wakes glow if it faded
+    function activate() {
+      if (!ring) return;
       idleStarted = true;
       clearTimeout(idleTimer);
 
-      // If it was faded out, fade it back in then restore pulse
-      if (r.classList.contains('cb-glow-fading')) {
-        r.classList.remove('cb-glow-fading');
-        r.classList.add('cb-glow-returning');
+      if (ring.classList.contains('cb-glow-fading')) {
+        ring.classList.remove('cb-glow-fading');
+        ring.classList.add('cb-glow-returning');
         setTimeout(() => {
           if (ring && ring.classList.contains('cb-glow-returning')) {
             ring.classList.remove('cb-glow-returning');
@@ -672,19 +672,11 @@
 
     function _fadeOut() {
       if (!ring) return;
-      ring.classList.remove('cb-glow-open');
-      ring.classList.remove('cb-glow-returning');
+      ring.classList.remove('cb-glow-open', 'cb-glow-returning');
       ring.classList.add('cb-glow-fading');
     }
 
-    function destroy() {
-      clearTimeout(idleTimer);
-      idleStarted = false;
-      paused = false;
-      if (ring) { ring.remove(); ring = null; }
-    }
-
-    return { show, activate, pauseIdle, resumeIdle, destroy };
+    return { init, show, hide, activate, pauseIdle, resumeIdle };
   })();
 
   const IMESSAGE_ICON = `
@@ -889,11 +881,14 @@
     overlay.appendChild(card);
 
     // Mount everything
+    const ring = document.createElement('div');
+    ring.className = 'cb-siri-ring';
     document.body.appendChild(fab);
+    document.body.appendChild(ring);
     document.body.appendChild(panel);
     document.body.appendChild(overlay);
 
-    return { fab, panel, overlay, avatarBtn, closeBtn, messagesEl,
+    return { fab, panel, ring, overlay, avatarBtn, closeBtn, messagesEl,
              textarea, sendBtn, counterEl, chipsRow, cardCloseBtn };
   }
 
@@ -905,10 +900,12 @@
   function init() {
     injectStyles();
     const {
-      fab, panel, overlay, avatarBtn, closeBtn,
+      fab, panel, ring, overlay, avatarBtn, closeBtn,
       messagesEl, textarea, sendBtn, counterEl,
       chipsRow, cardCloseBtn,
     } = createUI();
+
+    glowManager.init(ring);
 
     // Chip click: fill textarea and send, then hide all chips
     chipsRow.querySelectorAll('.cb-chip').forEach(chip => {
@@ -927,7 +924,7 @@
     function openPanel() {
       panel.classList.add('cb-open');
       fab.classList.add('cb-hidden');
-      glowManager.show(panel);
+      glowManager.show();
       // Block panel interactions for 450ms to prevent FAB-tap bleed-through
       panelReady = false;
       setTimeout(() => { panelReady = true; }, 450);
@@ -945,7 +942,7 @@
     function closePanel() {
       panel.classList.remove('cb-open');
       fab.classList.remove('cb-hidden');
-      glowManager.destroy();
+      glowManager.hide();
     }
 
     function isPanelOpen() { return panel.classList.contains('cb-open'); }
@@ -1108,7 +1105,7 @@
       updateUI();
       addMessage('user', text);
       // User sent → wake / keep the glow alive and start idle clock
-      glowManager.activate(panel);
+      glowManager.activate();
       chipsRow.querySelectorAll('.cb-chip').forEach(c => c.classList.add('cb-chip-gone'));
       history.push({ role: 'user', content: text });
       if (history.length > CONFIG.maxHistory) {
