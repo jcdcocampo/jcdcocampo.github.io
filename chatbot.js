@@ -45,22 +45,32 @@
          right edge   → magenta / pink
          bottom-right → violet / lavender                        */
 
-    /* Rotation — animates the conic-gradient start angle */
+    @property --cb-angle {
+      syntax: "<angle>";
+      initial-value: -45deg;
+      inherits: false;
+    }
+    /* Slow colour rotation */
     @keyframes cbGlowRotate {
       from { --cb-angle: -45deg; }
       to   { --cb-angle: 315deg; }
     }
-    /* Breathing pulse */
+    /* Breathing pulse — filter only, no opacity */
     @keyframes cbGlowPulse {
       0%   { filter: blur(18px) brightness(1);    }
       30%  { filter: blur(18px) brightness(1.18); }
       60%  { filter: blur(18px) brightness(0.84); }
       100% { filter: blur(18px) brightness(1);    }
     }
-    @property --cb-angle {
-      syntax: "<angle>";
-      initial-value: -45deg;
-      inherits: false;
+    /* Fade in — opacity only */
+    @keyframes cbGlowFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    /* Fade out — opacity only, leaves filter/rotation untouched */
+    @keyframes cbGlowFadeOut {
+      from { opacity: 1; }
+      to   { opacity: 0; }
     }
 
     .cb-siri-ring {
@@ -88,12 +98,27 @@
       );
       filter: blur(18px);
       opacity: 0;
-      /* Opacity is controlled entirely by JS — smooth transition, no keyframe override */
-      transition: opacity 2.5s ease;
     }
-    /* Rotation + pulse run forever once started — no opacity here */
+    /* Open: fade in, then rotate + pulse forever */
     .cb-siri-ring.cb-glow-open {
-      animation: cbGlowRotate 20s linear 0s infinite, cbGlowPulse 3.5s ease-in-out 0s infinite;
+      animation:
+        cbGlowFadeIn   2s   ease        forwards,
+        cbGlowRotate   20s  linear      2s infinite,
+        cbGlowPulse    3.5s ease-in-out 2s infinite;
+    }
+    /* Idle fade-out: only animates opacity, rotation keeps running via cb-glow-open */
+    .cb-siri-ring.cb-glow-fading {
+      animation:
+        cbGlowFadeOut  2.5s ease        forwards,
+        cbGlowRotate   20s  linear      0s infinite,
+        cbGlowPulse    3.5s ease-in-out 0s infinite;
+    }
+    /* Wake: fade back in, rotation was never stopped */
+    .cb-siri-ring.cb-glow-returning {
+      animation:
+        cbGlowFadeIn   1.5s ease        forwards,
+        cbGlowRotate   20s  linear      0s infinite,
+        cbGlowPulse    3.5s ease-in-out 0s infinite;
     }
 
     @media (max-width: 480px) {
@@ -342,6 +367,17 @@
       30%           { transform: translateY(-5px); opacity: 1;   }
     }
 
+    /* Anticipation text under typing bubble */
+    .cb-anticipation {
+      font-size: 11px;
+      color: var(--text-tertiary, #aeaeb2);
+      margin-top: 4px;
+      margin-left: 36px;
+      font-style: italic;
+      min-height: 16px;
+      transition: opacity 0.4s ease;
+    }
+
     /* Quick-start chips */
     .cb-chips {
       display: flex;
@@ -499,8 +535,8 @@
     .cb-card-close svg { width: 16px; height: 16px; }
 
     .cb-card-avatar {
-      width: 140px;
-      height: 140px;
+      width: 200px;
+      height: 200px;
       border-radius: 50%;
       margin: 0 auto 18px;
       overflow: hidden;
@@ -509,7 +545,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 52px;
+      font-size: 72px;
       font-weight: 700;
       box-shadow: 0 4px 18px rgba(0,0,0,0.18);
     }
@@ -596,47 +632,47 @@
     let idleTimer = null;
     let paused = false;
     let idleStarted = false;
-    let opened = false;
 
+    // Called once after createUI — hands the pre-mounted ring element over
     function init(ringEl) {
       ring = ringEl;
     }
 
-    // Start rotation/pulse, fade in via opacity transition
+    // Called on panel open — keyframe always starts at opacity:0, no flicker possible
     function show() {
       if (!ring) return;
-      if (!opened) {
-        // First open: start animations, then fade in after a tick
-        ring.classList.remove('cb-glow-open');
-        void ring.offsetWidth;
-        ring.classList.add('cb-glow-open');
-        opened = true;
-      }
-      // Always fade in via transition (no keyframe touching opacity)
-      setTimeout(() => { ring.style.opacity = '1'; }, 16);
+      // Strip all state classes and force animation reset
+      ring.classList.remove('cb-glow-open', 'cb-glow-fading', 'cb-glow-returning');
+      void ring.offsetWidth; // reflow to reset animation
+      ring.classList.add('cb-glow-open');
     }
 
-    // Panel closed — snap hide immediately, keep open class for rotation
+    // Called on panel close — revert to hidden, reset all state
     function hide() {
       if (!ring) return;
       clearTimeout(idleTimer);
       idleStarted = false;
       paused = false;
-      opened = false;
-      ring.classList.remove('cb-glow-open');
-      // Disable transition for instant hide on close
-      ring.style.transition = 'none';
-      ring.style.opacity = '0';
+      ring.classList.remove('cb-glow-open', 'cb-glow-returning', 'cb-glow-fading');
     }
 
-    // User sent a message — wake glow if faded, restart idle clock
+    // Called when user sends — arms idle clock, wakes glow if it faded
     function activate() {
       if (!ring) return;
       idleStarted = true;
       clearTimeout(idleTimer);
-      // Fade back in smoothly without touching the animation
-      ring.style.transition = 'opacity 2.5s ease';
-      ring.style.opacity = '1';
+
+      if (ring.classList.contains('cb-glow-fading')) {
+        ring.classList.remove('cb-glow-fading');
+        ring.classList.add('cb-glow-returning');
+        setTimeout(() => {
+          if (ring && ring.classList.contains('cb-glow-returning')) {
+            ring.classList.remove('cb-glow-returning');
+            ring.classList.add('cb-glow-open');
+          }
+        }, 2550);
+      }
+
       if (!paused) _scheduleIdle();
     }
 
@@ -658,9 +694,8 @@
 
     function _fadeOut() {
       if (!ring) return;
-      // Fade out via opacity transition — rotation keeps running underneath
-      ring.style.transition = 'opacity 2.5s ease';
-      ring.style.opacity = '0';
+      ring.classList.remove('cb-glow-open', 'cb-glow-returning');
+      ring.classList.add('cb-glow-fading');
     }
 
     return { init, show, hide, activate, pauseIdle, resumeIdle };
@@ -1049,16 +1084,48 @@
       row.className = 'cb-bot-row';
 
       const avatar = buildSmallAvatar();
+
+      const bubbleWrap = document.createElement('div');
+      bubbleWrap.style.display = 'flex';
+      bubbleWrap.style.flexDirection = 'column';
+
       const bubble = document.createElement('div');
       bubble.className = 'cb-msg cb-msg-bot';
 
       const typing = document.createElement('span');
       typing.className = 'cb-typing';
       typing.innerHTML = '<span></span><span></span><span></span>';
-
       bubble.appendChild(typing);
+
+      const anticipation = document.createElement('div');
+      anticipation.className = 'cb-anticipation';
+
+      const ANTICIPATION_STEPS = [
+        { text: 'Thinking…',         delay: 0    },
+        { text: 'Recalling…',        delay: 2000 },
+        { text: 'Putting it together…', delay: 4500 },
+        { text: 'Almost there…',     delay: 7500 },
+        { text: 'Confirming…',       delay: 11000 },
+      ];
+
+      const timers = [];
+      ANTICIPATION_STEPS.forEach(({ text, delay }) => {
+        timers.push(setTimeout(() => {
+          anticipation.style.opacity = '0';
+          setTimeout(() => {
+            anticipation.textContent = text;
+            anticipation.style.opacity = '1';
+          }, 200);
+        }, delay));
+      });
+
+      // Store timers on the row so we can clear them on remove
+      row._anticipationTimers = timers;
+
+      bubbleWrap.appendChild(bubble);
+      bubbleWrap.appendChild(anticipation);
       row.appendChild(avatar);
-      row.appendChild(bubble);
+      row.appendChild(bubbleWrap);
       messagesEl.appendChild(row);
       messagesEl.scrollTop = messagesEl.scrollHeight;
       return row;
@@ -1109,6 +1176,7 @@
       try {
         const rawReply = await sendToAI(history);
         const reply = stripMarkdown(rawReply);
+        if (typingEl._anticipationTimers) typingEl._anticipationTimers.forEach(clearTimeout);
         typingEl.remove();
 
         const { bubble } = addBotBubbleForTyping();
@@ -1117,6 +1185,7 @@
         history.push({ role: 'assistant', content: reply });
       } catch (err) {
         console.error('[Mian]', err);
+        if (typingEl._anticipationTimers) typingEl._anticipationTimers.forEach(clearTimeout);
         typingEl.remove();
         const { bubble } = addBotBubbleForTyping({ error: true });
         await typeIntoBubble(
