@@ -99,10 +99,13 @@
       filter: blur(18px);
       opacity: 0;
     }
-    /* Open: already visible — rotate + pulse immediately, no fade-in */
+    /* Open: fade in over 1.5s, rotate + pulse forever.
+       opacity:1 on the class so forwards-fill is not needed
+       and the fade-out transition can still override it.    */
     .cb-siri-ring.cb-glow-open {
       opacity: 1;
       animation:
+        cbGlowFadeIn   1.5s ease        0s 1 normal none,
         cbGlowRotate   20s  linear      0s infinite,
         cbGlowPulse    3.5s ease-in-out 0s infinite;
     }
@@ -1101,10 +1104,10 @@
 
       const ANTICIPATION_STEPS = [
         { text: 'Thinking…',            delay: 0     },
-        { text: 'Recalling…',           delay: 2000  },
-        { text: 'Putting it together…', delay: 4500  },
-        { text: 'Almost there…',        delay: 7500  },
-        { text: 'Confirming',           delay: 11000, countUp: true },
+        { text: 'Recalling…',           delay: 5000  },
+        { text: 'Putting it together…', delay: 15000 },
+        { text: 'Almost there…',        delay: 25000 },
+        { text: 'Confirming',           delay: 35000, countUp: true },
       ];
 
       let countUpInterval = null;
