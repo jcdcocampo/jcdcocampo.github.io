@@ -45,25 +45,17 @@
          right edge   → magenta / pink
          bottom-right → violet / lavender                        */
 
-    /* Fade in then pulse — opacity starts at 0 so no flicker ever */
-    @keyframes cbGlowIn {
-      0%   { opacity: 0;    filter: blur(18px) brightness(1); }
-      20%  { opacity: 1;    filter: blur(18px) brightness(1); }
-      60%  { opacity: 0.95; filter: blur(18px) brightness(1.18); }
-      80%  { opacity: 1;    filter: blur(18px) brightness(0.84); }
-      100% { opacity: 1;    filter: blur(18px) brightness(1); }
+    /* Rotation — animates the conic-gradient start angle */
+    @keyframes cbGlowRotate {
+      from { --cb-angle: -45deg; }
+      to   { --cb-angle: 315deg; }
     }
-    /* Seamless looping pulse once fully visible */
+    /* Breathing pulse */
     @keyframes cbGlowPulse {
       0%   { filter: blur(18px) brightness(1);    }
       30%  { filter: blur(18px) brightness(1.18); }
       60%  { filter: blur(18px) brightness(0.84); }
       100% { filter: blur(18px) brightness(1);    }
-    }
-    /* Slow rotation — animates the conic-gradient start angle */
-    @keyframes cbGlowRotate {
-      from { --cb-angle: -45deg; }
-      to   { --cb-angle: 315deg; }
     }
     @property --cb-angle {
       syntax: "<angle>";
@@ -96,12 +88,12 @@
       );
       filter: blur(18px);
       opacity: 0;
-    }
-    /* Ring runs continuously once opened — opacity controlled via JS
-       so rotation never resets when fading in/out.               */
-    .cb-siri-ring.cb-glow-open {
-      animation: cbGlowIn 2s ease forwards, cbGlowRotate 20s linear 2s infinite, cbGlowPulse 3.5s ease-in-out 2s infinite;
+      /* Opacity is controlled entirely by JS — smooth transition, no keyframe override */
       transition: opacity 2.5s ease;
+    }
+    /* Rotation + pulse run forever once started — no opacity here */
+    .cb-siri-ring.cb-glow-open {
+      animation: cbGlowRotate 20s linear 0s infinite, cbGlowPulse 3.5s ease-in-out 0s infinite;
     }
 
     @media (max-width: 480px) {
@@ -610,22 +602,21 @@
       ring = ringEl;
     }
 
-    // Start rotation/pulse animations, then fade in via opacity
+    // Start rotation/pulse, fade in via opacity transition
     function show() {
       if (!ring) return;
       if (!opened) {
-        // First open: let cbGlowIn keyframe handle fade-in + start rotation after 2s
+        // First open: start animations, then fade in after a tick
         ring.classList.remove('cb-glow-open');
         void ring.offsetWidth;
         ring.classList.add('cb-glow-open');
         opened = true;
-      } else {
-        // Re-open after close: fade back in without resetting rotation
-        ring.style.opacity = '1';
       }
+      // Always fade in via transition (no keyframe touching opacity)
+      setTimeout(() => { ring.style.opacity = '1'; }, 16);
     }
 
-    // Panel closed — snap hide, reset for next open
+    // Panel closed — snap hide immediately, keep open class for rotation
     function hide() {
       if (!ring) return;
       clearTimeout(idleTimer);
@@ -633,8 +624,9 @@
       paused = false;
       opened = false;
       ring.classList.remove('cb-glow-open');
-      ring.style.opacity = '0';
+      // Disable transition for instant hide on close
       ring.style.transition = 'none';
+      ring.style.opacity = '0';
     }
 
     // User sent a message — wake glow if faded, restart idle clock
