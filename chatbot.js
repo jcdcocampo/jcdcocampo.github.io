@@ -97,25 +97,11 @@
       filter: blur(18px);
       opacity: 0;
     }
-    /* Startup: fade in via keyframe (always starts at opacity 0, no flicker) */
+    /* Ring runs continuously once opened — opacity controlled via JS
+       so rotation never resets when fading in/out.               */
     .cb-siri-ring.cb-glow-open {
       animation: cbGlowIn 2s ease forwards, cbGlowRotate 20s linear 2s infinite, cbGlowPulse 3.5s ease-in-out 2s infinite;
-    }
-    /* Idle fade-out */
-    @keyframes cbGlowFadeOut {
-      from { opacity: 1; filter: blur(18px) brightness(1); }
-      to   { opacity: 0; filter: blur(18px) brightness(1); }
-    }
-    /* Fade back in after idle */
-    @keyframes cbGlowFadeIn {
-      from { opacity: 0; filter: blur(18px) brightness(1); }
-      to   { opacity: 1; filter: blur(18px) brightness(1); }
-    }
-    .cb-siri-ring.cb-glow-fading {
-      animation: cbGlowFadeOut 2.5s ease forwards;
-    }
-    .cb-siri-ring.cb-glow-returning {
-      animation: cbGlowFadeIn 2.5s ease forwards, cbGlowRotate 20s linear 0s infinite, cbGlowPulse 3.5s ease-in-out 0s infinite;
+      transition: opacity 2.5s ease;
     }
 
     @media (max-width: 480px) {
@@ -618,47 +604,47 @@
     let idleTimer = null;
     let paused = false;
     let idleStarted = false;
+    let opened = false;
 
-    // Called once after createUI — hands the pre-mounted ring element over
     function init(ringEl) {
       ring = ringEl;
     }
 
-    // Called on panel open — keyframe always starts at opacity:0, no flicker possible
+    // Start rotation/pulse animations, then fade in via opacity
     function show() {
       if (!ring) return;
-      // Strip all state classes and force animation reset
-      ring.classList.remove('cb-glow-open', 'cb-glow-fading', 'cb-glow-returning');
-      void ring.offsetWidth; // reflow to reset animation
-      ring.classList.add('cb-glow-open');
+      if (!opened) {
+        // First open: let cbGlowIn keyframe handle fade-in + start rotation after 2s
+        ring.classList.remove('cb-glow-open');
+        void ring.offsetWidth;
+        ring.classList.add('cb-glow-open');
+        opened = true;
+      } else {
+        // Re-open after close: fade back in without resetting rotation
+        ring.style.opacity = '1';
+      }
     }
 
-    // Called on panel close — revert to hidden, reset all state
+    // Panel closed — snap hide, reset for next open
     function hide() {
       if (!ring) return;
       clearTimeout(idleTimer);
       idleStarted = false;
       paused = false;
-      ring.classList.remove('cb-glow-open', 'cb-glow-returning', 'cb-glow-fading');
+      opened = false;
+      ring.classList.remove('cb-glow-open');
+      ring.style.opacity = '0';
+      ring.style.transition = 'none';
     }
 
-    // Called when user sends — arms idle clock, wakes glow if it faded
+    // User sent a message — wake glow if faded, restart idle clock
     function activate() {
       if (!ring) return;
       idleStarted = true;
       clearTimeout(idleTimer);
-
-      if (ring.classList.contains('cb-glow-fading')) {
-        ring.classList.remove('cb-glow-fading');
-        ring.classList.add('cb-glow-returning');
-        setTimeout(() => {
-          if (ring && ring.classList.contains('cb-glow-returning')) {
-            ring.classList.remove('cb-glow-returning');
-            ring.classList.add('cb-glow-open');
-          }
-        }, 2550);
-      }
-
+      // Fade back in smoothly without touching the animation
+      ring.style.transition = 'opacity 2.5s ease';
+      ring.style.opacity = '1';
       if (!paused) _scheduleIdle();
     }
 
@@ -680,8 +666,9 @@
 
     function _fadeOut() {
       if (!ring) return;
-      ring.classList.remove('cb-glow-open', 'cb-glow-returning');
-      ring.classList.add('cb-glow-fading');
+      // Fade out via opacity transition — rotation keeps running underneath
+      ring.style.transition = 'opacity 2.5s ease';
+      ring.style.opacity = '0';
     }
 
     return { init, show, hide, activate, pauseIdle, resumeIdle };
