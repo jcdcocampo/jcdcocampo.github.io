@@ -35,34 +35,35 @@
 
   // -------------------- STYLES --------------------
   const css = `
-    /* ── Encircling border glow ───────────────────────────────────
-       .cb-siri-ring     = outer wrapper — handles opacity/fade only.
-                           overflow:hidden clips stray blur outside.
-       .cb-siri-ring-inner = the rotating conic gradient, unmasked,
-                           scaled slightly smaller so the blurred
-                           edges bleed outside the wrapper and look
-                           like a soft glowing border ring.          */
+    /* ── Encircling glow — original feather preserved ─────────────
+       Identical to original but the conic-gradient rotates slowly.
+       @property animates --cb-angle so the colours travel around
+       the border. blur(18px) on the full div gives the same soft
+       feather as before — nothing else changed.                   */
 
-    @keyframes cbGlowFadeIn  { from { opacity: 0 } to { opacity: 1 } }
-    @keyframes cbGlowFadeOut { from { opacity: 1 } to { opacity: 0 } }
-
+    @keyframes cbGlowIn {
+      0%   { opacity: 0;    filter: blur(18px) brightness(1); }
+      20%  { opacity: 1;    filter: blur(18px) brightness(1); }
+      60%  { opacity: 0.95; filter: blur(18px) brightness(1.18); }
+      80%  { opacity: 1;    filter: blur(18px) brightness(0.84); }
+      100% { opacity: 1;    filter: blur(18px) brightness(1); }
+    }
+    @keyframes cbGlowPulse {
+      0%   { filter: blur(18px) brightness(1);    }
+      30%  { filter: blur(18px) brightness(1.18); }
+      60%  { filter: blur(18px) brightness(0.84); }
+      100% { filter: blur(18px) brightness(1);    }
+    }
     @keyframes cbGlowRotate {
-      from { --cb-glow-angle: 0deg;   }
-      to   { --cb-glow-angle: 360deg; }
+      from { --cb-angle: -45deg;  }
+      to   { --cb-angle: 315deg;  }
     }
-
-    @keyframes cbGlowBreathe {
-      0%,100% { filter: blur(22px) brightness(1);    }
-      50%     { filter: blur(22px) brightness(1.2);  }
-    }
-
-    @property --cb-glow-angle {
+    @property --cb-angle {
       syntax: "<angle>";
-      initial-value: 0deg;
+      initial-value: -45deg;
       inherits: false;
     }
 
-    /* Outer wrapper — same footprint as original ring */
     .cb-siri-ring {
       position: fixed;
       bottom: 24px;
@@ -74,54 +75,38 @@
       border-radius: 18px;
       z-index: 9998;
       pointer-events: none;
-      opacity: 0;
-      /* No overflow:hidden — let blur spill outside for feather */
-    }
-
-    /* Inner rotating gradient ring.
-       It sits inset ~30px so when blur(22px) spreads outward it
-       produces a soft glowing halo around the panel border.
-       The centre is hidden because the panel (z:9999) sits on top. */
-    .cb-siri-ring-inner {
-      position: absolute;
-      inset: -8px;
-      border-radius: 22px;
       background: conic-gradient(
-        from var(--cb-glow-angle, 0deg) at 50% 50%,
-        #ff8c00, #ff3c50, #ff2d55, #e8187a,
-        #9b59f5, #4060ff, #00c2e0, #ffb700, #ff8c00
+        from var(--cb-angle, -45deg) at 50% 50%,
+        #ff8c00  0%,
+        #ff3c50  12.5%,
+        #ff2d55  25%,
+        #e8187a  37.5%,
+        #9b59f5  50%,
+        #4060ff  62.5%,
+        #00c2e0  75%,
+        #ffb700  87.5%,
+        #ff8c00  100%
       );
-      /* Mask: transparent centre fading to opaque at edges —
-         applied BEFORE blur so blur then feathers the boundary. */
-      -webkit-mask: radial-gradient(
-        ellipse 75% 75% at 50% 50%,
-        transparent 55%, black 72%
-      );
-      mask: radial-gradient(
-        ellipse 75% 75% at 50% 50%,
-        transparent 55%, black 72%
-      );
-      filter: blur(22px);
+      filter: blur(18px);
+      opacity: 0;
     }
-
     .cb-siri-ring.cb-glow-open {
-      animation: cbGlowFadeIn 0.6s ease forwards;
-    }
-    .cb-siri-ring.cb-glow-open .cb-siri-ring-inner {
       animation:
-        cbGlowRotate   20s  linear       0s infinite,
-        cbGlowBreathe  3.5s ease-in-out  0s infinite;
+        cbGlowIn     2s   ease        forwards,
+        cbGlowRotate 20s  linear      2s infinite,
+        cbGlowPulse  3.5s ease-in-out 2s infinite;
     }
     .cb-siri-ring.cb-glow-fading {
-      animation: cbGlowFadeOut 2.5s ease forwards;
+      opacity: 0;
+      animation: none;
+      filter: blur(18px);
+      transition: opacity 2.5s ease;
     }
     .cb-siri-ring.cb-glow-returning {
-      animation: cbGlowFadeIn 1s ease forwards;
-    }
-    .cb-siri-ring.cb-glow-returning .cb-siri-ring-inner {
-      animation:
-        cbGlowRotate   20s  linear       0s infinite,
-        cbGlowBreathe  3.5s ease-in-out  0s infinite;
+      opacity: 1;
+      animation: none;
+      filter: blur(18px);
+      transition: opacity 2.5s ease;
     }
 
     @media (max-width: 480px) {
@@ -136,7 +121,6 @@
         max-height: none;
         border-radius: 16px;
       }
-      .cb-siri-ring-inner { border-radius: 20px; }
     }
 
     /* Floating action button */
@@ -898,9 +882,6 @@
     // Mount everything
     const ring = document.createElement('div');
     ring.className = 'cb-siri-ring';
-    const ringInner = document.createElement('div');
-    ringInner.className = 'cb-siri-ring-inner';
-    ring.appendChild(ringInner);
     document.body.appendChild(fab);
     document.body.appendChild(ring);
     document.body.appendChild(panel);
