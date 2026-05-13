@@ -35,88 +35,85 @@
 
   // -------------------- STYLES --------------------
   const css = `
-    /* ── Siri-style outer border glow ────────────────────────────
-       Sibling div behind the panel (z-index 9998, panel is 9999).
-       Colors match the full Siri logo palette:
-         top-left     → orange / warm yellow
-         left edge    → orange fading to yellow-white
-         bottom-left  → cyan / sky blue
-         top-right    → hot pink / red-pink
-         right edge   → magenta / pink
-         bottom-right → violet / lavender                        */
+    /* ── Encircling border glow ───────────────────────────────────
+       Rotating conic gradient masked to the border only so the
+       colours actually travel around the perimeter of the panel. */
 
-    /* Fade in then pulse — opacity starts at 0 so no flicker ever */
-    @keyframes cbGlowIn {
-      0%   { opacity: 0;    filter: blur(18px) brightness(1); }
-      20%  { opacity: 1;    filter: blur(18px) brightness(1); }
-      60%  { opacity: 0.95; filter: blur(18px) brightness(1.18); }
-      80%  { opacity: 1;    filter: blur(18px) brightness(0.84); }
-      100% { opacity: 1;    filter: blur(18px) brightness(1); }
+    @keyframes cbGlowFadeIn  { from { opacity:0 } to { opacity:1 } }
+    @keyframes cbGlowFadeOut { from { opacity:1 } to { opacity:0 } }
+
+    @keyframes cbGlowRotate {
+      from { --cb-glow-angle: 0deg; }
+      to   { --cb-glow-angle: 360deg; }
     }
-    /* Seamless looping pulse once fully visible */
-    @keyframes cbGlowPulse {
-      0%   { filter: blur(18px) brightness(1);    }
-      30%  { filter: blur(18px) brightness(1.18); }
-      60%  { filter: blur(18px) brightness(0.84); }
-      100% { filter: blur(18px) brightness(1);    }
+
+    @keyframes cbGlowBreathe {
+      0%,100% { filter: blur(10px) brightness(1);    }
+      50%     { filter: blur(10px) brightness(1.35); }
+    }
+
+    @property --cb-glow-angle {
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
     }
 
     .cb-siri-ring {
       position: fixed;
-      bottom: 24px;
-      right: 24px;
-      width: 380px;
-      max-width: calc(100vw - 32px);
-      height: 560px;
-      max-height: calc(100vh - 48px);
-      border-radius: 18px;
+      bottom: 16px;
+      right: 16px;
+      width: calc(380px + 16px);
+      max-width: calc(100vw - 16px);
+      height: calc(560px + 16px);
+      max-height: calc(100vh - 32px);
+      border-radius: 24px;
       z-index: 9998;
       pointer-events: none;
+      opacity: 0;
+
       background: conic-gradient(
-        from -45deg at 50% 50%,
-        #ff8c00  0%,
-        #ff3c50  12.5%,
-        #ff2d55  25%,
-        #e8187a  37.5%,
-        #9b59f5  50%,
-        #4060ff  62.5%,
-        #00c2e0  75%,
-        #ffb700  87.5%,
-        #ff8c00  100%
+        from var(--cb-glow-angle, 0deg) at 50% 50%,
+        #ff8c00, #ff2d55, #bf5af2, #0a84ff, #30d158, #ffd60a, #ff8c00
       );
-      filter: blur(18px);
-      opacity: 0;
+
+      /* Cut out the centre — only the border ring shows */
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      padding: 10px;
+
+      filter: blur(10px);
     }
-    /* Startup: fade in via keyframe (always starts at opacity 0, no flicker) */
+
     .cb-siri-ring.cb-glow-open {
-      animation: cbGlowIn 2s ease forwards, cbGlowPulse 3.5s ease-in-out 2s infinite;
+      animation:
+        cbGlowFadeIn  0.6s ease       forwards,
+        cbGlowRotate  6s  linear      0.6s infinite,
+        cbGlowBreathe 3s  ease-in-out 0.6s infinite;
     }
-    /* Idle fade-out */
     .cb-siri-ring.cb-glow-fading {
-      opacity: 0;
-      animation: none;
-      filter: blur(18px);
-      transition: opacity 2.5s ease;
+      animation: cbGlowFadeOut 2.5s ease forwards;
     }
-    /* Fade back in after idle */
     .cb-siri-ring.cb-glow-returning {
-      opacity: 1;
-      animation: none;
-      filter: blur(18px);
-      transition: opacity 2.5s ease;
+      animation:
+        cbGlowFadeIn  1s  ease        forwards,
+        cbGlowRotate  6s  linear      1s infinite,
+        cbGlowBreathe 3s  ease-in-out 1s infinite;
     }
 
     @media (max-width: 480px) {
       .cb-siri-ring {
-        bottom: 12px;
-        right: 8px;
-        left: 8px;
+        bottom: 4px;
+        right: 0;
+        left: 0;
         width: auto;
         max-width: none;
-        height: calc(100vh - 80px);
-        height: calc(100dvh - 80px);
+        height: calc(100vh - 64px);
+        height: calc(100dvh - 64px);
         max-height: none;
-        border-radius: 16px;
+        border-radius: 20px;
       }
     }
 
