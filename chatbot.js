@@ -35,12 +35,17 @@
 
   // -------------------- STYLES --------------------
   const css = `
-    /* ── Encircling glow — original feather preserved ─────────────
-       Identical to original but the conic-gradient rotates slowly.
-       @property animates --cb-angle so the colours travel around
-       the border. blur(18px) on the full div gives the same soft
-       feather as before — nothing else changed.                   */
+    /* ── Siri-style outer border glow ────────────────────────────
+       Sibling div behind the panel (z-index 9998, panel is 9999).
+       Colors match the full Siri logo palette:
+         top-left     → orange / warm yellow
+         left edge    → orange fading to yellow-white
+         bottom-left  → cyan / sky blue
+         top-right    → hot pink / red-pink
+         right edge   → magenta / pink
+         bottom-right → violet / lavender                        */
 
+    /* Fade in then pulse — opacity starts at 0 so no flicker ever */
     @keyframes cbGlowIn {
       0%   { opacity: 0;    filter: blur(18px) brightness(1); }
       20%  { opacity: 1;    filter: blur(18px) brightness(1); }
@@ -48,15 +53,17 @@
       80%  { opacity: 1;    filter: blur(18px) brightness(0.84); }
       100% { opacity: 1;    filter: blur(18px) brightness(1); }
     }
+    /* Seamless looping pulse once fully visible */
     @keyframes cbGlowPulse {
       0%   { filter: blur(18px) brightness(1);    }
       30%  { filter: blur(18px) brightness(1.18); }
       60%  { filter: blur(18px) brightness(0.84); }
       100% { filter: blur(18px) brightness(1);    }
     }
+    /* Slow rotation — animates the conic-gradient start angle */
     @keyframes cbGlowRotate {
-      from { --cb-angle: -45deg;  }
-      to   { --cb-angle: 315deg;  }
+      from { --cb-angle: -45deg; }
+      to   { --cb-angle: 315deg; }
     }
     @property --cb-angle {
       syntax: "<angle>";
@@ -90,18 +97,18 @@
       filter: blur(18px);
       opacity: 0;
     }
+    /* Startup: fade in via keyframe (always starts at opacity 0, no flicker) */
     .cb-siri-ring.cb-glow-open {
-      animation:
-        cbGlowIn     2s   ease        forwards,
-        cbGlowRotate 20s  linear      2s infinite,
-        cbGlowPulse  3.5s ease-in-out 2s infinite;
+      animation: cbGlowIn 2s ease forwards, cbGlowRotate 20s linear 2s infinite, cbGlowPulse 3.5s ease-in-out 2s infinite;
     }
+    /* Idle fade-out */
     .cb-siri-ring.cb-glow-fading {
       opacity: 0;
       animation: none;
       filter: blur(18px);
       transition: opacity 2.5s ease;
     }
+    /* Fade back in after idle */
     .cb-siri-ring.cb-glow-returning {
       opacity: 1;
       animation: none;
