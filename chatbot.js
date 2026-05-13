@@ -99,12 +99,12 @@
       filter: blur(18px);
       opacity: 0;
     }
-    /* Open: fade in, then rotate + pulse forever */
+    /* Open: already visible — rotate + pulse immediately, no fade-in */
     .cb-siri-ring.cb-glow-open {
+      opacity: 1;
       animation:
-        cbGlowFadeIn   2s   ease        forwards,
-        cbGlowRotate   20s  linear      2s infinite,
-        cbGlowPulse    3.5s ease-in-out 2s infinite;
+        cbGlowRotate   20s  linear      0s infinite,
+        cbGlowPulse    3.5s ease-in-out 0s infinite;
     }
     /* Idle fade-out: only animates opacity, rotation keeps running via cb-glow-open */
     .cb-siri-ring.cb-glow-fading {
@@ -372,7 +372,6 @@
       font-size: 11px;
       color: var(--text-tertiary, #aeaeb2);
       margin-top: 4px;
-      margin-left: 36px;
       font-style: italic;
       min-height: 16px;
       transition: opacity 0.4s ease;
@@ -1101,19 +1100,36 @@
       anticipation.className = 'cb-anticipation';
 
       const ANTICIPATION_STEPS = [
-        { text: 'Thinking…',         delay: 0    },
-        { text: 'Recalling…',        delay: 2000 },
-        { text: 'Putting it together…', delay: 4500 },
-        { text: 'Almost there…',     delay: 7500 },
-        { text: 'Confirming…',       delay: 11000 },
+        { text: 'Thinking…',            delay: 0     },
+        { text: 'Recalling…',           delay: 2000  },
+        { text: 'Putting it together…', delay: 4500  },
+        { text: 'Almost there…',        delay: 7500  },
+        { text: 'Confirming',           delay: 11000, countUp: true },
       ];
 
+      let countUpInterval = null;
       const timers = [];
-      ANTICIPATION_STEPS.forEach(({ text, delay }) => {
+
+      ANTICIPATION_STEPS.forEach(({ text, delay, countUp }) => {
         timers.push(setTimeout(() => {
           anticipation.style.opacity = '0';
+          // Clear any previous count-up
+          if (countUpInterval) { clearInterval(countUpInterval); countUpInterval = null; }
           setTimeout(() => {
-            anticipation.textContent = text;
+            anticipation.textContent = '';
+            if (countUp) {
+              // Build: "Confirming (Xs)..."
+              let secs = 0;
+              const update = () => {
+                secs++;
+                anticipation.textContent = `${text} (${secs}s)...`;
+              };
+              anticipation.textContent = `${text} (0s)...`;
+              countUpInterval = setInterval(update, 1000);
+              row._countUpInterval = countUpInterval;
+            } else {
+              anticipation.textContent = text;
+            }
             anticipation.style.opacity = '1';
           }, 200);
         }, delay));
@@ -1122,11 +1138,28 @@
       // Store timers on the row so we can clear them on remove
       row._anticipationTimers = timers;
 
+      // Wrap row + anticipation in a column container so anticipation
+      // sits below the row but is indented to align with the bubble
+      // (avatar is 28px wide + 8px gap = 36px offset)
+      const outer = document.createElement('div');
+      outer.style.display = 'flex';
+      outer.style.flexDirection = 'column';
+      outer.style.alignItems = 'flex-start';
+
+      anticipation.style.marginLeft = '36px';
+
       bubbleWrap.appendChild(bubble);
-      bubbleWrap.appendChild(anticipation);
       row.appendChild(avatar);
       row.appendChild(bubbleWrap);
-      messagesEl.appendChild(row);
+      outer.appendChild(row);
+      outer.appendChild(anticipation);
+
+      // Proxy remove() so callers removing `row` also remove outer
+      row._outer = outer;
+      const _origRemove = row.remove.bind(row);
+      row.remove = () => outer.remove();
+
+      messagesEl.appendChild(outer);
       messagesEl.scrollTop = messagesEl.scrollHeight;
       return row;
     }
@@ -1177,6 +1210,7 @@
         const rawReply = await sendToAI(history);
         const reply = stripMarkdown(rawReply);
         if (typingEl._anticipationTimers) typingEl._anticipationTimers.forEach(clearTimeout);
+        if (typingEl._countUpInterval) clearInterval(typingEl._countUpInterval);
         typingEl.remove();
 
         const { bubble } = addBotBubbleForTyping();
@@ -1186,6 +1220,7 @@
       } catch (err) {
         console.error('[Mian]', err);
         if (typingEl._anticipationTimers) typingEl._anticipationTimers.forEach(clearTimeout);
+        if (typingEl._countUpInterval) clearInterval(typingEl._countUpInterval);
         typingEl.remove();
         const { bubble } = addBotBubbleForTyping({ error: true });
         await typeIntoBubble(
