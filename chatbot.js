@@ -102,18 +102,20 @@
       animation: cbGlowIn 2s ease forwards, cbGlowRotate 20s linear 2s infinite, cbGlowPulse 3.5s ease-in-out 2s infinite;
     }
     /* Idle fade-out */
-    .cb-siri-ring.cb-glow-fading {
-      opacity: 0;
-      animation: none;
-      filter: blur(18px);
-      transition: opacity 2.5s ease;
+    @keyframes cbGlowFadeOut {
+      from { opacity: 1; filter: blur(18px) brightness(1); }
+      to   { opacity: 0; filter: blur(18px) brightness(1); }
     }
     /* Fade back in after idle */
+    @keyframes cbGlowFadeIn {
+      from { opacity: 0; filter: blur(18px) brightness(1); }
+      to   { opacity: 1; filter: blur(18px) brightness(1); }
+    }
+    .cb-siri-ring.cb-glow-fading {
+      animation: cbGlowFadeOut 2.5s ease forwards;
+    }
     .cb-siri-ring.cb-glow-returning {
-      opacity: 1;
-      animation: none;
-      filter: blur(18px);
-      transition: opacity 2.5s ease;
+      animation: cbGlowFadeIn 2.5s ease forwards, cbGlowRotate 20s linear 0s infinite, cbGlowPulse 3.5s ease-in-out 0s infinite;
     }
 
     @media (max-width: 480px) {
