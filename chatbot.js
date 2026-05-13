@@ -36,84 +36,90 @@
   // -------------------- STYLES --------------------
   const css = `
     /* ── Encircling border glow ───────────────────────────────────
-       Rotating conic gradient masked to the border only so the
-       colours actually travel around the perimeter of the panel. */
+       Same full conic-gradient div as original — preserves blur(18px)
+       feather on the outer edge. A radial-gradient mask fades the
+       centre to transparent so only the border ring glows softly. */
 
-    @keyframes cbGlowFadeIn  { from { opacity:0 } to { opacity:1 } }
-    @keyframes cbGlowFadeOut { from { opacity:1 } to { opacity:0 } }
+    @keyframes cbGlowFadeIn  { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes cbGlowFadeOut { from { opacity: 1 } to { opacity: 0 } }
 
     @keyframes cbGlowRotate {
-      from { --cb-glow-angle: 0deg; }
+      from { --cb-glow-angle: 0deg;   }
       to   { --cb-glow-angle: 360deg; }
     }
 
     @keyframes cbGlowBreathe {
-      0%,100% { filter: blur(10px) brightness(1);    }
-      50%     { filter: blur(10px) brightness(1.35); }
+      0%,100% { filter: blur(18px) brightness(1);    }
+      50%     { filter: blur(18px) brightness(1.18); }
     }
 
     @property --cb-glow-angle {
-      syntax: '<angle>';
+      syntax: "<angle>";
       initial-value: 0deg;
       inherits: false;
     }
 
     .cb-siri-ring {
       position: fixed;
-      bottom: 8px;
-      right: 8px;
-      width: calc(380px + 32px);
-      max-width: calc(100vw - 8px);
-      height: calc(560px + 32px);
-      max-height: calc(100vh - 16px);
-      border-radius: 28px;
+      bottom: 24px;
+      right: 24px;
+      width: 380px;
+      max-width: calc(100vw - 32px);
+      height: 560px;
+      max-height: calc(100vh - 48px);
+      border-radius: 18px;
       z-index: 9998;
       pointer-events: none;
       opacity: 0;
 
       background: conic-gradient(
         from var(--cb-glow-angle, 0deg) at 50% 50%,
-        #ff8c00, #ff2d55, #bf5af2, #0a84ff, #30d158, #ffd60a, #ff8c00
+        #ff8c00, #ff3c50, #ff2d55, #e8187a,
+        #9b59f5, #4060ff, #00c2e0, #ffb700, #ff8c00
       );
 
-      /* Cut out the centre — only the border ring shows */
-      -webkit-mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      padding: 18px;
+      /* Radial mask: transparent in the centre, opaque at the border.
+         The gradient between 60%-80% is the feather zone — it lets the
+         full blur(18px) spread naturally outward from the edge.        */
+      -webkit-mask: radial-gradient(
+        ellipse 88% 88% at 50% 50%,
+        transparent 60%, black 80%, black 100%
+      );
+      mask: radial-gradient(
+        ellipse 88% 88% at 50% 50%,
+        transparent 60%, black 80%, black 100%
+      );
 
       filter: blur(18px);
     }
 
     .cb-siri-ring.cb-glow-open {
       animation:
-        cbGlowFadeIn  0.6s ease       forwards,
-        cbGlowRotate  20s linear      0.6s infinite,
-        cbGlowBreathe 4s  ease-in-out 0.6s infinite;
+        cbGlowFadeIn   0.6s ease        forwards,
+        cbGlowRotate   20s linear       0.6s infinite,
+        cbGlowBreathe  3.5s ease-in-out 0.6s infinite;
     }
     .cb-siri-ring.cb-glow-fading {
       animation: cbGlowFadeOut 2.5s ease forwards;
     }
     .cb-siri-ring.cb-glow-returning {
       animation:
-        cbGlowFadeIn  1s  ease        forwards,
-        cbGlowRotate  20s linear      1s infinite,
-        cbGlowBreathe 4s  ease-in-out 1s infinite;
+        cbGlowFadeIn   1s  ease         forwards,
+        cbGlowRotate   20s linear       1s infinite,
+        cbGlowBreathe  3.5s ease-in-out 1s infinite;
     }
 
     @media (max-width: 480px) {
       .cb-siri-ring {
-        bottom: 4px;
-        right: 0;
-        left: 0;
+        bottom: 12px;
+        right: 8px;
+        left: 8px;
         width: auto;
         max-width: none;
-        height: calc(100vh - 64px);
-        height: calc(100dvh - 64px);
+        height: calc(100vh - 80px);
+        height: calc(100dvh - 80px);
         max-height: none;
-        border-radius: 20px;
+        border-radius: 16px;
       }
     }
 
