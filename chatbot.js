@@ -60,13 +60,13 @@
 
     .cb-siri-ring {
       position: fixed;
-      bottom: 16px;
-      right: 16px;
-      width: calc(380px + 16px);
-      max-width: calc(100vw - 16px);
-      height: calc(560px + 16px);
-      max-height: calc(100vh - 32px);
-      border-radius: 24px;
+      bottom: 8px;
+      right: 8px;
+      width: calc(380px + 32px);
+      max-width: calc(100vw - 8px);
+      height: calc(560px + 32px);
+      max-height: calc(100vh - 16px);
+      border-radius: 28px;
       z-index: 9998;
       pointer-events: none;
       opacity: 0;
@@ -82,16 +82,16 @@
         linear-gradient(#000 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
-      padding: 10px;
+      padding: 18px;
 
-      filter: blur(10px);
+      filter: blur(18px);
     }
 
     .cb-siri-ring.cb-glow-open {
       animation:
         cbGlowFadeIn  0.6s ease       forwards,
-        cbGlowRotate  6s  linear      0.6s infinite,
-        cbGlowBreathe 3s  ease-in-out 0.6s infinite;
+        cbGlowRotate  20s linear      0.6s infinite,
+        cbGlowBreathe 4s  ease-in-out 0.6s infinite;
     }
     .cb-siri-ring.cb-glow-fading {
       animation: cbGlowFadeOut 2.5s ease forwards;
@@ -99,8 +99,8 @@
     .cb-siri-ring.cb-glow-returning {
       animation:
         cbGlowFadeIn  1s  ease        forwards,
-        cbGlowRotate  6s  linear      1s infinite,
-        cbGlowBreathe 3s  ease-in-out 1s infinite;
+        cbGlowRotate  20s linear      1s infinite,
+        cbGlowBreathe 4s  ease-in-out 1s infinite;
     }
 
     @media (max-width: 480px) {
