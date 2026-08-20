@@ -1491,6 +1491,23 @@
       playForward();
     }
   });
+
+  // ── bfcache restore fix ──────────────────────────────────
+  // Mobile browsers can evict a <canvas>'s pixel buffer to save
+  // memory while a page sits frozen in the back/forward cache, even
+  // though the rest of the DOM (and the nav.js fade-up elements) are
+  // restored fine. That leaves this canvas blank — showing the plain
+  // gray .profile-pic background — regardless of light or dark theme.
+  // Repaint from the matching static poster whenever the page is
+  // restored from bfcache.
+  window.addEventListener('pageshow', function (event) {
+    if (!event.persisted) return;
+    if (root.getAttribute('data-theme') === 'dark') {
+      paintDark();
+    } else {
+      paintLight();
+    }
+  });
 })();
 </script>
 
