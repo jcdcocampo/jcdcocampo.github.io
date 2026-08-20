@@ -1319,9 +1319,12 @@
     try { ctx.drawImage(src, dx, dy, dw, dh); } catch (e) {}
   }
 
-  // ── Light poster image ────────────────────────────────────
+  // ── Light / Dark poster images ────────────────────────────
   var lightImg = new Image();
   lightImg.src = 'assets/profile-light.jpg';
+
+  var darkImg = new Image();
+  darkImg.src = 'assets/profile-dark.jpg';
 
   function paintFrame() { drawCover(video); }
 
@@ -1331,9 +1334,23 @@
     }
   }
 
+  function paintDark() {
+    if (darkImg.complete && darkImg.naturalWidth) {
+      drawCover(darkImg);
+    }
+  }
+
   // Draw light image as soon as it loads (if we're in light mode)
   lightImg.onload = function () {
     if (root.getAttribute('data-theme') !== 'dark') paintLight();
+  };
+
+  // Draw dark image as soon as it loads (if we're in dark mode) —
+  // this is the reliable fallback for initial paint on dark-mode
+  // page loads, since mobile browsers often won't preload/seek the
+  // hidden <video> without a user gesture.
+  darkImg.onload = function () {
+    if (root.getAttribute('data-theme') === 'dark') paintDark();
   };
 
   // ── Seek helper: waits for `seeked` before calling cb ────
@@ -1366,6 +1383,14 @@
 
   if (initialDark) {
     btn.setAttribute('aria-pressed', 'true');
+    // Paint the static dark poster right away — don't block on the
+    // video. On mobile, a hidden <video> often won't preload/seek
+    // without a user gesture, which used to leave the canvas blank
+    // (gray) after navigating back to this page in dark mode.
+    paintDark();
+    // Best-effort: if the video does become seekable, sync it to the
+    // dark frame too, so a later toggle-to-light reverse-scrub has
+    // the right starting frame.
     whenReady(function () {
       seekTo(video.duration - 0.01, function () {
         paintFrame();
