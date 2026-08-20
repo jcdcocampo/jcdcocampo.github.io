@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/jpeg" href="assets/favicon.jpg" />
+  <link rel="apple-touch-icon" href="assets/favicon.jpg" />
+  <title>Experience — Engr. Jose Carlo David Ocampo</title>
+  <meta name="description" content="Work experience of Engr. Jose Carlo David Ocampo — Licensed Electronics Engineer in the Philippines." />
+  <meta name="author" content="Jose Carlo David Ocampo" />
+  <meta name="robots" content="index, follow" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://jcdcocampo.github.io/experience.html" />
+  <meta property="og:title" content="Experience — Engr. Jose Carlo David Ocampo" />
+  <meta property="og:description" content="Licensed Electronics Engineer in the Philippines." />
+  <meta property="og:image" content="https://jcdcocampo.github.io/assets/og-image.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Experience — Engr. Jose Carlo David Ocampo" />
+  <meta name="twitter:description" content="Licensed Electronics Engineer in the Philippines." />
+  <meta name="twitter:image" content="https://jcdcocampo.github.io/assets/og-image.jpg" />
+  <script>
+    (function(){
+      try {
+        if (localStorage.getItem('theme') === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch(e){}
+    })();
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sf: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+            'Helvetica Neue', Arial, sans-serif;
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --sub-card: #f9f9fb;
+      --sub-hover: #f0f0f5;
+      --text-primary: #1c1c1e;
+      --text-secondary: #636366;
+      --text-tertiary: #aeaeb2;
+      --accent: #007aff;
+      --separator: rgba(0,0,0,0.10);
+      --radius-outer: 18px;
+      --radius-inner: 14px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.07);
+      --shadow-hover: 0 4px 20px rgba(0,0,0,0.13);
+      --transition: 0.18s ease;
+    }
+
+    [data-theme="dark"] {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --sub-card: #2c2c2e;
+      --sub-hover: #2c2c2e;
+      --text-primary: #ffffff;
+      --text-secondary: #aeaeb2;
+      --text-tertiary: #636366;
+      --separator: rgba(255,255,255,0.12);
+      --shadow: 0 2px 12px rgba(0,0,0,0.4);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.6);
+    }
+
+    html { font-family: var(--sf); background: var(--bg); color: var(--text-primary); transition: background 0.4s ease, color 0.4s ease; }
+    body { min-height: 100vh; background: var(--bg); transition: background 0.4s ease; padding-bottom: 100px; }
+    a { text-decoration: none; color: inherit; }
+
+    .fade-up { opacity: 0; transform: translateY(24px); animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) forwards; }
+    @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+    .fade-up.delay-0 { animation-delay: 0.00s; }
+    .fade-up.delay-1 { animation-delay: 0.10s; }
+    .fade-up.delay-2 { animation-delay: 0.20s; }
+    @media (prefers-reduced-motion: reduce) { .fade-up { animation: none; opacity: 1; transform: none; } }
+
+    .page-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 40px 40px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .top-bar { display: flex; align-items: center; gap: 18px; margin-bottom: 40px; padding: 24px 0 0; }
+
+    .back-link {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: transparent; color: var(--text-primary); cursor: pointer;
+      flex-shrink: 0;
+      transition: background var(--transition), box-shadow var(--transition), transform var(--transition), opacity var(--transition);
+    }
+    .back-link:hover {
+      background: var(--sub-hover);
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-1px);
+    }
+    .back-link:active { transform: scale(0.94); }
+    .back-link svg { width: 20px; height: 20px; }
+
+    .page-title { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+
+    /* ── Placeholder content ── */
+    .placeholder-card {
+      background: var(--card);
+      border-radius: var(--radius-outer);
+      box-shadow: var(--shadow);
+      padding: 60px 24px;
+      max-width: 1080px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .placeholder-text {
+      font-size: 17px;
+      color: var(--text-secondary);
+    }
+
+    /* ── Timeline (experience list) ── */
+    .timeline-card {
+      background: var(--card);
+      border-radius: var(--radius-outer);
+      box-shadow: var(--shadow);
+      padding: 32px 32px 28px;
+      max-width: 1080px;
+      width: 100%;
+    }
+
+    .timeline-card-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.1px;
+      color: var(--text-primary);
+      margin-bottom: 14px;
+      padding-left: 4px;
+    }
+
+    .timeline-wrap {
+      position: relative;
+      padding-left: 34px;
+    }
+
+    .timeline-section-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      margin: 30px 0 16px;
+    }
+    .timeline-section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--separator);
+    }
+    .timeline-section-label:first-child { margin-top: 0; }
+
+    .timeline-item {
+      position: relative;
+      padding: 0 0 28px;
+    }
+    .timeline-item:last-child { padding-bottom: 0; }
+
+    .timeline-dot {
+      position: absolute;
+      left: -34px;
+      top: 17px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      box-sizing: border-box;
+      z-index: 1;
+    }
+    .timeline-dot--current {
+      background: var(--text-primary);
+      border: 2px solid var(--text-primary);
+    }
+    .timeline-dot--past {
+      background: var(--card);
+      border: 2px solid var(--text-tertiary);
+    }
+
+    .timeline-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .timeline-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      object-fit: contain;
+      background: transparent;
+      flex-shrink: 0;
+    }
+
+    .timeline-info { flex: 1; min-width: 0; }
+    .timeline-role {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: var(--text-primary);
+    }
+    .timeline-company {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+    .timeline-meta {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+    .timeline-desc {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      margin-top: 10px;
+    }
+
+    @media (max-width: 767px) {
+      .timeline-card { padding: 24px 18px 20px; border-radius: 16px; }
+      .timeline-card-title { font-size: 15px; margin-bottom: 12px; padding-left: 0; }
+      .timeline-wrap { padding-left: 28px; }
+      .timeline-dot { left: -28px; top: 13px; }
+      .timeline-logo { width: 40px; height: 40px; }
+      .timeline-role { font-size: 15px; }
+      .timeline-company, .timeline-desc { font-size: 13px; }
+      .timeline-meta { font-size: 12px; }
+    }
+
+    /* ── Connect CTA ── */
+    /* ── Footer ── */
+    footer { text-align: center; padding-top: 20px; font-size: 13px; color: var(--text-tertiary); margin-top: auto; }
+    .footer-links { display: flex; justify-content: center; gap: 18px; margin-bottom: 10px; flex-wrap: wrap; }
+    .footer-links a { color: var(--text-secondary); font-size: 13px; text-decoration: none; transition: color var(--transition); }
+    .footer-links a:hover { color: var(--accent); }
+
+    /* ── Mobile ── */
+    @media (max-width: 767px) {
+      .page-wrap { padding: 24px 20px 30px; max-width: 100%; }
+      .top-bar { margin-bottom: 28px; gap: 14px; }
+      .back-link { width: 26px; height: 26px; }
+      .back-link svg { width: 18px; height: 18px; }
+      .page-title { font-size: 20px; }
+      .placeholder-card { padding: 44px 18px; border-radius: 16px; }
+      .placeholder-text { font-size: 15px; }
+      footer { padding-top: 24px; }
+      .footer-links { gap: 14px; margin-bottom: 8px; }
+      .footer-links a { font-size: 12px; }
+    }
+
+    @media (max-width: 767px) {
+      .top-bar {
+        margin-left: -20px;
+        margin-right: -20px;
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+      }
+    }
+
+    /* ── Liquid Glass Nav ── */
+    #navc button{cursor:pointer;border:none;outline:none;background:none;font-family:inherit;-webkit-tap-highlight-color:transparent;touch-action:none;user-select:none;-webkit-user-select:none}
+    .nb{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 20px;min-width:74px;border-radius:9999px}
+    .bw{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 20px;min-width:74px;border:none;background:none;box-sizing:border-box;font-family:inherit;border-radius:980px;font-weight:600;pointer-events:none;color:#007aff}
+    #navc {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+    }
+    @media (min-width: 768px) {
+      #mian {
+        position: fixed !important;
+        bottom: 32px !important;
+        right: 32px !important;
+        left: auto !important;
+        top: auto !important;
+      }
+    }
+    @media (max-width: 767px) {
+      #navc {
+        bottom: 24px;
+      }
+      #mian {
+        position: fixed !important;
+        bottom: 24px;
+        top: auto !important;
+        right: auto !important;
+        left: 50%;
+      }
+    }
+
+    /* ── Sticky top-bar ── */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 998;
+      padding-bottom: 44px !important;
+      margin-bottom: 0 !important;
+    }
+    .top-bar::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: rgba(242, 242, 247, 0.72);
+      backdrop-filter: blur(48px) saturate(200%);
+      -webkit-backdrop-filter: blur(48px) saturate(200%);
+      -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 32px), transparent 100%);
+      mask-image: linear-gradient(to bottom, black calc(100% - 32px), transparent 100%);
+      transition: background 0.4s ease;
+      pointer-events: none;
+    }
+    [data-theme="dark"] .top-bar::before {
+      background: rgba(0, 0, 0, 0.72);
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <div class="top-bar fade-up delay-0">
+    <a class="back-link" href="index.html" aria-label="Back to Home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="19" y1="12" x2="5" y2="12"/>
+        <polyline points="12 19 5 12 12 5"/>
+      </svg>
+    </a>
+    <span class="page-title">Experience</span>
+  </div>
+
+  <div class="timeline-card-title fade-up delay-1">Career Timeline</div>
+
+  <div class="timeline-card fade-up delay-2">
+    <div class="timeline-wrap">
+
+      <div class="timeline-section-label">Current</div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot timeline-dot--current"></div>
+        <div class="timeline-row">
+          <img class="timeline-logo" src="assets/accenture-logo.png" alt="Accenture logo">
+          <div class="timeline-info">
+            <div class="timeline-role">Application &amp; Cloud Support Engineer</div>
+            <div class="timeline-company">Accenture, Inc.</div>
+            <div class="timeline-meta">August 2026 - Present · Taguig, NCR</div>
+            <div class="timeline-desc">Supporting business-critical applications and cloud infrastructure through monitoring, troubleshooting, and timely issue resolution.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-section-label">Past</div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot timeline-dot--past"></div>
+        <div class="timeline-row">
+          <img class="timeline-logo" src="assets/converge-logo.png" alt="Converge ICT logo">
+          <div class="timeline-info">
+            <div class="timeline-role">IT Helpdesk Intern</div>
+            <div class="timeline-company">Converge ICT Solutions Inc.</div>
+            <div class="timeline-meta">April 2025 - June 2025 · 3 mos · Pasig City, NCR</div>
+            <div class="timeline-desc">Provided Level 1 IT support, troubleshooting network issues and managing cases through JIRA and Salesforce.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot timeline-dot--past"></div>
+        <div class="timeline-row">
+          <img class="timeline-logo" src="assets/cardinal-one-logo.png" alt="Mapua Cardinal One logo">
+          <div class="timeline-info">
+            <div class="timeline-role">Electronics Engineer &amp; Media Manager</div>
+            <div class="timeline-company">Mapua University Cardinal One</div>
+            <div class="timeline-meta">2023 - 2025 · 2 yrs · Manila, NCR</div>
+            <div class="timeline-desc">Developed vehicle electronics for Shell Eco-marathon while managing Cardinal One's branding and media presence.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot timeline-dot--past"></div>
+        <div class="timeline-row">
+          <img class="timeline-logo" src="assets/cardinal-one-logo.png" alt="Mapua Cardinal One logo">
+          <div class="timeline-info">
+            <div class="timeline-role">Apprentice</div>
+            <div class="timeline-company">Mapua University Cardinal One</div>
+            <div class="timeline-meta">2022 - 2023 · 1 yr · Manila, NCR</div>
+            <div class="timeline-desc">Trained in electronics and systems engineering through hands-on prototype vehicle development.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-section-label">Education</div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot timeline-dot--past"></div>
+        <div class="timeline-row">
+          <img class="timeline-logo" src="assets/mapua-logo.png" alt="Mapua University logo">
+          <div class="timeline-info">
+            <div class="timeline-role">BS Electronics Engineering</div>
+            <div class="timeline-company">Mapua University</div>
+            <div class="timeline-meta">2021 - 2025 · Manila, NCR</div>
+            <div class="timeline-desc">Specialized in Advanced Internet Protocol Networking, with a focus on IoT, AI, and network engineering.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <footer class="fade-up delay-2">
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms and Conditions</a>
+    </div>
+    &copy; 2026 Jose Carlo David Ocampo. All rights reserved.
+  </footer>
+
+</div>
+
+
+<script>
+(function(){
+  var tb=document.querySelector('.top-bar');
+  var title=tb&&(tb.querySelector('.page-title')||tb.querySelector('.breadcrumb'));
+  if(!tb||!title)return;
+  var origSize=parseFloat(getComputedStyle(title).fontSize);
+  var minSize=Math.max(16, origSize*0.7);
+  var ticking=false;
+  window.addEventListener('scroll',function(){
+    if(!ticking){ticking=true;requestAnimationFrame(function(){
+      var p=Math.min(1,window.scrollY/80);
+      title.style.fontSize=((1-p)*origSize+p*minSize)+'px';
+      ticking=false;
+    });}
+  },{passive:true});
+})();
+</script>
+
+<script>
+/* ── Timeline: draw connector line dot-to-dot ── */
+(function () {
+  function drawTimelineLine() {
+    var wrap = document.querySelector('.timeline-wrap');
+    if (!wrap) return;
+    var dots = wrap.querySelectorAll('.timeline-dot');
+    if (dots.length < 2) return;
+
+    var line = wrap.querySelector('.timeline-connector-line');
+    if (!line) {
+      line = document.createElement('div');
+      line.className = 'timeline-connector-line';
+      line.style.cssText = 'position:absolute;width:2px;z-index:0;pointer-events:none;';
+      wrap.appendChild(line);
+    }
+
+    var wrapRect  = wrap.getBoundingClientRect();
+    var firstRect = dots[0].getBoundingClientRect();
+    var lastRect  = dots[dots.length - 1].getBoundingClientRect();
+
+    var leftPx   = (firstRect.left + firstRect.width / 2) - wrapRect.left - 1;
+    var topPx    = (firstRect.top + firstRect.height / 2) - wrapRect.top;
+    var bottomPx = (lastRect.top  + lastRect.height  / 2) - wrapRect.top;
+
+    line.style.left   = leftPx + 'px';
+    line.style.top    = topPx + 'px';
+    line.style.height = (bottomPx - topPx) + 'px';
+    line.style.background = 'var(--separator)';
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    drawTimelineLine();
+    window.addEventListener('resize', drawTimelineLine);
+    setTimeout(drawTimelineLine, 300);
+  });
+})();
+</script>
+
+
+
+<script>window.__navActive="experience";</script>
+<div id="navc" style="opacity:0;position:fixed;bottom:32px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;z-index:1000">
+    <div id="pill" style="position:relative;display:flex;align-items:stretch;padding:5px;border-radius:9999px;
+      background:linear-gradient(180deg,rgba(255,255,255,.18) 0%,rgba(245,245,255,.14) 100%);
+      backdrop-filter:blur(72px) saturate(240%) brightness(1.08);-webkit-backdrop-filter:blur(72px) saturate(240%) brightness(1.08);
+      box-shadow:0 0 0 .5px rgba(255,255,255,.5),0 0 0 1px rgba(0,0,0,.06),0 6px 30px rgba(0,0,0,.10),inset 0 1.5px 0 rgba(255,255,255,1),inset 0 -.5px 0 rgba(0,0,0,.04);
+      cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;
+      transition:background .45s,box-shadow .45s,transform .38s ease">
+      <div id="rpill" style="position:absolute;border-radius:9999px;pointer-events:none;z-index:0;
+        background:rgba(0,0,0,.10);opacity:1;transition:opacity .2s ease"></div>
+      <div id="ind" style="position:absolute;border-radius:9999px;pointer-events:none;z-index:1;
+        opacity:0;transition:opacity .18s ease;
+        background:rgba(0,122,255,.13);
+        backdrop-filter:blur(16px) saturate(400%) brightness(1.15);-webkit-backdrop-filter:blur(16px) saturate(400%) brightness(1.15);
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.68),inset 0 1.5px 0 rgba(255,255,255,.92),inset 0 -1px 0 rgba(0,0,0,.07),0 0 0 .5px rgba(255,255,255,.5),0 0 18px rgba(0,122,255,.18),0 3px 12px rgba(0,122,255,.13)">
+      </div>
+      <button class="nb" data-nav="home" style="color:rgba(0,0,0,.36)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span style="font-size:10px;font-weight:600;letter-spacing:.3px;line-height:1">Home</span>
+      </button>
+      <button class="nb" data-nav="experience" style="color:rgba(0,0,0,.36)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span style="font-size:10px;font-weight:600;letter-spacing:.3px;line-height:1">Experience</span>
+      </button>
+      <button class="nb" data-nav="projects" style="color:rgba(0,0,0,.36)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span style="font-size:10px;font-weight:600;letter-spacing:.3px;line-height:1">Projects</span>
+      </button>
+      <button class="nb" data-nav="certs" style="color:rgba(0,0,0,.36)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9.09 14L7 21l5-2 5 2-2.09-7"/></svg>
+        <span style="font-size:10px;font-weight:600;letter-spacing:.3px;line-height:1">Certs</span>
+      </button>
+      <div id="wl" style="position:absolute;inset:0;pointer-events:none;z-index:3;display:flex;align-items:stretch;padding:5px;gap:1px;will-change:clip-path">
+        <div class="bw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span style="font-size:10px;letter-spacing:.3px;line-height:1">Home</span></div>
+        <div class="bw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span style="font-size:10px;letter-spacing:.3px;line-height:1">Experience</span></div>
+        <div class="bw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span style="font-size:10px;letter-spacing:.3px;line-height:1">Projects</span></div>
+        <div class="bw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9.09 14L7 21l5-2 5 2-2.09-7"/></svg><span style="font-size:10px;letter-spacing:.3px;line-height:1">Certs</span></div>
+      </div>
+    </div>
+  </div>
+<div id="mian" style="position:fixed;bottom:32px;right:32px;z-index:1001;width:60px;height:60px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer;
+      background:linear-gradient(180deg,rgba(255,255,255,.18) 0%,rgba(245,245,255,.14) 100%);
+      backdrop-filter:blur(72px) saturate(240%);-webkit-backdrop-filter:blur(72px) saturate(240%);
+      box-shadow:0 0 0 .5px rgba(255,255,255,.8),0 0 0 1px rgba(0,0,0,.06),0 8px 28px rgba(0,0,0,.09),inset 0 1.5px 0 rgba(255,255,255,1);
+      transition:background .45s,box-shadow .45s,transform .38s ease">
+      <div id="mind" style="position:absolute;width:60px;height:60px;border-radius:50%;pointer-events:none;z-index:1;will-change:transform;transform-origin:center;
+        background:rgba(0,122,255,.13);
+        backdrop-filter:blur(16px) saturate(400%) brightness(1.15);-webkit-backdrop-filter:blur(16px) saturate(400%) brightness(1.15);
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.68),inset 0 1.5px 0 rgba(255,255,255,.92),inset 0 -1px 0 rgba(0,0,0,.07),0 0 0 .5px rgba(255,255,255,.5),0 0 22px rgba(0,122,255,.22),0 4px 16px rgba(0,122,255,.16);
+        opacity:0;transition:opacity .25s ease"></div>
+      <svg id="mico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,.38)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:relative;z-index:4;pointer-events:none;transition:stroke .25s ease">
+        <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
+      </svg>
+    </div>
+<script src="nav.js" defer></script>
+</body>
+</html>
