@@ -52,7 +52,7 @@
     [data-theme="dark"] {
       --bg: #000000;
       --card: #1c1c1e;
-      --sub-card: #1c1c1e;
+      --sub-card: #2c2c2e;
       --sub-hover: #2c2c2e;
       --text-primary: #ffffff;
       --text-secondary: #aeaeb2;
@@ -68,7 +68,7 @@
       color: var(--text-primary);
       transition: background 0.4s ease, color 0.4s ease;
     }
-    body { min-height: 100vh; background: var(--bg); transition: background 0.4s ease; }
+    body { min-height: 100vh; background: var(--bg); transition: background 0.4s ease; padding-bottom: 100px; }
 
     a { color: inherit; text-decoration: none; }
 
@@ -92,7 +92,7 @@
     .top-bar {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 40px 40px 0;
+      padding: 24px 40px 0;
       display: flex;
       align-items: center;
       gap: 18px;
@@ -105,7 +105,7 @@
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background: var(--sub-card);
+      background: transparent;
       color: var(--text-primary);
       cursor: pointer;
       flex-shrink: 0;
@@ -223,46 +223,6 @@
       font-weight: 600;
     }
 
-    .connect-cta {
-      max-width: 720px;
-      margin: 80px auto 0;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 10px;
-    }
-
-    .connect-heading {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: -0.4px;
-      color: var(--text-primary);
-    }
-    .connect-email {
-      font-size: 15px;
-      color: var(--text-secondary);
-      font-weight: 400;
-    }
-    .send-email-btn {
-      display: inline-flex;
-      align-items: center;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 980px;
-      padding: 9px 24px;
-      font-size: 15px;
-      font-weight: 600;
-      font-family: var(--sf);
-      cursor: pointer;
-      margin-top: 6px;
-      transition: opacity var(--transition), transform var(--transition);
-    }
-    .send-email-btn:hover { opacity: 0.85; transform: scale(1.02); }
-    .send-email-btn:active { transform: scale(0.97); }
-
     footer {
       text-align: center;
       padding: 40px 20px 30px;
@@ -303,19 +263,80 @@
 
       .article-meta { font-size: 14px; margin-top: 40px; padding-top: 24px; }
 
-      .connect-cta { margin-top: 56px; padding: 20px 12px 10px; }
-      .connect-heading { font-size: 18px; }
-      .connect-email { font-size: 14px; }
-      .send-email-btn { font-size: 14px; padding: 8px 22px; }
-
       footer { padding: 30px 16px 24px; }
       .footer-links { gap: 14px; margin-bottom: 8px; }
       .footer-links a { font-size: 12px; }
     }
+  
+  
+  
+  
+  
+  
+  
+    /* ── Liquid Glass Nav ── */
+  #navc button{cursor:pointer;border:none;outline:none;background:none;font-family:inherit;-webkit-tap-highlight-color:transparent;touch-action:none;user-select:none;-webkit-user-select:none}
+  .nb{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 20px;min-width:74px;border-radius:9999px}
+  .bw{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 20px;min-width:74px;border:none;background:none;box-sizing:border-box;font-family:inherit;border-radius:980px;font-weight:600;pointer-events:none;color:#007aff}
+  #navc {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+  }
+  @media (min-width: 768px) {
+    #mian {
+      position: fixed !important;
+      bottom: 32px !important;
+      right: 32px !important;
+      left: auto !important;
+      top: auto !important;
+    }
+  }
+  @media (max-width: 767px) {
+    #navc {
+      bottom: 24px;
+    }
+    #mian {
+      position: fixed !important;
+      bottom: 24px;
+      top: auto !important;
+      right: auto !important;
+      left: 50%;
+    }
+  }
+
+
+  .top-bar-spacer {
+    height: 40px;
+  }
+  @media (max-width: 767px) {
+    .top-bar-spacer { height: 24px; }
+  }
+  /* ── Sticky top-bar ── */
+  .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 998;
+    background: rgba(242, 242, 247, 0.72);
+    backdrop-filter: blur(48px) saturate(200%);
+    -webkit-backdrop-filter: blur(48px) saturate(200%);
+    -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 32px), transparent 100%);
+    mask-image: linear-gradient(to bottom, black calc(100% - 32px), transparent 100%);
+    padding-bottom: 44px !important;
+    margin-bottom: 0 !important;
+    transition: background 0.4s ease;
+  }
+  [data-theme="dark"] .top-bar {
+    background: rgba(0, 0, 0, 0.72);
+  }
+
   </style>
 </head>
 <body>
 
+  <div class="top-bar-spacer"></div>
   <div class="top-bar fade-up delay-0">
     <a class="back-link" href="projects.html" aria-label="Back to Projects">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -353,13 +374,13 @@
       </p>
 
       <p class="fade-up delay-3">
-        In 2023, during my second year at Mapua, the team opened applications for apprentices. I applied. In Season 2024, I joined as an Electronics Engineer, the role I had always been working toward.
+        In 2022, during my second year at Mapua, the team opened applications for apprentices. I applied. In Season 2024, I joined as an Electronics Engineer, the role I had always been working toward.
       </p>
 
       <h2 class="fade-up delay-3">Season 2024: Back on the Track</h2>
 
       <p class="fade-up delay-3">
-        Season 2024 marked the team's return after years of hiatus, and Aguila ran on an internal combustion engine. My primary contribution was to the vehicle's electronics: the circuits, core systems, and telemetry that keep the vehicle running and communicating data in real time. Getting the electronics right in a competition vehicle means working with tight constraints, and every component matters because failure during a run is not an option.
+        Season 2024 marked the team's return after years of hiatus, and Aguila ran on an internal combustion engine. My primary contribution was to the vehicle's electronics, a role that came with little room for error, since failure during a run was not an option.
       </p>
 
       <p class="fade-up delay-3">
@@ -382,7 +403,7 @@
       <h2 class="fade-up delay-4">Season 2026: A New Frontier</h2>
 
       <p class="fade-up delay-4">
-        Season 2026 was different in every way. The team made the shift from internal combustion to battery electric, a transition that put Mapua Cardinal One among the first Philippine teams to compete with a fully electric prototype at Shell Eco-marathon Asia Pacific and the Middle East. It was uncharted territory, and I was still part of it, continuing my role in vehicle electronics development while also serving as Media Manager, handling the team's photography, videography, and social media.
+        Season 2026 was different in every way. The team made the shift from internal combustion to battery electric, a transition that put Mapua Cardinal One among the first Philippine teams to compete with a fully electric prototype at Shell Eco-marathon Asia Pacific and the Middle East. It was uncharted territory, and I was still part of it, continuing my role in vehicle electronics development while also serving as Media Manager, handling the team's branding and public presence.
       </p>
 
       <p class="fade-up delay-4">
@@ -397,32 +418,97 @@
         <p><strong>Team:</strong> Mapua University Cardinal One</p>
         <p><strong>Competition:</strong> Shell Eco-marathon Asia Pacific and the Middle East</p>
         <p><strong>Role:</strong> Electronics Engineer, Media Manager</p>
-        <p><strong>Seasons:</strong> 2024, 2026 (active participation 2023 to 2025)</p>
+        <p><strong>Seasons:</strong> 2024, 2026 (active participation 2022 to 2025)</p>
         <p><strong>Institution:</strong> Mapua University</p>
       </div>
 
     </div>
 
   </article>
-
-  <div class="connect-cta fade-up delay-5">
-    <div class="connect-heading">Let's Connect</div>
-    <div class="connect-email">jcdcocampo@gmail.com</div>
-    <button class="send-email-btn" onclick="window.location.href='mailto:jcdcocampo@gmail.com'">
-      Send Email
-    </button>
-  </div>
-
   <footer class="fade-up delay-5">
     <div class="footer-links">
       <a href="index.html">Home</a>
       <a href="privacy.html">Privacy Policy</a>
       <a href="terms.html">Terms and Conditions</a>
     </div>
-    &copy; 2026 Engr. Jose Carlo David Ocampo. All rights reserved.
+    &copy; 2026 Jose Carlo David Ocampo. All rights reserved.
   </footer>
 
-  <script src="chatbot.js" defer></script>
+  
+<script>
+(function(){
+  var tb=document.querySelector('.top-bar');
+  var title=tb&&(tb.querySelector('.page-title')||tb.querySelector('.breadcrumb'));
+  if(!tb||!title)return;
+  var origSize=parseFloat(getComputedStyle(title).fontSize);
+  var minSize=Math.max(16, origSize*0.7);
+  var ticking=false;
+  window.addEventListener('scroll',function(){
+    if(!ticking){ticking=true;requestAnimationFrame(function(){
+      var p=Math.min(1,window.scrollY/80);
+      title.style.fontSize=((1-p)*origSize+p*minSize)+'px';
+      ticking=false;
+    });}
+  },{passive:true});
+})();
+</script>
 
+
+
+<script>window.__navActive="projects";</script>
+<div id="navc" style="opacity:0;position:fixed;bottom:32px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;z-index:1000">
+    <div id="pill" style="position:relative;display:flex;align-items:stretch;padding:5px;border-radius:9999px;
+      background:linear-gradient(180deg,rgba(255,255,255,.18) 0%,rgba(245,245,255,.14) 100%);
+      backdrop-filter:blur(72px) saturate(240%) brightness(1.08);-webkit-backdrop-filter:blur(72px) saturate(240%) brightness(1.08);
+      box-shadow:0 0 0 .5px rgba(255,255,255,.5),0 0 0 1px rgba(0,0,0,.06),0 6px 30px rgba(0,0,0,.10),inset 0 1.5px 0 rgba(255,255,255,1),inset 0 -.5px 0 rgba(0,0,0,.04);
+      cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;
+      transition:background .45s,box-shadow .45s,transform .38s ease">
+      <div id="rpill" style="position:absolute;border-radius:9999px;pointer-events:none;z-index:0;
+        background:rgba(0,0,0,.10);opacity:1;transition:opacity .2s ease"></div>
+      <div id="ind" style="position:absolute;border-radius:9999px;pointer-events:none;z-index:1;
+        opacity:0;transition:opacity .18s ease;
+        background:rgba(0,122,255,.13);
+        backdrop-filter:blur(16px) saturate(400%) brightness(1.15);-webkit-backdrop-filter:blur(16px) saturate(400%) brightness(1.15);
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.68),inset 0 1.5px 0 rgba(255,255,255,.92),inset 0 -1px 0 rgba(0,0,0,.07),0 0 0 .5px rgba(255,255,255,.5),0 0 18px rgba(0,122,255,.18),0 3px 12px rgba(0,122,255,.13)">
+      </div>
+      <button class="nb" data-nav="home" style="color:rgba(0,0,0,.36)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span style="font-size:10px;font-weight:600;letter-spacing:.3px;line-height:1">Home</span>
+      </button>
+      <button class="nb" data-nav="experience" style="color:rgba(0,0,0,.36)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span style="font-size:10px;font-weight:600;letter-spacing:.3px;line-height:1">Experience</span>
+      </button>
+      <button class="nb" data-nav="projects" style="color:rgba(0,0,0,.36)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span style="font-size:10px;font-weight:600;letter-spacing:.3px;line-height:1">Projects</span>
+      </button>
+      <button class="nb" data-nav="certs" style="color:rgba(0,0,0,.36)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9.09 14L7 21l5-2 5 2-2.09-7"/></svg>
+        <span style="font-size:10px;font-weight:600;letter-spacing:.3px;line-height:1">Certs</span>
+      </button>
+      <div id="wl" style="position:absolute;inset:0;pointer-events:none;z-index:3;display:flex;align-items:stretch;padding:5px;gap:1px;will-change:clip-path">
+        <div class="bw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span style="font-size:10px;letter-spacing:.3px;line-height:1">Home</span></div>
+        <div class="bw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span style="font-size:10px;letter-spacing:.3px;line-height:1">Experience</span></div>
+        <div class="bw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span style="font-size:10px;letter-spacing:.3px;line-height:1">Projects</span></div>
+        <div class="bw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9.09 14L7 21l5-2 5 2-2.09-7"/></svg><span style="font-size:10px;letter-spacing:.3px;line-height:1">Certs</span></div>
+      </div>
+    </div>
+  </div>
+<div id="mian" style="position:fixed;bottom:32px;right:32px;z-index:1001;width:60px;height:60px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer;
+      background:linear-gradient(180deg,rgba(255,255,255,.18) 0%,rgba(245,245,255,.14) 100%);
+      backdrop-filter:blur(72px) saturate(240%);-webkit-backdrop-filter:blur(72px) saturate(240%);
+      box-shadow:0 0 0 .5px rgba(255,255,255,.8),0 0 0 1px rgba(0,0,0,.06),0 8px 28px rgba(0,0,0,.09),inset 0 1.5px 0 rgba(255,255,255,1);
+      transition:background .45s,box-shadow .45s,transform .38s ease">
+      <div id="mind" style="position:absolute;width:60px;height:60px;border-radius:50%;pointer-events:none;z-index:1;will-change:transform;transform-origin:center;
+        background:rgba(0,122,255,.13);
+        backdrop-filter:blur(16px) saturate(400%) brightness(1.15);-webkit-backdrop-filter:blur(16px) saturate(400%) brightness(1.15);
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.68),inset 0 1.5px 0 rgba(255,255,255,.92),inset 0 -1px 0 rgba(0,0,0,.07),0 0 0 .5px rgba(255,255,255,.5),0 0 22px rgba(0,122,255,.22),0 4px 16px rgba(0,122,255,.16);
+        opacity:0;transition:opacity .25s ease"></div>
+      <svg id="mico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,.38)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:relative;z-index:4;pointer-events:none;transition:stroke .25s ease">
+        <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
+      </svg>
+    </div>
+<script src="nav.js" defer></script>
 </body>
 </html>
