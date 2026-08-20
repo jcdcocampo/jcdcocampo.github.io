@@ -598,6 +598,28 @@
       font-size: 13px;
       color: var(--text-tertiary);
     }
+    .footer-connect {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 28px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--separator);
+    }
+    .footer-connect-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+    .footer-connect-email {
+      font-size: 15px;
+      color: var(--text-secondary);
+      transition: color var(--transition);
+    }
+    .footer-connect-email:hover { color: var(--accent); }
+    .footer-connect .send-email-btn { margin-top: 6px; }
     .footer-links {
       display: flex;
       justify-content: center;
@@ -1245,6 +1267,13 @@
 
   </div>
   <footer>
+    <div class="footer-connect">
+      <h2 class="footer-connect-title">Let's Connect</h2>
+      <a href="mailto:jcdcocampo@gmail.com" class="footer-connect-email">jcdcocampo@gmail.com</a>
+      <button class="send-email-btn" onclick="window.location.href='mailto:jcdcocampo@gmail.com'">
+        Send Email
+      </button>
+    </div>
     <div class="footer-links">
       <a href="index.html">Home</a>
       <a href="privacy.html">Privacy Policy</a>
