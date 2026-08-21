@@ -1,4 +1,4 @@
-var PAGES={home:{t:'JC Ocampo',s:'Electronics Engineer · Manila, PH'},experience:{t:'Experience',s:'Roles, internships, and work history'},projects:{t:'Projects',s:'IEEE research, robots, and AI apps'},certs:{t:'Certifications',s:'PRC · Cisco · Google Cloud · Huawei'}};
+var PAGES={home:{t:'JC Ocampo',s:'Electronics Engineer · Manila, PH'},experience:{t:'Experience',s:'Roles, internships, and work history'},projects:{t:'Projects',s:'IEEE research, robots, and AI apps'},certs:{t:'Certifications',s:'PRC · Cisco · Google Cloud'}};
 var NAV_URLS={home:'index.html',experience:'experience.html',projects:'projects.html',certs:'certifications.html'};
 var isDark=false,curId=window.__navActive||'home';
 
@@ -2294,12 +2294,16 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
 })();
 
 /* ══════════════════════════════════════════════════════════════════
-   COMMAND PALETTE  (⌘K / Ctrl+K)
-   Site-wide quick launcher. Lives in nav.js so every page that loads
-   this script gets it automatically — same as the nav pill and Mian.
-   Actions: open Mian, toggle theme, jump to a section on the current
-   page, or navigate to another page. Intercepts ⌘K so the browser's
-   native search shortcut no longer fires.
+   COMMAND PALETTE  (⌘K / Ctrl+K) — Spotlight-style
+   Site-wide quick launcher, lives in nav.js so every page gets it.
+   Two kinds of results:
+     • Live commands (Actions, Jump to, Go to page) — built fresh each
+       time the palette opens, since they depend on the current page.
+     • A static content index (Projects / Certifications / Experience /
+       Education) — real titles pulled straight from the site's own
+       pages, so searching "AWS" or "Cisco" finds the actual item and
+       deep-links to it, the way Spotlight surfaces files, not just menus.
+   Intercepts ⌘K so the browser's native search shortcut no longer fires.
    ══════════════════════════════════════════════════════════════════ */
 (function () {
   if (window.__cmdkLoaded) return;
@@ -2315,13 +2319,20 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     moon:    svg('<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'),
     sun:     svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>'),
     section: svg('<line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>'),
-    page:    svg('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>')
+    page:    svg('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'),
+    contact: svg('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2.2"/><path d="M5.5 17c.7-2.1 2.2-3.2 3.5-3.2s2.8 1.1 3.5 3.2"/><line x1="14" y1="9" x2="18" y2="9"/><line x1="14" y1="12.5" x2="18" y2="12.5"/>'),
+    mail:    svg('<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>'),
+    share:   svg('<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/>'),
+    proj:    svg('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+    cert:    svg('<circle cx="12" cy="8" r="5"/><path d="M9.09 14L7 21l5-2 5 2-2.09-7"/>'),
+    exp:     svg('<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'),
+    edu:     svg('<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/>')
   };
   var PAGE_ICON = {
     home:       svg('<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'),
-    experience: svg('<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'),
-    projects:   svg('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
-    certs:      svg('<circle cx="12" cy="8" r="5"/><path d="M9.09 14L7 21l5-2 5 2-2.09-7"/>')
+    experience: ICON.exp,
+    projects:   ICON.proj,
+    certs:      ICON.cert
   };
 
   var SECTION_LABELS = {
@@ -2332,10 +2343,38 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     'section-leadership':     'Leadership & Activities',
     'section-certifications': 'Certifications & Licenses',
     'section-organization':   'Organization',
-    'section-social':         'Social Links'
+    'section-social':         'Social Links',
+    'section-share':          'Share this portfolio'
   };
 
-  /* ── Styles ── */
+  /* ── Static content index — real titles from the site's own pages, so
+     a search actually finds things, not just menu commands. Kept as data
+     here (rather than scraped from the current page's DOM) so results
+     are the same no matter which page the palette is opened from. ── */
+  var CONTENT = [
+    { group: 'Projects', label: 'Mian: An Intelligent Portfolio Assistant', hint: 'Personal Project', icon: ICON.proj, url: 'mian.html', keywords: 'mian chatbot ai assistant portfolio javascript' },
+    { group: 'Projects', label: 'Aguila — Energy-Efficient Vehicle', hint: 'Mapua Cardinal One · Shell Eco-marathon', icon: ICON.proj, url: 'aguila.html', keywords: 'aguila shell eco-marathon vehicle energy efficient cardinal one' },
+    { group: 'Projects', label: 'Banana Shelf Life Neural Network', hint: 'IEEE research', icon: ICON.proj, url: 'banana-shelflife.html', keywords: 'banana shelf life neural network lakatan ieee sensor prediction' },
+    { group: 'Projects', label: 'EEG Exoskeleton (BCI)', hint: 'Brain-computer interface research', icon: ICON.proj, url: 'eeg-exoskeleton.html', keywords: 'eeg exoskeleton brain computer interface bci rehabilitation' },
+
+    { group: 'Certifications', label: 'Electronics Engineer License', hint: 'PRC', icon: ICON.cert, url: 'certifications.html#section-licenses', keywords: 'prc electronics engineer license' },
+    { group: 'Certifications', label: 'Electronics Technician License', hint: 'PRC', icon: ICON.cert, url: 'certifications.html#section-licenses', keywords: 'prc electronics technician license' },
+    { group: 'Certifications', label: 'Network Fundamentals', hint: 'Cisco', icon: ICON.cert, url: 'certifications.html#section-networking', keywords: 'cisco network fundamentals networking' },
+    { group: 'Certifications', label: 'CCNA: Enterprise Networking, Security, and Automation', hint: 'Cisco', icon: ICON.cert, url: 'certifications.html#section-networking', keywords: 'ccna cisco enterprise networking security automation' },
+    { group: 'Certifications', label: 'CCNA: Switching, Routing, and Wireless Essentials', hint: 'Cisco', icon: ICON.cert, url: 'certifications.html#section-networking', keywords: 'ccna cisco switching routing wireless essentials' },
+    { group: 'Certifications', label: 'Google Cloud Fundamentals', hint: 'Google Cloud', icon: ICON.cert, url: 'certifications.html#section-cloud-computing', keywords: 'google cloud fundamentals gcp cloud computing' },
+    { group: 'Certifications', label: 'Foundations of Cybersecurity', hint: 'Google / Coursera', icon: ICON.cert, url: 'certifications.html#section-cybersecurity', keywords: 'cybersecurity foundations security' },
+
+    { group: 'Experience', label: 'Application & Cloud Support Engineer', hint: 'Accenture, Inc. · 2026', icon: ICON.exp, url: 'experience.html#section-current', keywords: 'accenture cloud support engineer application current job' },
+    { group: 'Experience', label: 'IT Helpdesk Intern', hint: 'Converge ICT Solutions Inc. · 2025', icon: ICON.exp, url: 'experience.html#section-past', keywords: 'converge ict helpdesk intern' },
+    { group: 'Experience', label: 'Electronics Engineer & Media Manager', hint: 'Mapua University Cardinal One', icon: ICON.exp, url: 'experience.html#section-past', keywords: 'cardinal one electronics engineer media manager' },
+    { group: 'Experience', label: 'Apprentice', hint: 'Mapua University Cardinal One', icon: ICON.exp, url: 'experience.html#section-past', keywords: 'cardinal one apprentice' },
+
+    { group: 'Education', label: 'BS Electronics Engineering', hint: 'Mapua University · 2025', icon: ICON.edu, url: 'experience.html#section-education', keywords: 'mapua university bs electronics engineering degree' }
+  ];
+
+  /* ── Styles — Spotlight-flavored: quieter icons, group label sits
+     directly above its own items, result count bottom-right. ── */
   function injectCss() {
     if (document.getElementById('cmdk-style')) return;
     var css =
@@ -2344,44 +2383,44 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       'backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);transition:opacity .18s ease;}' +
     '.cmdk-overlay.cmdk-show{opacity:1;pointer-events:auto;}' +
     '[data-theme="dark"] .cmdk-overlay{background:rgba(0,0,0,.45);}' +
-    '.cmdk-panel{width:100%;max-width:560px;border-radius:16px;overflow:hidden;' +
+    '.cmdk-panel{width:100%;max-width:560px;border-radius:14px;overflow:hidden;' +
       "font-family:var(--sf,-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif);" +
-      'background:rgba(255,255,255,.86);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);' +
+      'background:rgba(255,255,255,.92);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);' +
       'box-shadow:0 0 0 .5px rgba(0,0,0,.08),0 24px 60px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.7);' +
       'transform:translateY(-8px) scale(.98);opacity:0;transition:transform .2s cubic-bezier(.22,1,.36,1),opacity .2s ease;}' +
     '.cmdk-show .cmdk-panel{transform:none;opacity:1;}' +
-    '[data-theme="dark"] .cmdk-panel{background:rgba(30,30,32,.82);' +
+    '[data-theme="dark"] .cmdk-panel{background:rgba(30,30,32,.9);' +
       'box-shadow:0 0 0 .5px rgba(255,255,255,.12),0 24px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08);}' +
-    '.cmdk-inputwrap{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:.5px solid rgba(0,0,0,.08);}' +
-    '[data-theme="dark"] .cmdk-inputwrap{border-color:rgba(255,255,255,.1);}' +
+    '.cmdk-inputwrap{display:flex;align-items:center;gap:10px;padding:14px 16px;}' +
     '.cmdk-inputwrap svg{width:19px;height:19px;color:#8e8e93;flex-shrink:0;}' +
-    '.cmdk-input{flex:1;border:0;outline:0;background:transparent;font:inherit;font-size:16px;color:#1c1c1e;padding:0;}' +
-    '.cmdk-input::placeholder{color:#aeaeb2;}' +
+    '.cmdk-input{flex:1;border:0;outline:0;background:transparent;font:inherit;font-size:18px;font-weight:400;color:#1c1c1e;padding:0;}' +
+    '.cmdk-input::placeholder{color:#c7c7cc;}' +
     '[data-theme="dark"] .cmdk-input{color:#fff;}' +
-    '[data-theme="dark"] .cmdk-input::placeholder{color:#8e8e93;}' +
-    '.cmdk-list{max-height:min(52vh,380px);overflow-y:auto;padding:6px;}' +
-    '.cmdk-group{font-size:11px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:#aeaeb2;padding:8px 12px 4px;}' +
+    '[data-theme="dark"] .cmdk-input::placeholder{color:#68686d;}' +
+    '.cmdk-divider{height:.5px;background:rgba(0,0,0,.09);margin:0 14px;}' +
+    '[data-theme="dark"] .cmdk-divider{background:rgba(255,255,255,.12);}' +
+    '.cmdk-list{max-height:min(52vh,400px);overflow-y:auto;padding:8px 8px 0;}' +
+    '.cmdk-group{font-size:11.5px;font-weight:600;color:#8e8e93;padding:10px 10px 3px;}' +
     '[data-theme="dark"] .cmdk-group{color:#8e8e93;}' +
-    '.cmdk-row{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;cursor:pointer;}' +
-    '.cmdk-row.cmdk-sel{background:rgba(0,122,255,.12);}' +
-    '[data-theme="dark"] .cmdk-row.cmdk-sel{background:rgba(10,132,255,.26);}' +
-    '.cmdk-ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;' +
-      'background:rgba(0,0,0,.05);color:#1c1c1e;transition:background .12s,color .12s;}' +
-    '.cmdk-ic svg{width:17px;height:17px;}' +
-    '[data-theme="dark"] .cmdk-ic{background:rgba(255,255,255,.1);color:#fff;}' +
-    '.cmdk-row.cmdk-sel .cmdk-ic{background:#007aff;color:#fff;}' +
-    '[data-theme="dark"] .cmdk-row.cmdk-sel .cmdk-ic{background:#0a84ff;color:#fff;}' +
-    '.cmdk-txt{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1;}' +
-    '.cmdk-label{font-size:14.5px;font-weight:500;color:#1c1c1e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
-    '[data-theme="dark"] .cmdk-label{color:#fff;}' +
-    '.cmdk-hint{font-size:12px;color:#8e8e93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
-    '.cmdk-empty{padding:26px;text-align:center;color:#8e8e93;font-size:14px;}' +
-    '.cmdk-foot{display:flex;gap:16px;padding:9px 16px;border-top:.5px solid rgba(0,0,0,.08);font-size:11.5px;color:#8e8e93;}' +
-    '[data-theme="dark"] .cmdk-foot{border-color:rgba(255,255,255,.1);}' +
-    '.cmdk-foot span{display:inline-flex;align-items:center;gap:5px;}' +
-    '.cmdk-foot kbd{font-family:inherit;background:rgba(0,0,0,.06);border-radius:4px;padding:1px 6px;font-size:11px;line-height:1.5;}' +
+    '.cmdk-row{display:flex;align-items:center;gap:10px;padding:7px 10px;margin:0 2px;border-radius:7px;cursor:pointer;}' +
+    '.cmdk-row.cmdk-sel{background:rgba(0,122,255,.13);}' +
+    '[data-theme="dark"] .cmdk-row.cmdk-sel{background:rgba(10,132,255,.28);}' +
+    '.cmdk-ic{width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#98989d;}' +
+    '.cmdk-ic svg{width:16px;height:16px;}' +
+    '.cmdk-row.cmdk-sel .cmdk-ic{color:#007aff;}' +
+    '[data-theme="dark"] .cmdk-row.cmdk-sel .cmdk-ic{color:#0a84ff;}' +
+    '.cmdk-txt{display:flex;flex-direction:column;gap:0;min-width:0;flex:1;}' +
+    '.cmdk-label{font-size:14.5px;font-weight:450;color:#1c1c1e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+    '[data-theme="dark"] .cmdk-label{color:#f2f2f2;}' +
+    '.cmdk-hint{font-size:12px;color:#98989d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+    '.cmdk-empty{padding:30px 16px;text-align:center;color:#8e8e93;font-size:14px;}' +
+    '.cmdk-foot{display:flex;align-items:center;justify-content:flex-end;gap:14px;padding:8px 14px;font-size:11.5px;color:#98989d;}' +
+    '.cmdk-foot .cmdk-hints{display:flex;gap:14px;margin-right:auto;}' +
+    '.cmdk-foot span{display:inline-flex;align-items:center;gap:4px;}' +
+    '.cmdk-foot kbd{font-family:inherit;background:rgba(0,0,0,.06);border-radius:4px;padding:1px 5px;font-size:10.5px;line-height:1.5;}' +
     '[data-theme="dark"] .cmdk-foot kbd{background:rgba(255,255,255,.12);}' +
-    '@media (max-width:600px){.cmdk-overlay{padding:10vh 14px 14px;}.cmdk-foot{display:none;}}';
+    '.cmdk-count{font-variant-numeric:tabular-nums;}' +
+    '@media (max-width:600px){.cmdk-overlay{padding:10vh 14px 14px;}.cmdk-foot .cmdk-hints{display:none;}}';
     var st = document.createElement('style');
     st.id = 'cmdk-style';
     st.textContent = css;
@@ -2399,12 +2438,12 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
   }
 
   /* ── Build DOM ── */
-  var overlay, panel, input, listEl;
+  var overlay, panel, input, listEl, countEl;
   function buildUI() {
     overlay = document.createElement('div');
     overlay.className = 'cmdk-overlay';
     overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-label', 'Command palette');
+    overlay.setAttribute('aria-label', 'Search');
 
     panel = document.createElement('div');
     panel.className = 'cmdk-panel';
@@ -2416,24 +2455,34 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     input = document.createElement('input');
     input.className = 'cmdk-input';
     input.type = 'text';
-    input.placeholder = 'Search actions, sections, pages…';
+    input.placeholder = 'Search';
     input.setAttribute('aria-label', 'Search');
     input.autocapitalize = 'off';
     input.autocomplete = 'off';
     input.spellcheck = false;
     iw.appendChild(input);
 
+    var divider = document.createElement('div');
+    divider.className = 'cmdk-divider';
+
     listEl = document.createElement('div');
     listEl.className = 'cmdk-list';
 
     var foot = document.createElement('div');
     foot.className = 'cmdk-foot';
-    foot.innerHTML =
+    var hints = document.createElement('div');
+    hints.className = 'cmdk-hints';
+    hints.innerHTML =
       '<span><kbd>&uarr;</kbd><kbd>&darr;</kbd> navigate</span>' +
       '<span><kbd>&crarr;</kbd> open</span>' +
       '<span><kbd>esc</kbd> close</span>';
+    countEl = document.createElement('span');
+    countEl.className = 'cmdk-count';
+    foot.appendChild(hints);
+    foot.appendChild(countEl);
 
     panel.appendChild(iw);
+    panel.appendChild(divider);
     panel.appendChild(listEl);
     panel.appendChild(foot);
     overlay.appendChild(panel);
@@ -2443,8 +2492,7 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     input.addEventListener('input', function () { filter(input.value); });
   }
 
-  /* ── Theme toggle: reuse the page's own toggle button if present (so the
-     home page's fancy avatar transition still plays); else flip directly. ── */
+  /* ── Theme toggle: reuse the page's own toggle button if present ── */
   function toggleTheme() {
     var btn = document.getElementById('themeToggle') || document.getElementById('stickyThemeToggle');
     if (btn) { btn.click(); return; }
@@ -2457,7 +2505,27 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     if (m) m.setAttribute('content', dark ? '#f2f2f7' : '#000000');
   }
 
-  /* ── Command list (rebuilt each open so theme label / current page are fresh) ── */
+  /* ── Copy-to-clipboard helper, with a safe fallback ── */
+  function copyText(text) {
+    return (navigator.clipboard && navigator.clipboard.writeText)
+      ? navigator.clipboard.writeText(text).catch(function () { fallbackCopy(text); })
+      : Promise.resolve(fallbackCopy(text));
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  var JC_EMAIL = 'jcdcocampo@gmail.com';
+  var SITE_URL = 'https://jcdcocampo.github.io/';
+
+  /* ── Command list (rebuilt each open so theme label / current page stay fresh) ── */
   function buildCommands() {
     var out = [];
     var active = window.__navActive || 'home';
@@ -2469,6 +2537,50 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       run: function () {
         if (typeof window.__openMian === 'function') window.__openMian();
         else { var m = document.getElementById('mian'); if (m) m.click(); }
+      }
+    });
+    out.push({
+      group: 'Actions', label: 'Contact JC', hint: 'Opens the digital contact card',
+      icon: ICON.contact, keywords: 'contact card vcard save number reach connect',
+      run: function () {
+        if (typeof window.__openContactCard === 'function') window.__openContactCard();
+        else window.location.href = (active === 'home' ? '#section-social' : 'index.html#section-social');
+      }
+    });
+    out.push({
+      group: 'Actions', label: 'Copy Email', hint: JC_EMAIL,
+      icon: ICON.mail, keywords: 'copy email address contact gmail',
+      noAutoClose: true,
+      run: function (row) {
+        copyText(JC_EMAIL).then(function () {
+          if (!row) return;
+          var lbl = row.querySelector('.cmdk-label');
+          if (lbl) lbl.textContent = 'Copied!';
+          setTimeout(close, 700);
+        });
+      }
+    });
+    out.push({
+      group: 'Actions', label: 'Send Email', hint: JC_EMAIL,
+      icon: ICON.mail, keywords: 'send email mail compose message gmail',
+      run: function () { window.location.href = 'mailto:' + JC_EMAIL; }
+    });
+    out.push({
+      group: 'Actions', label: 'Share Portfolio', hint: 'jcdcocampo.github.io',
+      icon: ICON.share, keywords: 'share portfolio link site url send',
+      noAutoClose: true,
+      run: function (row) {
+        if (navigator.share) {
+          navigator.share({ title: 'Jose Carlo David Ocampo', url: SITE_URL }).catch(function () {});
+          close();
+        } else {
+          copyText(SITE_URL).then(function () {
+            if (!row) return;
+            var lbl = row.querySelector('.cmdk-label');
+            if (lbl) lbl.textContent = 'Link copied!';
+            setTimeout(close, 700);
+          });
+        }
       }
     });
     var dark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -2510,28 +2622,43 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       });
     }
 
+    // Real content — projects, certifications, experience, education
+    CONTENT.forEach(function (c) {
+      out.push({
+        group: c.group, label: c.label, hint: c.hint, icon: c.icon,
+        keywords: c.keywords, run: function () { window.location.href = c.url; }
+      });
+    });
+
     return out;
   }
 
-  /* ── Filter / render / selection ── */
+  /* ── Filter / render / selection ──
+     Empty query: Actions + Jump to + Go to page only (Spotlight-style
+     "suggestions"). Typing: everything, filtered, including content. ── */
   var all = [], shown = [], sel = 0;
 
   function filter(q) {
     q = (q || '').trim().toLowerCase();
-    shown = !q ? all.slice() : all.filter(function (c) {
-      return (c.label + ' ' + (c.hint || '') + ' ' + (c.keywords || '')).toLowerCase().indexOf(q) >= 0;
-    });
+    if (!q) {
+      shown = all.filter(function (c) { return c.group === 'Actions' || c.group === 'Jump to' || c.group === 'Go to page'; });
+    } else {
+      shown = all.filter(function (c) {
+        return (c.label + ' ' + (c.hint || '') + ' ' + (c.keywords || '')).toLowerCase().indexOf(q) >= 0;
+      });
+    }
     sel = 0;
-    render();
+    render(q);
   }
 
-  function render() {
+  function render(q) {
     listEl.innerHTML = '';
     if (!shown.length) {
       var e = document.createElement('div');
       e.className = 'cmdk-empty';
       e.textContent = 'No results';
       listEl.appendChild(e);
+      countEl.textContent = '';
       return;
     }
     var lastGroup = null;
@@ -2554,6 +2681,9 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       row.addEventListener('click', function () { sel = i; execSel(); });
       listEl.appendChild(row);
     });
+    // Only count as "results" once the person is actually searching —
+    // matches the Spotlight example: N results shown while typing.
+    countEl.textContent = q ? (shown.length + (shown.length === 1 ? ' result' : ' results')) : '';
   }
 
   function paintSel() {
@@ -2574,6 +2704,11 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
   function execSel() {
     var c = shown[sel];
     if (!c) return;
+    if (c.noAutoClose) {
+      var row = listEl.querySelector('.cmdk-row[data-i="' + sel + '"]');
+      try { c.run(row); } catch (e) {}
+      return;
+    }
     close();
     setTimeout(function () { try { c.run(); } catch (e) {} }, 60);
   }
