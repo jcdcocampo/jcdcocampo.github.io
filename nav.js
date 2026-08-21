@@ -594,6 +594,19 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     ]
   };
 
+  // -------------------- EMAIL-INTENT INSTANT REPLY --------------------
+  // When a visitor asks how to reach JC / for his email, answer instantly
+  // from this local cache instead of round-tripping the LLM. Every variant
+  // contains the address so the Copy/Send email buttons attach automatically
+  // via maybeAddEmailActions().
+  const EMAIL_INTENT = /(e-?mail|gmail|contact|get in touch|reach (?:out|him|jc|you)|how (?:can|do|to|would) i .*(?:contact|reach|email|message|connect)|connect with (?:him|jc)|his (?:email|contact)|your (?:email|contact)|mail address|hire (?:him|jc)|work with (?:him|jc))/i;
+
+  const EMAIL_REPLIES = [
+    "You can reach JC directly at jcdcocampo@gmail.com. Use the buttons below to copy the address or open your mail app.",
+    "The best way to reach JC is by email at jcdcocampo@gmail.com. Tap below to copy it or start a message.",
+    "JC's email is jcdcocampo@gmail.com — feel free to copy it or send a message straight away using the buttons below."
+  ];
+
   if (window.__mianChatbotLoaded) return;
   window.__mianChatbotLoaded = true;
 
@@ -1684,6 +1697,12 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
 
     function isPanelOpen() { return panel.classList.contains('cb-open'); }
 
+    // Expose to the command palette (⌘K) so its "Ask Mian" action can
+    // open the chat without duplicating the open/close logic.
+    window.__openMian  = openPanel;
+    window.__closeMian = closePanel;
+    window.__isMianOpen = isPanelOpen;
+
     fab.addEventListener('click', openPanel);
     fab.addEventListener('touchend', (e) => {
       e.preventDefault();
@@ -2055,6 +2074,31 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       }
     }
 
+    // Types a locally-provided reply into a bubble with the same feel as a
+    // real answer (typing indicator + natural pause), but no network call.
+    // Used for the email-intent instant reply.
+    async function replyInstant(reply) {
+      const typingEl = addTyping();
+      glowManager.pauseIdle();
+
+      await new Promise(resolve => setTimeout(resolve, 350 + Math.random() * 300));
+
+      if (typingEl._anticipationTimers) typingEl._anticipationTimers.forEach(clearTimeout);
+      if (typingEl._countUpInterval) clearInterval(typingEl._countUpInterval);
+      typingEl.remove();
+
+      const { bubble } = addBotBubbleForTyping();
+      await typeIntoBubble(bubble, reply);
+      maybeAddEmailActions(reply);
+
+      history.push({ role: 'assistant', content: reply });
+
+      isSending = false;
+      updateUI();
+      textarea.focus();
+      glowManager.resumeIdle();
+    }
+
     async function send() {
       const text = textarea.value.trim();
       if (!text || isSending) return;
@@ -2073,7 +2117,13 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       textarea.value = '';
       updateUI();
 
-      await attemptReply();
+      // Contact/email questions get an instant cached answer (with the
+      // Copy/Send email buttons) instead of hitting the LLM.
+      if (EMAIL_INTENT.test(text)) {
+        await replyInstant(EMAIL_REPLIES[Math.floor(Math.random() * EMAIL_REPLIES.length)]);
+      } else {
+        await attemptReply();
+      }
     }
 
     // Instant reply for the quick-question chips — pulls a random
@@ -2241,4 +2291,323 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     pageWrap.style.transform='translateX(0)';
     pageWrap.style.opacity='1';
   },{passive:true});
+})();
+
+/* ══════════════════════════════════════════════════════════════════
+   COMMAND PALETTE  (⌘K / Ctrl+K)
+   Site-wide quick launcher. Lives in nav.js so every page that loads
+   this script gets it automatically — same as the nav pill and Mian.
+   Actions: open Mian, toggle theme, jump to a section on the current
+   page, or navigate to another page. Intercepts ⌘K so the browser's
+   native search shortcut no longer fires.
+   ══════════════════════════════════════════════════════════════════ */
+(function () {
+  if (window.__cmdkLoaded) return;
+  window.__cmdkLoaded = true;
+
+  /* ── Icon helpers (match the nav pill's stroke style) ── */
+  function svg(inner) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+           'stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+  }
+  var ICON = {
+    mian:    svg('<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>'),
+    moon:    svg('<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'),
+    sun:     svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>'),
+    section: svg('<line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>'),
+    page:    svg('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>')
+  };
+  var PAGE_ICON = {
+    home:       svg('<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'),
+    experience: svg('<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'),
+    projects:   svg('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+    certs:      svg('<circle cx="12" cy="8" r="5"/><path d="M9.09 14L7 21l5-2 5 2-2.09-7"/>')
+  };
+
+  var SECTION_LABELS = {
+    'section-about':          'About',
+    'section-experience':     'Experience',
+    'section-projects':       'Projects',
+    'section-education':      'Education',
+    'section-leadership':     'Leadership & Activities',
+    'section-certifications': 'Certifications & Licenses',
+    'section-organization':   'Organization',
+    'section-social':         'Social Links'
+  };
+
+  /* ── Styles ── */
+  function injectCss() {
+    if (document.getElementById('cmdk-style')) return;
+    var css =
+    '.cmdk-overlay{position:fixed;inset:0;z-index:100000;display:flex;align-items:flex-start;justify-content:center;' +
+      'padding:15vh 20px 20px;opacity:0;pointer-events:none;background:rgba(0,0,0,.18);' +
+      'backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);transition:opacity .18s ease;}' +
+    '.cmdk-overlay.cmdk-show{opacity:1;pointer-events:auto;}' +
+    '[data-theme="dark"] .cmdk-overlay{background:rgba(0,0,0,.45);}' +
+    '.cmdk-panel{width:100%;max-width:560px;border-radius:16px;overflow:hidden;' +
+      "font-family:var(--sf,-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif);" +
+      'background:rgba(255,255,255,.86);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);' +
+      'box-shadow:0 0 0 .5px rgba(0,0,0,.08),0 24px 60px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.7);' +
+      'transform:translateY(-8px) scale(.98);opacity:0;transition:transform .2s cubic-bezier(.22,1,.36,1),opacity .2s ease;}' +
+    '.cmdk-show .cmdk-panel{transform:none;opacity:1;}' +
+    '[data-theme="dark"] .cmdk-panel{background:rgba(30,30,32,.82);' +
+      'box-shadow:0 0 0 .5px rgba(255,255,255,.12),0 24px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08);}' +
+    '.cmdk-inputwrap{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:.5px solid rgba(0,0,0,.08);}' +
+    '[data-theme="dark"] .cmdk-inputwrap{border-color:rgba(255,255,255,.1);}' +
+    '.cmdk-inputwrap svg{width:19px;height:19px;color:#8e8e93;flex-shrink:0;}' +
+    '.cmdk-input{flex:1;border:0;outline:0;background:transparent;font:inherit;font-size:16px;color:#1c1c1e;padding:0;}' +
+    '.cmdk-input::placeholder{color:#aeaeb2;}' +
+    '[data-theme="dark"] .cmdk-input{color:#fff;}' +
+    '[data-theme="dark"] .cmdk-input::placeholder{color:#8e8e93;}' +
+    '.cmdk-list{max-height:min(52vh,380px);overflow-y:auto;padding:6px;}' +
+    '.cmdk-group{font-size:11px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:#aeaeb2;padding:8px 12px 4px;}' +
+    '[data-theme="dark"] .cmdk-group{color:#8e8e93;}' +
+    '.cmdk-row{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;cursor:pointer;}' +
+    '.cmdk-row.cmdk-sel{background:rgba(0,122,255,.12);}' +
+    '[data-theme="dark"] .cmdk-row.cmdk-sel{background:rgba(10,132,255,.26);}' +
+    '.cmdk-ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;' +
+      'background:rgba(0,0,0,.05);color:#1c1c1e;transition:background .12s,color .12s;}' +
+    '.cmdk-ic svg{width:17px;height:17px;}' +
+    '[data-theme="dark"] .cmdk-ic{background:rgba(255,255,255,.1);color:#fff;}' +
+    '.cmdk-row.cmdk-sel .cmdk-ic{background:#007aff;color:#fff;}' +
+    '[data-theme="dark"] .cmdk-row.cmdk-sel .cmdk-ic{background:#0a84ff;color:#fff;}' +
+    '.cmdk-txt{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1;}' +
+    '.cmdk-label{font-size:14.5px;font-weight:500;color:#1c1c1e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+    '[data-theme="dark"] .cmdk-label{color:#fff;}' +
+    '.cmdk-hint{font-size:12px;color:#8e8e93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+    '.cmdk-empty{padding:26px;text-align:center;color:#8e8e93;font-size:14px;}' +
+    '.cmdk-foot{display:flex;gap:16px;padding:9px 16px;border-top:.5px solid rgba(0,0,0,.08);font-size:11.5px;color:#8e8e93;}' +
+    '[data-theme="dark"] .cmdk-foot{border-color:rgba(255,255,255,.1);}' +
+    '.cmdk-foot span{display:inline-flex;align-items:center;gap:5px;}' +
+    '.cmdk-foot kbd{font-family:inherit;background:rgba(0,0,0,.06);border-radius:4px;padding:1px 6px;font-size:11px;line-height:1.5;}' +
+    '[data-theme="dark"] .cmdk-foot kbd{background:rgba(255,255,255,.12);}' +
+    '@media (max-width:600px){.cmdk-overlay{padding:10vh 14px 14px;}.cmdk-foot{display:none;}}';
+    var st = document.createElement('style');
+    st.id = 'cmdk-style';
+    st.textContent = css;
+    document.head.appendChild(st);
+  }
+
+  /* ── Small utilities ── */
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+  function titleCase(s) {
+    return s.replace(/\b\w/g, function (m) { return m.toUpperCase(); });
+  }
+
+  /* ── Build DOM ── */
+  var overlay, panel, input, listEl;
+  function buildUI() {
+    overlay = document.createElement('div');
+    overlay.className = 'cmdk-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-label', 'Command palette');
+
+    panel = document.createElement('div');
+    panel.className = 'cmdk-panel';
+
+    var iw = document.createElement('div');
+    iw.className = 'cmdk-inputwrap';
+    iw.innerHTML = svg('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>');
+
+    input = document.createElement('input');
+    input.className = 'cmdk-input';
+    input.type = 'text';
+    input.placeholder = 'Search actions, sections, pages…';
+    input.setAttribute('aria-label', 'Search');
+    input.autocapitalize = 'off';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    iw.appendChild(input);
+
+    listEl = document.createElement('div');
+    listEl.className = 'cmdk-list';
+
+    var foot = document.createElement('div');
+    foot.className = 'cmdk-foot';
+    foot.innerHTML =
+      '<span><kbd>&uarr;</kbd><kbd>&darr;</kbd> navigate</span>' +
+      '<span><kbd>&crarr;</kbd> open</span>' +
+      '<span><kbd>esc</kbd> close</span>';
+
+    panel.appendChild(iw);
+    panel.appendChild(listEl);
+    panel.appendChild(foot);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+    input.addEventListener('input', function () { filter(input.value); });
+  }
+
+  /* ── Theme toggle: reuse the page's own toggle button if present (so the
+     home page's fancy avatar transition still plays); else flip directly. ── */
+  function toggleTheme() {
+    var btn = document.getElementById('themeToggle') || document.getElementById('stickyThemeToggle');
+    if (btn) { btn.click(); return; }
+    var root = document.documentElement;
+    var dark = root.getAttribute('data-theme') === 'dark';
+    if (dark) { root.removeAttribute('data-theme'); }
+    else { root.setAttribute('data-theme', 'dark'); }
+    try { localStorage.setItem('theme', dark ? 'light' : 'dark'); } catch (e) {}
+    var m = document.getElementById('themeColorMeta');
+    if (m) m.setAttribute('content', dark ? '#f2f2f7' : '#000000');
+  }
+
+  /* ── Command list (rebuilt each open so theme label / current page are fresh) ── */
+  function buildCommands() {
+    var out = [];
+    var active = window.__navActive || 'home';
+
+    // Actions
+    out.push({
+      group: 'Actions', label: 'Ask Mian', hint: "Open JC's AI assistant",
+      icon: ICON.mian, keywords: 'chat assistant ai help ask question mian',
+      run: function () {
+        if (typeof window.__openMian === 'function') window.__openMian();
+        else { var m = document.getElementById('mian'); if (m) m.click(); }
+      }
+    });
+    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    out.push({
+      group: 'Actions',
+      label: dark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+      hint: 'Toggle appearance', icon: dark ? ICON.sun : ICON.moon,
+      keywords: 'theme dark light mode appearance color night day',
+      run: toggleTheme
+    });
+
+    // Sections on the CURRENT page (scroll)
+    var secs = document.querySelectorAll('[id^="section-"]');
+    Array.prototype.forEach.call(secs, function (el) {
+      var lbl = SECTION_LABELS[el.id] || titleCase(el.id.replace('section-', '').replace(/-/g, ' '));
+      out.push({
+        group: 'Jump to', label: lbl, hint: 'On this page', icon: ICON.section,
+        keywords: 'section jump scroll ' + lbl,
+        run: function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      });
+    });
+
+    // Pages (navigate)
+    if (typeof NAV_URLS === 'object' && NAV_URLS) {
+      ['home', 'experience', 'projects', 'certs'].forEach(function (id) {
+        if (!NAV_URLS[id]) return;
+        var meta = (typeof PAGES === 'object' && PAGES && PAGES[id]) ? PAGES[id] : { t: titleCase(id), s: '' };
+        var isCur = id === active;
+        out.push({
+          group: 'Go to page',
+          label: meta.t + (isCur ? '  ·  current' : ''),
+          hint: meta.s || '', icon: PAGE_ICON[id] || ICON.page,
+          keywords: 'page go to open navigate ' + id + ' ' + meta.t,
+          run: function () {
+            if (isCur) { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+            else { window.location.href = NAV_URLS[id]; }
+          }
+        });
+      });
+    }
+
+    return out;
+  }
+
+  /* ── Filter / render / selection ── */
+  var all = [], shown = [], sel = 0;
+
+  function filter(q) {
+    q = (q || '').trim().toLowerCase();
+    shown = !q ? all.slice() : all.filter(function (c) {
+      return (c.label + ' ' + (c.hint || '') + ' ' + (c.keywords || '')).toLowerCase().indexOf(q) >= 0;
+    });
+    sel = 0;
+    render();
+  }
+
+  function render() {
+    listEl.innerHTML = '';
+    if (!shown.length) {
+      var e = document.createElement('div');
+      e.className = 'cmdk-empty';
+      e.textContent = 'No results';
+      listEl.appendChild(e);
+      return;
+    }
+    var lastGroup = null;
+    shown.forEach(function (c, i) {
+      if (c.group && c.group !== lastGroup) {
+        lastGroup = c.group;
+        var g = document.createElement('div');
+        g.className = 'cmdk-group';
+        g.textContent = c.group;
+        listEl.appendChild(g);
+      }
+      var row = document.createElement('div');
+      row.className = 'cmdk-row' + (i === sel ? ' cmdk-sel' : '');
+      row.dataset.i = i;
+      row.innerHTML =
+        '<span class="cmdk-ic">' + c.icon + '</span>' +
+        '<span class="cmdk-txt"><span class="cmdk-label">' + esc(c.label) + '</span>' +
+        (c.hint ? '<span class="cmdk-hint">' + esc(c.hint) + '</span>' : '') + '</span>';
+      row.addEventListener('mousemove', function () { if (sel !== i) { sel = i; paintSel(); } });
+      row.addEventListener('click', function () { sel = i; execSel(); });
+      listEl.appendChild(row);
+    });
+  }
+
+  function paintSel() {
+    var rows = listEl.querySelectorAll('.cmdk-row');
+    Array.prototype.forEach.call(rows, function (r) {
+      r.classList.toggle('cmdk-sel', Number(r.dataset.i) === sel);
+    });
+    var cur = listEl.querySelector('.cmdk-row.cmdk-sel');
+    if (cur) cur.scrollIntoView({ block: 'nearest' });
+  }
+
+  function move(d) {
+    if (!shown.length) return;
+    sel = (sel + d + shown.length) % shown.length;
+    paintSel();
+  }
+
+  function execSel() {
+    var c = shown[sel];
+    if (!c) return;
+    close();
+    setTimeout(function () { try { c.run(); } catch (e) {} }, 60);
+  }
+
+  /* ── Open / close ── */
+  function isOpen() { return overlay.classList.contains('cmdk-show'); }
+  function open() {
+    all = buildCommands();
+    input.value = '';
+    filter('');
+    overlay.classList.add('cmdk-show');
+    setTimeout(function () { input.focus(); }, 30);
+  }
+  function close() { overlay.classList.remove('cmdk-show'); }
+  function toggle() { isOpen() ? close() : open(); }
+
+  /* ── Keyboard: capture phase so we win ⌘K over the browser and Esc over
+     the chat's own Escape handler. ── */
+  document.addEventListener('keydown', function (e) {
+    var isK = (e.key === 'k' || e.key === 'K');
+    if ((e.metaKey || e.ctrlKey) && isK) {
+      e.preventDefault();
+      toggle();
+      return;
+    }
+    if (!isOpen()) return;
+    if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); close(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+    else if (e.key === 'Enter') { e.preventDefault(); execSel(); }
+  }, true);
+
+  /* ── Init ── */
+  function start() { injectCss(); buildUI(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
 })();
