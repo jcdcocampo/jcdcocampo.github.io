@@ -2540,11 +2540,14 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       }
     });
     out.push({
-      group: 'Actions', label: 'Contact JC', hint: 'Opens the digital contact card',
-      icon: ICON.contact, keywords: 'contact card vcard save number reach connect',
+      group: 'Actions', label: 'Contact JC', hint: 'Jump to social & contact links',
+      icon: ICON.contact, keywords: 'contact social links reach connect',
       run: function () {
-        if (typeof window.__openContactCard === 'function') window.__openContactCard();
-        else window.location.href = (active === 'home' ? '#section-social' : 'index.html#section-social');
+        if (active === 'home') {
+          var el = document.getElementById('section-social');
+          if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+        }
+        window.location.href = 'index.html#section-social';
       }
     });
     out.push({
