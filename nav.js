@@ -2322,7 +2322,6 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     page:    svg('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'),
     contact: svg('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2.2"/><path d="M5.5 17c.7-2.1 2.2-3.2 3.5-3.2s2.8 1.1 3.5 3.2"/><line x1="14" y1="9" x2="18" y2="9"/><line x1="14" y1="12.5" x2="18" y2="12.5"/>'),
     mail:    svg('<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>'),
-    share:   svg('<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/>'),
     proj:    svg('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
     cert:    svg('<circle cx="12" cy="8" r="5"/><path d="M9.09 14L7 21l5-2 5 2-2.09-7"/>'),
     exp:     svg('<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'),
@@ -2343,8 +2342,7 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     'section-leadership':     'Leadership & Activities',
     'section-certifications': 'Certifications & Licenses',
     'section-organization':   'Organization',
-    'section-social':         'Social Links',
-    'section-share':          'Share this portfolio'
+    'section-social':         'Social Links'
   };
 
   /* ── Static content index — real titles from the site's own pages, so
@@ -2523,7 +2521,6 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
   }
 
   var JC_EMAIL = 'jcdcocampo@gmail.com';
-  var SITE_URL = 'https://jcdcocampo.github.io/';
 
   /* ── Command list (rebuilt each open so theme label / current page stay fresh) ── */
   function buildCommands() {
@@ -2567,24 +2564,6 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       group: 'Actions', label: 'Send Email', hint: JC_EMAIL,
       icon: ICON.mail, keywords: 'send email mail compose message gmail',
       run: function () { window.location.href = 'mailto:' + JC_EMAIL; }
-    });
-    out.push({
-      group: 'Actions', label: 'Share Portfolio', hint: 'jcdcocampo.github.io',
-      icon: ICON.share, keywords: 'share portfolio link site url send',
-      noAutoClose: true,
-      run: function (row) {
-        if (navigator.share) {
-          navigator.share({ title: 'Jose Carlo David Ocampo', url: SITE_URL }).catch(function () {});
-          close();
-        } else {
-          copyText(SITE_URL).then(function () {
-            if (!row) return;
-            var lbl = row.querySelector('.cmdk-label');
-            if (lbl) lbl.textContent = 'Link copied!';
-            setTimeout(close, 700);
-          });
-        }
-      }
     });
     var dark = document.documentElement.getAttribute('data-theme') === 'dark';
     out.push({
