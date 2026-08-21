@@ -1009,6 +1009,42 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     .cb-retry-btn svg { flex-shrink: 0; }
     .cb-retry-btn:disabled { opacity: 0.5; cursor: default; }
 
+    .cb-email-row {
+      display: flex;
+      gap: 8px;
+      align-self: flex-start;
+      margin-left: 36px; /* aligns under the bot bubble, past the avatar */
+      animation: cbFadeIn 0.25s ease;
+    }
+    .cb-email-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--separator, #e5e5ea);
+      background: var(--sub-card, #f9f9fb);
+      color: var(--text-secondary, #636366);
+      font-size: 12.5px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .cb-email-btn:hover {
+      background: var(--sub-hover, #ececf2);
+      color: var(--text-primary, #1c1c1e);
+      border-color: var(--text-tertiary, #aeaeb2);
+    }
+    .cb-email-btn:active { transform: scale(0.97); }
+    .cb-email-btn svg { flex-shrink: 0; }
+    .cb-email-btn.cb-email-copied {
+      background: var(--accent, #007aff);
+      color: #fff;
+      border-color: var(--accent, #007aff);
+    }
+
     .cb-typing { display: inline-flex; gap: 4px; align-items: center; padding: 4px 0; }
     .cb-typing span {
       width: 7px; height: 7px; border-radius: 50%;
@@ -1895,6 +1931,64 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     });
     sendBtn.addEventListener('click', () => { if (panelReady) send(); });
 
+    // Detects an email address anywhere in a Mian reply — catches both the
+    // hardcoded connection-error fallback and any LLM-generated reply that
+    // follows the system prompt's instruction to suggest emailing JC.
+    const EMAIL_PATTERN = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+
+    function addEmailActions(email) {
+      const wrap = document.createElement('div');
+      wrap.className = 'cb-email-row';
+
+      const copyBtn = document.createElement('button');
+      copyBtn.type = 'button';
+      copyBtn.className = 'cb-email-btn';
+      copyBtn.innerHTML =
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+        '<span>Copy email</span>';
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(email);
+        } catch (e) {
+          // Fallback for browsers/contexts without Clipboard API access
+          const ta = document.createElement('textarea');
+          ta.value = email;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); } catch (e2) {}
+          document.body.removeChild(ta);
+        }
+        copyBtn.classList.add('cb-email-copied');
+        copyBtn.querySelector('span').textContent = 'Copied';
+        setTimeout(() => {
+          copyBtn.classList.remove('cb-email-copied');
+          copyBtn.querySelector('span').textContent = 'Copy email';
+        }, 1500);
+      });
+
+      const sendBtn = document.createElement('a');
+      sendBtn.className = 'cb-email-btn';
+      sendBtn.href = 'mailto:' + email;
+      sendBtn.innerHTML =
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>' +
+        '<span>Send email</span>';
+
+      wrap.appendChild(copyBtn);
+      wrap.appendChild(sendBtn);
+      messagesEl.appendChild(wrap);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return wrap;
+    }
+
+    // Call after any bot reply finishes rendering — attaches Copy/Send
+    // buttons only if the reply actually contains an email address.
+    function maybeAddEmailActions(text) {
+      const match = text.match(EMAIL_PATTERN);
+      if (match) addEmailActions(match[0]);
+    }
+
     function addRetryButton(errorRow) {
       const wrap = document.createElement('div');
       wrap.className = 'cb-retry-row';
@@ -1939,6 +2033,7 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
 
         const { bubble } = addBotBubbleForTyping();
         await typeIntoBubble(bubble, reply);
+        maybeAddEmailActions(reply);
 
         history.push({ role: 'assistant', content: reply });
       } catch (err) {
@@ -1948,11 +2043,10 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
         typingEl.remove();
 
         const { row, bubble } = addBotBubbleForTyping({ error: true });
-        await typeIntoBubble(
-          bubble,
-          "Sorry, I'm having trouble connecting right now. Please try again in a moment, or reach JC directly at jcdcocampo@gmail.com."
-        );
+        const fallbackText = "Sorry, I'm having trouble connecting right now. Please try again in a moment, or reach JC directly at jcdcocampo@gmail.com.";
+        await typeIntoBubble(bubble, fallbackText);
         addRetryButton(row);
+        maybeAddEmailActions(fallbackText);
       } finally {
         isSending = false;
         updateUI();
@@ -2015,6 +2109,7 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
 
       const { bubble } = addBotBubbleForTyping();
       await typeIntoBubble(bubble, reply);
+      maybeAddEmailActions(reply);
 
       history.push({ role: 'assistant', content: reply });
 
