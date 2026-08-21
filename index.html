@@ -322,23 +322,6 @@
     [data-theme="dark"] .theme-toggle .icon-sun { opacity: 0; transform: rotate(90deg) scale(0.6); }
     [data-theme="dark"] .theme-toggle .icon-moon { opacity: 1; transform: rotate(0deg) scale(1); }
 
-    .open-to-work {
-      color: var(--green);
-      font-size: 14px;
-      font-weight: 600;
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .open-to-work::before {
-      content: '';
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--green);
-      display: inline-block;
-    }
-
     .header-title {
       font-size: 16px;
       color: var(--text-secondary);
@@ -718,7 +701,6 @@
         right: 14px;
         gap: 0;
       }
-      .header-corner .open-to-work { display: none; }
 
       .profile-pic {
         width: 100%;
@@ -779,28 +761,6 @@
         flex-shrink: 0;
         width: 14px;
         height: 14px;
-      }
-
-      .open-to-work-mobile {
-        display: flex !important;
-        align-items: center;
-        gap: 5px;
-        color: var(--green);
-        font-size: 13px;
-        font-weight: 600;
-        margin-top: 5px;
-        position: static;
-      }
-      .open-to-work-mobile::before {
-        content: '';
-        position: static;
-        transform: none;
-        width: 14px;
-        height: 14px;
-        border-radius: 0;
-        background: radial-gradient(circle, var(--green) 0 3.5px, transparent 4px);
-        display: inline-block;
-        flex-shrink: 0;
       }
 
       .send-email-btn {
