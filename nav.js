@@ -979,6 +979,36 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       border-color: #5a2a2a;
     }
 
+    .cb-retry-row {
+      display: flex;
+      align-self: flex-start;
+      margin-left: 36px; /* aligns under the bot bubble, past the avatar */
+      animation: cbFadeIn 0.25s ease;
+    }
+    .cb-retry-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--separator, #e5e5ea);
+      background: var(--sub-card, #f9f9fb);
+      color: var(--text-secondary, #636366);
+      font-size: 12.5px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .cb-retry-btn:hover {
+      background: var(--sub-hover, #ececf2);
+      color: var(--text-primary, #1c1c1e);
+      border-color: var(--text-tertiary, #aeaeb2);
+    }
+    .cb-retry-btn:active { transform: scale(0.97); }
+    .cb-retry-btn svg { flex-shrink: 0; }
+    .cb-retry-btn:disabled { opacity: 0.5; cursor: default; }
+
     .cb-typing { display: inline-flex; gap: 4px; align-items: center; padding: 4px 0; }
     .cb-typing span {
       width: 7px; height: 7px; border-radius: 50%;
@@ -1865,26 +1895,39 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     });
     sendBtn.addEventListener('click', () => { if (panelReady) send(); });
 
-    async function send() {
-      const text = textarea.value.trim();
-      if (!text || isSending) return;
+    function addRetryButton(errorRow) {
+      const wrap = document.createElement('div');
+      wrap.className = 'cb-retry-row';
 
-      isSending = true;
-      updateUI();
-      addMessage('user', text);
-      // User sent → wake / keep the glow alive and start idle clock
-      glowManager.activate();
-      chipsRow.querySelectorAll('.cb-chip').forEach(c => c.classList.add('cb-chip-gone'));
-      history.push({ role: 'user', content: text });
-      if (history.length > CONFIG.maxHistory) {
-        history = history.slice(-CONFIG.maxHistory);
-      }
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cb-retry-btn';
+      btn.innerHTML =
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>' +
+        '<span>Retry</span>';
 
-      textarea.value = '';
-      updateUI();
+      btn.addEventListener('click', async () => {
+        if (isSending) return;
+        isSending = true;
+        updateUI();
+        btn.disabled = true;
+        wrap.remove();
+        errorRow.remove();
+        await attemptReply();
+      });
 
+      wrap.appendChild(btn);
+      messagesEl.appendChild(wrap);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return wrap;
+    }
+
+    // Sends `history` to the backend and renders the result. On failure,
+    // shows an error bubble with a Retry button that re-runs this same
+    // function — no need to re-type the message, since it's already in
+    // `history` from when the user first sent it.
+    async function attemptReply() {
       const typingEl = addTyping();
-      // Pause idle while bot is fetching + typing so glow never fades mid-reply
       glowManager.pauseIdle();
 
       try {
@@ -1903,18 +1946,40 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
         if (typingEl._anticipationTimers) typingEl._anticipationTimers.forEach(clearTimeout);
         if (typingEl._countUpInterval) clearInterval(typingEl._countUpInterval);
         typingEl.remove();
-        const { bubble } = addBotBubbleForTyping({ error: true });
+
+        const { row, bubble } = addBotBubbleForTyping({ error: true });
         await typeIntoBubble(
           bubble,
           "Sorry, I'm having trouble connecting right now. Please try again in a moment, or reach JC directly at jcdcocampo@gmail.com."
         );
+        addRetryButton(row);
       } finally {
         isSending = false;
         updateUI();
         textarea.focus();
-        // Bot fully done → resume idle clock from now
         glowManager.resumeIdle();
       }
+    }
+
+    async function send() {
+      const text = textarea.value.trim();
+      if (!text || isSending) return;
+
+      isSending = true;
+      updateUI();
+      addMessage('user', text);
+      // User sent → wake / keep the glow alive and start idle clock
+      glowManager.activate();
+      chipsRow.querySelectorAll('.cb-chip').forEach(c => c.classList.add('cb-chip-gone'));
+      history.push({ role: 'user', content: text });
+      if (history.length > CONFIG.maxHistory) {
+        history = history.slice(-CONFIG.maxHistory);
+      }
+
+      textarea.value = '';
+      updateUI();
+
+      await attemptReply();
     }
 
     // Instant reply for the quick-question chips — pulls a random
