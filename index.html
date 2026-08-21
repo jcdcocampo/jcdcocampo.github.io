@@ -613,42 +613,6 @@
       grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
-    .share-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      background: var(--sub-card);
-      border-radius: var(--radius-inner);
-      padding: 13px 16px;
-    }
-    .share-url {
-      font-size: 15px;
-      font-weight: 500;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-family: var(--sf);
-    }
-    .share-copy-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 980px;
-      padding: 7px 14px;
-      font-size: 13.5px;
-      font-weight: 600;
-      font-family: var(--sf);
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: opacity var(--transition), transform 0.12s ease, background var(--transition);
-    }
-    .share-copy-btn:active { transform: scale(0.95); }
-    .share-copy-btn.share-copied { background: #34c759; }
 
     .social-item {
       display: flex;
@@ -839,7 +803,6 @@
       .mob-order-certifications { order: 6; }
       .mob-order-organization   { order: 7; }
       .mob-order-social         { order: 8; }
-      .mob-order-share          { order: 9; }
 
       .section-card {
         border-radius: 16px;
@@ -1389,17 +1352,6 @@
         </div>
       </div>
 
-      <div id="section-share" class="section-card mob-order-share fade-up delay-7">
-        <div class="section-title">Share this portfolio</div>
-        <div class="share-row" id="shareRow">
-          <span class="share-url">jcdcocampo.github.io</span>
-          <button class="share-copy-btn" id="shareCopyBtn" type="button" aria-label="Copy portfolio link">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <span>Copy</span>
-          </button>
-        </div>
-      </div>
-
     </div>
 
   </div>
@@ -1856,45 +1808,6 @@ document.addEventListener('DOMContentLoaded', function () {
     window.addEventListener('resize', drawExpLine);
     /* re-run after fonts/images settle */
     setTimeout(drawExpLine, 300);
-  });
-})();
-
-/* ── Copy-to-clipboard helper, with a safe fallback for older/locked-down
-   browsers where the Clipboard API isn't available. ── */
-function siteCopyText(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    return navigator.clipboard.writeText(text).catch(function () { siteFallbackCopy(text); });
-  }
-  return Promise.resolve(siteFallbackCopy(text));
-}
-function siteFallbackCopy(text) {
-  var ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.select();
-  try { document.execCommand('copy'); } catch (e) {}
-  document.body.removeChild(ta);
-}
-
-/* ── Share this portfolio: copy-link button ── */
-(function () {
-  document.addEventListener('DOMContentLoaded', function () {
-    var btn = document.getElementById('shareCopyBtn');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      siteCopyText('https://jcdcocampo.github.io/').then(function () {
-        btn.classList.add('share-copied');
-        var span = btn.querySelector('span');
-        var original = span.textContent;
-        span.textContent = 'Copied';
-        setTimeout(function () {
-          btn.classList.remove('share-copied');
-          span.textContent = original;
-        }, 1400);
-      });
-    });
   });
 })();
 
