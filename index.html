@@ -10,6 +10,13 @@
   <meta name="author" content="Jose Carlo David Ocampo" />
   <meta name="robots" content="index, follow" />
 
+  <!-- PWA: Add to Home Screen support -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" id="themeColorMeta" content="#f2f2f7" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="JC Ocampo" />
   <!-- Open Graph / LinkedIn / Facebook -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://jcdcocampo.github.io/" />
@@ -85,6 +92,8 @@
       try {
         if (localStorage.getItem('theme') === 'dark') {
           document.documentElement.setAttribute('data-theme', 'dark');
+          var m = document.getElementById('themeColorMeta');
+          if (m) m.setAttribute('content', '#000000');
         }
       } catch(e){}
     })();
@@ -997,6 +1006,62 @@
       left: 50%; /* fallback only — JS overrides with the measured position */
     }
   }
+
+  /* ── Print stylesheet ──
+     Hides everything that only makes sense on a live, interactive page —
+     the floating nav pill, Mian and her chat panel, the sticky header,
+     theme toggles — and forces a plain light, high-contrast layout so a
+     recruiter's Ctrl+P prints just the actual content. */
+  @media print {
+    #stickyHeader,
+    #navc,
+    #mian,
+    #mind,
+    .theme-toggle,
+    .cb-panel,
+    .cb-fab,
+    .send-email-btn,
+    .see-more-btn {
+      display: none !important;
+    }
+
+    html, body {
+      background: #ffffff !important;
+      color: #000000 !important;
+    }
+
+    .page-wrap { max-width: 100%; padding: 0; }
+
+    .header-card,
+    .section-card {
+      background: #ffffff !important;
+      box-shadow: none !important;
+      border: 1px solid #ddd;
+      break-inside: avoid;
+    }
+
+    .sub-item, .exp-inner, .cert-item, .home-project-item,
+    .reference-item, .member-item, .social-item {
+      background: #ffffff !important;
+      box-shadow: none !important;
+      border: 1px solid #eee;
+    }
+
+    a { color: #000 !important; text-decoration: underline; }
+
+    /* Fade-in animations are pointless (and can leave content invisible)
+       on a static printed page. */
+    .fade-up { animation: none !important; opacity: 1 !important; transform: none !important; }
+
+    /* Video/canvas profile picture never renders reliably in print —
+       swap to the plain static image instead. */
+    .profile-pic canvas { display: none; }
+    .profile-pic {
+      background-image: url('assets/profile-light.jpg');
+      background-size: cover;
+      background-position: center;
+    }
+  }
   </style>
 </head>
 <body>
@@ -1698,10 +1763,12 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   /* ── Theme-aware avatar swap + aria sync ── */
+  var themeColorMeta = document.getElementById('themeColorMeta');
   function syncStickyTheme() {
     var dark = document.documentElement.getAttribute('data-theme') === 'dark';
     if (stickyAvatar) stickyAvatar.src = dark ? 'assets/profile-dark.jpg' : 'assets/profile-light.jpg';
     if (stickyToggle) stickyToggle.setAttribute('aria-pressed', dark ? 'true' : 'false');
+    if (themeColorMeta) themeColorMeta.setAttribute('content', dark ? '#000000' : '#f2f2f7');
   }
   syncStickyTheme();
   var obs = new MutationObserver(syncStickyTheme);
