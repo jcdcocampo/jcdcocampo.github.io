@@ -584,17 +584,38 @@
     .member-item {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 14px;
       background: var(--sub-card);
       border-radius: var(--radius-inner);
-      padding: 14px;
+      padding: 12px 14px;
       cursor: pointer;
       transition: background var(--transition), box-shadow var(--transition);
       text-decoration: none;
       color: inherit;
     }
     .member-item:hover { background: var(--sub-hover); box-shadow: 0 1px 6px rgba(0,0,0,0.09); }
+    .member-logo {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      object-fit: contain;
+      background: transparent;
+      flex-shrink: 0;
+    }
+    .member-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
     .member-org-name { font-size: 14px; font-weight: 500; line-height: 1.4; }
+    .member-chip {
+      display: inline-flex;
+      align-self: flex-start;
+      align-items: center;
+      background: #e5e5ea;
+      color: #1c1c1e;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      padding: 2.5px 9px;
+      border-radius: 980px;
+    }
+    [data-theme="dark"] .member-chip { background: #3a3a3c; color: #ffffff; }
     .member-link-icon {
       width: 18px;
       height: 18px;
@@ -833,6 +854,7 @@
       .home-project-issuer { font-size: 12px; }
 
       .sub-logo { width: 38px; height: 38px; }
+      .member-logo { width: 38px; height: 38px; }
       .sub-name { font-size: 14px; }
       .sub-detail { font-size: 12px; }
 
@@ -1324,9 +1346,13 @@
       </div>
 
       <div id="section-organization" class="section-card mob-order-organization fade-up delay-5">
-        <div class="section-title">Organization</div>
+        <div class="section-title">Affiliation</div>
         <a class="member-item" href="https://iecepnational.com/" target="_blank" rel="noopener">
-          <span class="member-org-name">Institute of Electronics Engineers<br>of the Philippines (IECEP)</span>
+          <img class="member-logo" src="assets/iecep-national-logo.png" alt="IECEP National logo">
+          <div class="member-info">
+            <span class="member-org-name">Institute of Electronics Engineers<br>of the Philippines (IECEP)</span>
+            <span class="member-chip">Member</span>
+          </div>
           <svg class="member-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="7" y1="17" x2="17" y2="7"/>
             <polyline points="8 7 17 7 17 16"/>
