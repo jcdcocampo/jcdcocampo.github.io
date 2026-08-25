@@ -631,10 +631,10 @@
     /* Two columns in every orientation — LinkedIn + GitHub share one row. */
     .social-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
     }
-    .social-item-wide { grid-column: 1 / -1; }
+    .social-item-wide { grid-column: 1 / -1; justify-content: center; }
 
     .social-item {
       display: flex;
@@ -662,7 +662,15 @@
     [data-theme="dark"] .social-logo.logo-light { display: none; }
     [data-theme="dark"] .social-logo.logo-dark  { display: block; }
 
-    .social-name { font-size: 15px; font-weight: 500; }
+    .social-name {
+      font-size: 15px;
+      font-weight: 500;
+      display: block;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
     footer {
       text-align: center;
@@ -1365,7 +1373,7 @@
         <div class="section-title">Social Links</div>
 
         <div class="social-grid">
-          <a class="social-item" href="https://www.linkedin.com/in/jcdcocampo" target="_blank" rel="noopener">
+          <a class="social-item social-item-wide" href="https://www.linkedin.com/in/jcdcocampo" target="_blank" rel="noopener">
             <img class="social-logo logo-light" src="assets/linkedin-logo.png" alt="LinkedIn logo">
             <img class="social-logo logo-dark" src="assets/linkedin-logo-white.png" alt="LinkedIn logo">
             <span class="social-name">LinkedIn</span>
@@ -1377,7 +1385,7 @@
             <span class="social-name">GitHub</span>
           </a>
 
-          <a class="social-item social-item-wide" href="https://credly.com/users/jcdcocampo" target="_blank" rel="noopener">
+          <a class="social-item" href="https://credly.com/users/jcdcocampo" target="_blank" rel="noopener">
             <img class="social-logo logo-light" src="assets/credly-logo.png" alt="Credly logo">
             <img class="social-logo logo-dark" src="assets/credly-logo-white.png" alt="Credly logo">
             <span class="social-name">Credly</span>
