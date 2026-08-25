@@ -578,19 +578,19 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
   // SYSTEM_PROMPT in worker.js if JC's info ever changes.
   const CACHED_REPLIES = {
     'Tell me about JC': [
-      "JC (Engr. Jose Carlo David Ocampo) is a licensed Electronics Engineer from the Philippines. He graduated from Mapua University in 2025 and passed his PRC board exams in March 2026. He now works as an Application & Cloud Support Engineer at Accenture Philippines, with earlier experience interning at Converge ICT Solutions and serving as Electronics Engineer for Mapua's Cardinal One team. Ask me for more on his certifications, projects, or experience anytime.",
-      "JC is a licensed Electronics Engineer based in Metro Manila. He earned his degree from Mapua University in 2025 and passed his board exams in March 2026. He's currently an Application & Cloud Support Engineer at Accenture Philippines, having previously interned at Converge ICT Solutions and worked as Electronics Engineer for Mapua's Cardinal One team. Happy to go deeper on any part of his background.",
-      "JC is a licensed Electronics Engineer from the Philippines who graduated from Mapua University in 2025 and passed his board exams in March 2026. He's currently at Accenture Philippines as an Application & Cloud Support Engineer, with earlier stops at Converge ICT Solutions and Mapua's Cardinal One team. Just ask if you want the details on any of that."
+      "JC (Engr. Jose Carlo David Ocampo) is a licensed Electronics Engineer from the Philippines. He graduated from Mapua University in 2025 and passed his PRC board exams in March 2026. He now works as an Application & Cloud Support Associate at Accenture Philippines, with earlier experience interning at Converge ICT Solutions and serving as Electronics Engineer for Mapua's Cardinal One team. Ask me for more on his certifications, projects, or experience anytime.",
+      "JC is a licensed Electronics Engineer based in Metro Manila. He earned his degree from Mapua University in 2025 and passed his board exams in March 2026. He's currently an Application & Cloud Support Associate at Accenture Philippines, having previously interned at Converge ICT Solutions and worked as Electronics Engineer for Mapua's Cardinal One team. Happy to go deeper on any part of his background.",
+      "JC is a licensed Electronics Engineer from the Philippines who graduated from Mapua University in 2025 and passed his board exams in March 2026. He's currently at Accenture Philippines as an Application & Cloud Support Associate, with earlier stops at Converge ICT Solutions and Mapua's Cardinal One team. Just ask if you want the details on any of that."
     ],
     'Is he open to work?': [
-      "JC is currently employed as an Application & Cloud Support Engineer at Accenture Philippines, so he's not actively looking for other opportunities right now.",
-      "Right now, JC is full-time at Accenture Philippines as an Application & Cloud Support Engineer, so he isn't actively job hunting at the moment.",
+      "JC is currently employed as an Application & Cloud Support Associate at Accenture Philippines, so he's not actively looking for other opportunities right now.",
+      "Right now, JC is full-time at Accenture Philippines as an Application & Cloud Support Associate, so he isn't actively job hunting at the moment.",
       "He's currently employed at Accenture Philippines and isn't actively seeking new roles at this time. If you'd still like to connect, he's reachable at jcdcocampo@gmail.com."
     ],
     "What's his experience?": [
-      "JC is currently an Application & Cloud Support Engineer at Accenture Philippines, a role he started in August 2026. Before that, he interned on the IT Helpdesk at Converge ICT Solutions for three months in 2025, and earlier still, he was the Electronics Engineer for Mapua University's Cardinal One team from 2023 to 2025.",
-      "He's currently at Accenture Philippines as an Application & Cloud Support Engineer, starting August 2026. Prior to that, he did a three month IT Helpdesk internship at Converge ICT Solutions in 2025, and before that, he was Electronics Engineer for Mapua's Cardinal One team from 2023 to 2025.",
-      "JC's work history: Application & Cloud Support Engineer at Accenture Philippines since August 2026, an IT Helpdesk internship at Converge ICT Solutions in 2025, and Electronics Engineer for Mapua University's Cardinal One team from 2023 to 2025."
+      "JC is currently an Application & Cloud Support Associate at Accenture Philippines, a role he started in August 2026. Before that, he interned on the IT Helpdesk at Converge ICT Solutions for three months in 2025, and earlier still, he was the Electronics Engineer for Mapua University's Cardinal One team from 2023 to 2025.",
+      "He's currently at Accenture Philippines as an Application & Cloud Support Associate, starting August 2026. Prior to that, he did a three month IT Helpdesk internship at Converge ICT Solutions in 2025, and before that, he was Electronics Engineer for Mapua's Cardinal One team from 2023 to 2025.",
+      "JC's work history: Application & Cloud Support Associate at Accenture Philippines since August 2026, an IT Helpdesk internship at Converge ICT Solutions in 2025, and Electronics Engineer for Mapua University's Cardinal One team from 2023 to 2025."
     ]
   };
 
@@ -2363,7 +2363,7 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     { group: 'Certifications', label: 'Google Cloud Fundamentals', hint: 'Google Cloud', icon: ICON.cert, url: 'certifications.html#section-cloud-computing', keywords: 'google cloud fundamentals gcp cloud computing' },
     { group: 'Certifications', label: 'Foundations of Cybersecurity', hint: 'Google / Coursera', icon: ICON.cert, url: 'certifications.html#section-cybersecurity', keywords: 'cybersecurity foundations security' },
 
-    { group: 'Experience', label: 'Application & Cloud Support Engineer', hint: 'Accenture, Inc. · 2026', icon: ICON.exp, url: 'experience.html#section-current', keywords: 'accenture cloud support engineer application current job' },
+    { group: 'Experience', label: 'Application & Cloud Support Associate', hint: 'Accenture, Inc. · 2026', icon: ICON.exp, url: 'experience.html#section-current', keywords: 'accenture cloud support associate engineer application current job' },
     { group: 'Experience', label: 'IT Helpdesk Intern', hint: 'Converge ICT Solutions Inc. · 2025', icon: ICON.exp, url: 'experience.html#section-past', keywords: 'converge ict helpdesk intern' },
     { group: 'Experience', label: 'Electronics Engineer & Media Manager', hint: 'Mapua University Cardinal One', icon: ICON.exp, url: 'experience.html#section-past', keywords: 'cardinal one electronics engineer media manager' },
     { group: 'Experience', label: 'Apprentice', hint: 'Mapua University Cardinal One', icon: ICON.exp, url: 'experience.html#section-past', keywords: 'cardinal one apprentice' },
