@@ -1852,15 +1852,16 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 })();
 
-/* ── Easter egg: click the header name 7 times to open the 404 game ── */
+/* ── Easter egg: click the profile picture 7 times to open the 404 game ── */
 (function () {
   document.addEventListener('DOMContentLoaded', function () {
-    var nameEl = document.querySelector('.header-name');
-    if (!nameEl) return;
+    var picEl = document.getElementById('profilePic');
+    if (!picEl) return;
+    picEl.style.cursor = 'pointer';
     var count = 0;
     var lastClick = 0;
     var RESET_MS = 1400;
-    nameEl.addEventListener('click', function () {
+    picEl.addEventListener('click', function () {
       var now = Date.now();
       if (now - lastClick > RESET_MS) count = 0;
       lastClick = now;
