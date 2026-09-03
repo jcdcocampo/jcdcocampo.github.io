@@ -918,6 +918,8 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       flex-direction: column;
       gap: 10px;
       scroll-behavior: smooth;
+      overscroll-behavior: contain; /* stop scroll from chaining into the page behind the panel */
+      -webkit-overflow-scrolling: touch;
     }
     .cb-messages::-webkit-scrollbar { width: 6px; }
     .cb-messages::-webkit-scrollbar-thumb {
@@ -1663,10 +1665,36 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     // ---- Panel open/close ----
     let panelReady = false;
 
+    // On mobile the panel doesn't cover the full screen, and without this
+    // the page underneath stays scrollable — so a scroll gesture that
+    // starts on (or chains past the edge of) the messages list ends up
+    // moving the page behind it instead. Lock the page in place while
+    // the panel is open, restore the exact scroll position on close.
+    var __cbLockY = 0;
+    function cbLockScroll() {
+      if (!window.matchMedia('(max-width: 767px)').matches) return;
+      __cbLockY = window.scrollY || window.pageYOffset || 0;
+      document.body.style.position = 'fixed';
+      document.body.style.top = '-' + __cbLockY + 'px';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+    }
+    function cbUnlockScroll() {
+      if (document.body.style.position !== 'fixed') return;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.width = '';
+      window.scrollTo(0, __cbLockY);
+    }
+
     function openPanel() {
       panel.classList.add('cb-open');
       fab.classList.add('cb-hidden');
       glowManager.show();
+      cbLockScroll();
       // Sync Mian indicator — show glass
       if (typeof M !== 'undefined' && !M.open) { M.open = true; if (typeof updateMian === 'function') updateMian(); }
       // Block panel interactions for 450ms to prevent FAB-tap bleed-through
@@ -1689,6 +1717,7 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       panel.classList.remove('cb-open');
       fab.classList.remove('cb-hidden');
       glowManager.hide();
+      cbUnlockScroll();
       // After collapse animation, remove cb-closing so panel is clean for next open
       setTimeout(function() { panel.classList.remove('cb-closing'); }, 360);
       // Sync Mian indicator — dismiss glass
