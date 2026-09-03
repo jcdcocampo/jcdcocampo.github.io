@@ -554,5 +554,122 @@
       </svg>
     </div>
 <script src="nav.js" defer></script>
+<script>
+/* ── Eased "weighted" scroll (Apple investor-site style) ──
+   Mouse-wheel / trackpad input no longer jumps the page directly.
+   Instead each tick nudges a virtual target, and the real scroll
+   position eases toward it every frame — same idea as the smooth,
+   slightly heavy scroll on investor.apple.com. Touch scrolling on
+   phones/tablets is left completely native (no 'wheel' events fire
+   there), so mobile feel is untouched. */
+(function () {
+  var reduceMotion = window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) return;
+
+  var EASE = 0.085;       /* lower = heavier / more lag, like Apple's */
+  var MIN_DELTA = 0.05;   /* px threshold to stop the animation loop */
+
+  var current = window.scrollY || window.pageYOffset || 0;
+  var target  = current;
+  var rafId   = null;
+  var selfScroll = false;
+
+  function maxScroll() {
+    var doc = document.documentElement;
+    return Math.max(0, doc.scrollHeight - window.innerHeight);
+  }
+
+  function clamp(v) {
+    return Math.max(0, Math.min(v, maxScroll()));
+  }
+
+  function setScroll(y) {
+    selfScroll = true;
+    window.scrollTo(0, y);
+  }
+
+  function loop() {
+    current += (target - current) * EASE;
+    if (Math.abs(target - current) < MIN_DELTA) {
+      current = target;
+      setScroll(current);
+      rafId = null;
+      return;
+    }
+    setScroll(current);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function kick() {
+    if (!rafId) rafId = requestAnimationFrame(loop);
+  }
+
+  /* If the wheel/key event happened inside an element that has its
+     own internal scroll (e.g. a chat panel), let it scroll natively
+     instead of hijacking the page underneath it. */
+  function insideOwnScroller(el) {
+    while (el && el !== document.body && el !== document.documentElement) {
+      if (el.scrollHeight > el.clientHeight + 1) {
+        var oy = getComputedStyle(el).overflowY;
+        if (oy === 'auto' || oy === 'scroll') return true;
+      }
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  function onWheel(e) {
+    /* let ctrl/cmd + wheel (pinch-zoom gesture) behave natively */
+    if (e.ctrlKey || e.metaKey) return;
+    if (insideOwnScroller(e.target)) return;
+
+    var dy = e.deltaY;
+    if (e.deltaMode === 1) dy *= 16;              /* line mode   */
+    else if (e.deltaMode === 2) dy *= window.innerHeight; /* page mode */
+
+    e.preventDefault();
+    target = clamp(target + dy);
+    kick();
+  }
+
+  function onKey(e) {
+    var tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (/INPUT|TEXTAREA|SELECT/.test(tag)) return;
+    if (document.activeElement && document.activeElement.isContentEditable) return;
+    if (insideOwnScroller(document.activeElement || document.body)) return;
+
+    var step = window.innerHeight * 0.85;
+    var dy = 0;
+    switch (e.key) {
+      case 'ArrowDown': dy = 60; break;
+      case 'ArrowUp':   dy = -60; break;
+      case ' ':
+      case 'PageDown':  dy = e.shiftKey ? -step : step; break;
+      case 'PageUp':    dy = -step; break;
+      case 'Home':      target = 0; kick(); e.preventDefault(); return;
+      case 'End':       target = maxScroll(); kick(); e.preventDefault(); return;
+      default: return;
+    }
+    e.preventDefault();
+    target = clamp(target + dy);
+    kick();
+  }
+
+  /* Keep our virtual target in sync with any scroll we didn't cause
+     ourselves — anchor-link jumps, browser scroll restoration, etc. */
+  window.addEventListener('scroll', function () {
+    if (selfScroll) { selfScroll = false; return; }
+    current = target = window.scrollY || window.pageYOffset || 0;
+  }, { passive: true });
+
+  window.addEventListener('resize', function () {
+    target = clamp(target);
+  });
+
+  window.addEventListener('wheel', onWheel, { passive: false });
+  window.addEventListener('keydown', onKey, { passive: false });
+})();
+</script>
 </body>
 </html>
