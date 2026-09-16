@@ -570,43 +570,457 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
     maxHistory: 10,
   };
 
-  // -------------------- CACHED QUICK-CHIP REPLIES --------------------
-  // These three starter questions are answered instantly from a local
-  // cache instead of hitting the LLM — no network round trip, no wait.
-  // Each has 3 pre-written variants so repeat visits don't feel canned;
-  // one is picked at random on each click. Keep facts in sync with the
-  // SYSTEM_PROMPT in worker.js if JC's info ever changes.
-  const CACHED_REPLIES = {
-    'Tell me about JC': [
-      "JC (Engr. Jose Carlo David Ocampo) is a licensed Electronics Engineer from the Philippines. He graduated from Mapua University in 2025 and passed his PRC board exams in March 2026. He now works as an Application & Cloud Support Associate at Accenture Philippines, with earlier experience interning at Converge ICT Solutions and serving as Electronics Engineer for Mapua's Cardinal One team. Ask me for more on his certifications, projects, or experience anytime.",
-      "JC is a licensed Electronics Engineer based in Metro Manila. He earned his degree from Mapua University in 2025 and passed his board exams in March 2026. He's currently an Application & Cloud Support Associate at Accenture Philippines, having previously interned at Converge ICT Solutions and worked as Electronics Engineer for Mapua's Cardinal One team. Happy to go deeper on any part of his background.",
-      "JC is a licensed Electronics Engineer from the Philippines who graduated from Mapua University in 2025 and passed his board exams in March 2026. He's currently at Accenture Philippines as an Application & Cloud Support Associate, with earlier stops at Converge ICT Solutions and Mapua's Cardinal One team. Just ask if you want the details on any of that."
-    ],
-    'Is he open to work?': [
-      "JC is currently employed as an Application & Cloud Support Associate at Accenture Philippines, so he's not actively looking for other opportunities right now.",
-      "Right now, JC is full-time at Accenture Philippines as an Application & Cloud Support Associate, so he isn't actively job hunting at the moment.",
-      "He's currently employed at Accenture Philippines and isn't actively seeking new roles at this time. If you'd still like to connect, he's reachable at jcdcocampo@gmail.com."
-    ],
-    "What's his experience?": [
-      "JC is currently an Application & Cloud Support Associate at Accenture Philippines, a role he started in August 2026. Before that, he interned on the IT Helpdesk at Converge ICT Solutions for three months in 2025, and earlier still, he was the Electronics Engineer for Mapua University's Cardinal One team from 2023 to 2025.",
-      "He's currently at Accenture Philippines as an Application & Cloud Support Associate, starting August 2026. Prior to that, he did a three month IT Helpdesk internship at Converge ICT Solutions in 2025, and before that, he was Electronics Engineer for Mapua's Cardinal One team from 2023 to 2025.",
-      "JC's work history: Application & Cloud Support Associate at Accenture Philippines since August 2026, an IT Helpdesk internship at Converge ICT Solutions in 2025, and Electronics Engineer for Mapua University's Cardinal One team from 2023 to 2025."
-    ]
-  };
+  // ==================== MIAN FAQ CACHE ====================
+  // Common questions are answered instantly from this local cache
+  // instead of hitting the LLM — no network round trip, no API cost.
+  //
+  // HOW IT WORKS
+  //   1. The visitor's message is normalized (lowercase, punctuation
+  //      stripped, "Jose Carlo / Ocampo / JC's" → "jc", leading
+  //      "hi mian," removed).
+  //   2. Every intent's patterns are tested against it.
+  //   3. Exactly ONE intent must match. Zero matches, two or more matches
+  //      (compound questions like "where did he study and what certs
+  //      does he have?"), or a long message → falls through to the LLM.
+  //   4. A random variant is picked, never the same one twice in a row.
+  //
+  // HOW TO ADD ONE
+  //   Copy any block below, give it a unique id, a few regex patterns,
+  //   and 2–3 reply variants. Plain text only (no markdown). If a reply
+  //   contains an email address, the Copy/Send buttons attach on their own.
+  //   Keep facts in sync with SYSTEM_PROMPT in worker.js.
+  //
+  // TESTING
+  //   Open the browser console and run: __mianMatch("where did he study")
+  // ========================================================
+  const JC_EMAIL_ADDR = 'jcdcocampo@gmail.com';
 
-  // -------------------- EMAIL-INTENT INSTANT REPLY --------------------
-  // When a visitor asks how to reach JC / for his email, answer instantly
-  // from this local cache instead of round-tripping the LLM. Every variant
-  // contains the address so the Copy/Send email buttons attach automatically
-  // via maybeAddEmailActions().
+  // Messages longer than this are treated as "real" questions → LLM.
+  const FAQ_MAX_LEN = 110;
+
+  const FAQ_INTENTS = [
+    // ---------- Small talk ----------
+    {
+      id: 'greeting',
+      whole: true, // must be the ENTIRE message, so "hi, what are his certs" isn't swallowed
+      patterns: [/^(hi+|hello+|hey+|heya|yo|sup|hiya|howdy|good (morning|afternoon|evening|day)|kumusta|musta|hello there|hi there|hey there)( mian)?$/],
+      replies: [
+        "Hi there! I'm Mian. Ask me anything about JC's background, projects, certifications, or experience.",
+        "Hello! What would you like to know about JC? I can tell you about his work, education, projects, or certifications.",
+        "Hey! I'm Mian, JC's assistant. Where would you like to start: his experience, projects, or certifications?"
+      ]
+    },
+    {
+      id: 'thanks',
+      whole: true,
+      patterns: [/^(thanks?|thank you|thank u|ty|tysm|thx|salamat|maraming salamat|thanks a lot|thank you so much|appreciate it|great thanks|ok thanks|okay thanks|cool thanks|nice|cool|great|awesome|ok|okay|got it)( mian)?$/],
+      replies: [
+        "You're welcome! Let me know if there's anything else you'd like to know about JC.",
+        "Happy to help! Feel free to ask more anytime.",
+        "Anytime! If you'd like to reach JC directly, just ask for his email."
+      ]
+    },
+    {
+      id: 'bye',
+      whole: true,
+      patterns: [/^(bye+|goodbye|good bye|see (you|ya)|cya|later|paalam|take care)( mian)?$/],
+      replies: [
+        "Goodbye! Thanks for stopping by JC's portfolio.",
+        "See you! Thanks for visiting.",
+        "Take care, and thanks for dropping by!"
+      ]
+    },
+    {
+      id: 'about_mian',
+      patterns: [
+        /\bwho (are|r) (you|u)\b/,
+        /\bwhat (are|r) (you|u)\b/,
+        /\bwhat(s| is) mian\b/,
+        /\bwho(s| is) mian\b/,
+        /\b(who|what) (made|built|created|developed) (you|u|mian)\b/,
+        /\bare (you|u) (a |an )?(bot|ai|robot|human|real)\b/,
+        /\bwhat can (you|u) do\b/,
+        /\bhow do(es)? (you|u|this|mian) work\b/
+      ],
+      replies: [
+        "I'm Mian, JC's personal AI assistant. JC built me in April 2026 to answer questions about his background, projects, certifications, and experience. My answers can occasionally be off, so feel free to verify anything important with JC directly.",
+        "I'm Mian, an AI assistant JC created in April 2026 for his portfolio. I can tell you about his work, education, projects, and certifications, or give you his email if you'd like to reach him.",
+        "I'm Mian, JC's portfolio assistant. He built me in April 2026. Ask me about his experience, projects, certifications, or how to contact him."
+      ]
+    },
+
+    // ---------- Quick-start chips ----------
+    {
+      id: 'about_jc',
+      patterns: [
+        /^(tell me )?(about|abt) jc$/,
+        /\bwho(s| is) jc\b/,
+        /\btell me (about|abt) (jc|him)( please| pls)?$/,
+        /\b(introduce|describe) (jc|him)$/,
+        /\bwhat do(es)? (jc|he) do\b/,
+        /\b(summary|overview|background) (of|on) (jc|him)\b/,
+        /^(jc|his) background$/
+      ],
+      replies: [
+        "JC (Engr. Jose Carlo David Ocampo) is a licensed Electronics Engineer from the Philippines. He graduated from Mapua University in 2025 and passed his PRC board exams in March 2026. He now works as an Application & Cloud Support Associate at Accenture Philippines, with earlier experience interning at Converge ICT Solutions and serving as Electronics Engineer for Mapua's Cardinal One team. Ask me for more on his certifications, projects, or experience anytime.",
+        "JC is a licensed Electronics Engineer based in Metro Manila. He earned his degree from Mapua University in 2025 and passed his board exams in March 2026. He's currently an Application & Cloud Support Associate at Accenture Philippines, having previously interned at Converge ICT Solutions and worked as Electronics Engineer for Mapua's Cardinal One team. Happy to go deeper on any part of his background.",
+        "JC is a licensed Electronics Engineer from the Philippines who graduated from Mapua University in 2025 and passed his board exams in March 2026. He's currently at Accenture Philippines as an Application & Cloud Support Associate, with earlier stops at Converge ICT Solutions and Mapua's Cardinal One team. Just ask if you want the details on any of that."
+      ]
+    },
+    {
+      id: 'open_to_work',
+      patterns: [
+        /\bopen (to|for) (work|opportunit|offers?|roles?|jobs?)/,
+        /\b(is|iss) (he|jc) (available|hiring|looking|job hunting)\b/,
+        /\b(looking|searching) for (a )?(job|work|role|opportunit)/,
+        /\b(available|availability) (for|to) (work|hire|freelance|projects?|a role)\b/,
+        /\b(accepting|taking) (freelance|projects?|clients?|offers?)\b/,
+        /\bcan i hire (him|jc)\b/,
+        /\bfreelanc/
+      ],
+      replies: [
+        "JC is currently employed as an Application & Cloud Support Associate at Accenture Philippines, so he's not actively looking for other opportunities right now.",
+        "Right now, JC is full-time at Accenture Philippines as an Application & Cloud Support Associate, so he isn't actively job hunting at the moment.",
+        "He's currently employed at Accenture Philippines and isn't actively seeking new roles at this time. If you'd still like to connect, he's reachable at " + JC_EMAIL_ADDR + "."
+      ]
+    },
+    {
+      id: 'experience',
+      patterns: [
+        /\b(jc|his|work|job|professional|employment) (experience|history)\b/,
+        /^experience$/,
+        /\bwhat(s| is) (his|jc) experience\b/,
+        /\bwhere (has|did) (he|jc) work(ed)?\b/,
+        /\b(previous|past|former) (jobs?|roles?|work|employers?)\b/,
+        /\bwork(ed)? experience\b/
+      ],
+      replies: [
+        "JC is currently an Application & Cloud Support Associate at Accenture Philippines, a role he started in August 2026. Before that, he interned on the IT Helpdesk at Converge ICT Solutions for three months in 2025, and earlier still, he was the Electronics Engineer for Mapua University's Cardinal One team from 2023 to 2025.",
+        "He's currently at Accenture Philippines as an Application & Cloud Support Associate, starting August 2026. Prior to that, he did a three month IT Helpdesk internship at Converge ICT Solutions in 2025, and before that, he was Electronics Engineer for Mapua's Cardinal One team from 2023 to 2025.",
+        "JC's work history: Application & Cloud Support Associate at Accenture Philippines since August 2026, an IT Helpdesk internship at Converge ICT Solutions in 2025, and Electronics Engineer for Mapua University's Cardinal One team from 2023 to 2025."
+      ]
+    },
+
+    // ---------- Career ----------
+    {
+      id: 'current_job',
+      patterns: [
+        /\bwhere (does|do) (he|jc) work\b/,
+        /\bwhere (is|s) (he|jc) (working|employed)\b/,
+        /\b(current|present) (job|role|position|work|employer|company)\b/,
+        /\bwhat(s| is) (his|jc) (job|role|position|title)\b/,
+        /\bwhat do(es)? (he|jc) do (now|currently|for (a )?(work|living))\b/,
+        /\baccenture\b/
+      ],
+      replies: [
+        "JC works at Accenture Philippines as an Application & Cloud Support Associate. He joined in August 2026, supporting enterprise applications and cloud environments.",
+        "He's currently an Application & Cloud Support Associate at Accenture Philippines, a role he started in August 2026.",
+        "Since August 2026, JC has been with Accenture Philippines as an Application & Cloud Support Associate, working on enterprise application and cloud support."
+      ]
+    },
+    {
+      id: 'internship',
+      patterns: [
+        /\bintern(ship|ed)?\b/,
+        /\bconverge\b/,
+        /\bojt\b/,
+        /\bhelp ?desk\b/
+      ],
+      replies: [
+        "JC interned at Converge ICT Solutions as an IT Helpdesk Intern for three months in 2025. He gained hands-on experience in enterprise network support and Level 1 IT operations.",
+        "His internship was at Converge ICT Solutions in 2025, where he spent three months as an IT Helpdesk Intern handling enterprise network support and Level 1 IT operations.",
+        "In 2025, JC completed a three month IT Helpdesk internship at Converge ICT Solutions, working on enterprise network support and Level 1 IT operations."
+      ]
+    },
+
+    // ---------- Education & licenses ----------
+    {
+      id: 'education',
+      patterns: [
+        /\bwhere did (he|jc) (study|go to (school|college|university)|graduate)\b/,
+        /\b(school|college|university|alma mater|education|degree|course|major|educational background)\b/,
+        /\bmapua\b/,
+        /\bwhen did (he|jc) graduate\b/,
+        /\bwhat did (he|jc) (study|take)\b/
+      ],
+      replies: [
+        "JC graduated from Mapua University in 2025 with a BS in Electronics Engineering, specializing in Advanced Internet Protocol Networking.",
+        "He studied at Mapua University, earning a BS in Electronics Engineering in 2025. His specialization was Advanced Internet Protocol Networking.",
+        "JC holds a BS in Electronics Engineering from Mapua University (2025), where he specialized in Advanced Internet Protocol Networking."
+      ]
+    },
+    {
+      id: 'license',
+      patterns: [
+        /\b(licensed|license|licence)\b/,
+        /\bboard (exam|passer|examination)s?\b/,
+        /\bprc\b/,
+        /\bis (he|jc) (an? )?(registered |licensed )?(engineer|ece|ect)\b/,
+        /\b(ece|ect) (board|exam|license)\b/,
+        /\bengr\b/
+      ],
+      replies: [
+        "Yes! JC passed both the Electronics Engineer and Electronics Technician licensure exams given by the Philippine Professional Regulation Commission (PRC) in March 2026. He holds both licenses.",
+        "JC is a PRC-licensed Electronics Engineer and Electronics Technician. He passed both board exams in March 2026.",
+        "He's licensed by the PRC as both an Electronics Engineer and an Electronics Technician, having passed both licensure exams in March 2026."
+      ]
+    },
+    {
+      id: 'certifications',
+      patterns: [
+        /\bcert(s|ification|ifications|ificate|ificates|ified)?\b/,
+        /\bcredentials?\b/,
+        /\bccna\b/,
+        /\bcisco\b/,
+        /\bgoogle cloud\b/,
+        /\bgcp\b/,
+        /\bcredly\b/,
+        /\bbadges?\b/
+      ],
+      replies: [
+        "Besides his PRC Electronics Engineer and Electronics Technician licenses, JC holds Cisco Network Fundamentals plus two CCNA courses (Switching, Routing, and Wireless Essentials, and Enterprise Networking, Security, and Automation), Google Cloud Fundamentals, and Foundations of Cybersecurity. The full list is on the Certifications page.",
+        "JC's credentials include his PRC Electronics Engineer and Electronics Technician licenses, Cisco Network Fundamentals, CCNA: Switching, Routing, and Wireless Essentials, CCNA: Enterprise Networking, Security, and Automation, Google Cloud Fundamentals, and Foundations of Cybersecurity. You can see all of them on the Certifications page.",
+        "His certifications span networking, cloud, and security: Cisco Network Fundamentals, two CCNA courses, Google Cloud Fundamentals, and Foundations of Cybersecurity, on top of his two PRC licenses. Check the Certifications page for the complete list."
+      ]
+    },
+
+    // ---------- Projects ----------
+    {
+      id: 'projects',
+      patterns: [
+        /^projects?$/,
+        /\b(his|jc|any|what|recent|notable|past) projects?\b/,
+        /\bprojects? (has|did) (he|jc)\b/,
+        /\bwhat (has|did) (he|jc) (built|build|made|make|created|create|worked on)\b/,
+        /\bportfolio (work|pieces?|projects?)\b/
+      ],
+      replies: [
+        "JC's projects include Mian (that's me, his AI portfolio assistant), Aguila (an energy-efficient vehicle built with Mapua's Cardinal One team for the Shell Eco-marathon), an IEEE-recognized thesis using a feedforward neural network to predict Lakatan banana shelf life from transport sensor data, and EEG exoskeleton research on brain-computer interfaces. Ask about any of them for more.",
+        "A few highlights: Aguila, an energy-efficient vehicle for the Shell Eco-marathon with Mapua Cardinal One; his IEEE-recognized banana shelf-life neural network research; EEG exoskeleton (brain-computer interface) research; and Mian, the assistant you're talking to now. The Projects page has the full details.",
+        "JC has worked on Mian (this AI assistant), the Aguila energy-efficient vehicle for the Shell Eco-marathon, an IEEE-recognized neural network for predicting banana shelf life, and EEG exoskeleton research. Want details on any one of them?"
+      ]
+    },
+    {
+      id: 'project_aguila',
+      patterns: [/\baguila\b/, /\beco ?-?marathon\b/, /\bshell\b/, /\bcardinal one\b/, /\b(eco|energy efficient|electric) (car|vehicle)\b/],
+      replies: [
+        "Aguila is an energy-efficient vehicle designed and built by Mapua University's Cardinal One team for the Shell Eco-marathon. JC was part of the team from 2023 to 2025, serving as Electronics Engineer.",
+        "Aguila was Mapua Cardinal One's energy-efficient vehicle for the Shell Eco-marathon. JC worked on it as the team's Electronics Engineer between 2023 and 2025. See the Aguila page for more.",
+        "JC was Electronics Engineer for Mapua's Cardinal One team (2023 to 2025), which designed and built Aguila, an energy-efficient vehicle for the Shell Eco-marathon."
+      ]
+    },
+    {
+      id: 'project_thesis',
+      patterns: [/\bbanana\b/, /\blakatan\b/, /\bshelf ?-?life\b/, /\bthesis\b/, /\bneural network\b/, /\bieee (paper|research|publication)\b/, /\b(his|jc) research\b/],
+      replies: [
+        "JC's thesis is an IEEE-recognized study titled \"Feedforward Neural Network for Real-time Prediction of Lakatan Banana Shelf Life using Sensor Data from Transport Conditions.\" It uses sensor readings collected during transport to predict how long Lakatan bananas will stay fresh.",
+        "His IEEE-recognized thesis applies a feedforward neural network to sensor data from transport conditions to predict the shelf life of Lakatan bananas in real time.",
+        "For his thesis, JC built a feedforward neural network that predicts Lakatan banana shelf life in real time from transport sensor data. The work was recognized by IEEE, and the details are on the Banana Shelf Life project page."
+      ]
+    },
+    {
+      id: 'project_eeg',
+      patterns: [/\beeg\b/, /\bexoskeleton\b/, /\bbrain ?-?computer\b/, /\bbci\b/],
+      replies: [
+        "JC's EEG exoskeleton project is brain-computer interface research, exploring how EEG signals can be used to control an exoskeleton. You'll find the full write-up on the EEG Exoskeleton project page.",
+        "The EEG exoskeleton is one of JC's research projects in brain-computer interfaces (BCI). Check its project page for the details.",
+        "That's JC's brain-computer interface research: using EEG signals with an exoskeleton. The EEG Exoskeleton page has more."
+      ]
+    },
+    {
+      id: 'project_mian',
+      patterns: [
+        /\bhow (was|were) (you|u|mian) (made|built|created)\b/,
+        /\b(tech|technology|stack) (behind|of|for) (you|u|mian)\b/,
+        /\bmian project\b/,
+        /\bwhat (model|llm|ai) (are|r) (you|u)\b/
+      ],
+      replies: [
+        "JC built me in April 2026 as a personal project. I'm a JavaScript chat widget on his site that talks to an AI backend running on Cloudflare Workers. Common questions like this one are answered instantly from a built-in cache. The Mian project page has more on how I work.",
+        "I'm a personal project JC created in April 2026: a front-end chat widget written in JavaScript, connected to an AI backend hosted on Cloudflare Workers. See the Mian project page for the full story.",
+        "JC made me in April 2026. The chat interface is plain JavaScript on his site, and my answers come from an AI backend on Cloudflare Workers, with frequent questions served from a local cache for speed."
+      ]
+    },
+
+    // ---------- Personal / profile ----------
+    {
+      id: 'location',
+      patterns: [
+        /\bwhere (is|s) (he|jc) (from|based|located|living)\b/,
+        /\bwhere do(es)? (he|jc) live\b/,
+        /\b(his|jc) (location|hometown|city)\b/,
+        /\bwhat country\b/
+      ],
+      replies: [
+        "JC is based in Metro Manila, Philippines.",
+        "He's located in Metro Manila, Philippines.",
+        "JC lives and works in Metro Manila, Philippines."
+      ]
+    },
+    {
+      id: 'full_name',
+      patterns: [/\b(full|real|complete) name\b/, /\bwhat(s| is) (his|jc) name\b/, /\bwhat does jc stand for\b/],
+      replies: [
+        "JC's full name is Jose Carlo David Ocampo. Professionally, he goes by Engr. Jose Carlo David Ocampo.",
+        "JC stands for Jose Carlo. His full name is Jose Carlo David Ocampo.",
+        "His full name is Engr. Jose Carlo David Ocampo, but most people call him JC."
+      ]
+    },
+    {
+      id: 'skills',
+      patterns: [
+        /\b(his|jc|technical|tech|key|main|what) skills?\b/,
+        /\bskill ?set\b/,
+        /\b(what|which) (is|are) (he|jc) good at\b/,
+        /\b(tech|technology) stack\b/,
+        /\bexpertise\b/,
+        /\bspeciali[sz](e|es|ation|ty)\b/
+      ],
+      replies: [
+        "JC's strengths are in networking (he specialized in Advanced Internet Protocol Networking and completed Cisco CCNA coursework), cloud and application support (Google Cloud Fundamentals, plus his role at Accenture), IT support, cybersecurity fundamentals, electronics engineering, and applied neural networks from his IEEE-recognized thesis.",
+        "His skill set spans networking and Cisco CCNA topics, cloud and enterprise application support, Level 1 IT operations, cybersecurity foundations, and electronics engineering. He also has hands-on experience with neural networks for sensor-data prediction.",
+        "JC combines an electronics engineering background with networking (Advanced IP Networking specialization, CCNA coursework), cloud support (Google Cloud, Accenture), IT helpdesk operations, and machine learning research."
+      ]
+    },
+    {
+      id: 'interests',
+      patterns: [
+        /\b(his|jc) (interests?|hobbies|passions?)\b/,
+        /\bwhat (is|s|are) (he|jc) (interested in|passionate about|into)\b/,
+        /\bhobb(y|ies)\b/,
+        /\bwhat does (he|jc) (like|enjoy)\b/
+      ],
+      replies: [
+        "Beyond engineering, JC is passionate about cloud computing, artificial intelligence, and finance. He's especially interested in where technology and financial markets meet.",
+        "JC's interests include cloud computing, AI, and finance, particularly the intersection of technology and financial markets.",
+        "He's into cloud computing, artificial intelligence, and finance, and he likes exploring how tech and financial markets overlap."
+      ]
+    },
+    {
+      id: 'leadership',
+      patterns: [
+        /\bleadership\b/,
+        /\b(org|orgs|organi[sz]ations?|clubs?|affiliations?|memberships?|extracurricular)\b/,
+        /\biecep\b/,
+        /\bieee\b/,
+        /\bstudent (council|chapter|branch)\b/
+      ],
+      replies: [
+        "In college, JC served as Treasurer and Board Auditor of IECEP Mapua University Student Chapter, Finance Committee Head of IEEE Mapua University Student Branch, and Electronics Engineer for Mapua Cardinal One. He's also a member of the Institute of Electronics Engineers of the Philippines (IECEP).",
+        "JC's leadership roles include Treasurer/Board Auditor at IECEP – MUSC, Finance Committee Head at IEEE – MUSB, and Electronics Engineer for Mapua Cardinal One. Professionally, he's an IECEP member.",
+        "He held finance and engineering roles in student organizations: Treasurer/Board Auditor for IECEP – MUSC, Finance Committee Head for IEEE – MUSB, and Electronics Engineer for Mapua Cardinal One. He's currently an IECEP member."
+      ]
+    },
+    {
+      id: 'socials',
+      patterns: [
+        /\blinked ?in\b/,
+        /\bgit ?hub\b/,
+        /\bsocials?( media| links)?\b/,
+        /\b(resume|resumé|résumé|cv)\b/
+      ],
+      replies: [
+        "You can find JC on LinkedIn (linkedin.com/in/jcdcocampo), GitHub (github.com/jcdcocampo), and Credly (credly.com/users/jcdcocampo). For his résumé, email him at " + JC_EMAIL_ADDR + ".",
+        "JC's profiles: LinkedIn at linkedin.com/in/jcdcocampo, GitHub at github.com/jcdcocampo, and Credly at credly.com/users/jcdcocampo. If you need his résumé, reach him at " + JC_EMAIL_ADDR + ".",
+        "He's on LinkedIn (jcdcocampo), GitHub (jcdcocampo), and Credly (jcdcocampo). The links are also in the Social Links section of the home page. For a résumé, just email " + JC_EMAIL_ADDR + "."
+      ]
+    }
+  ];
+
+  // Email/contact is checked FIRST and wins even if another intent also
+  // matches ("how do I contact him about a job?" → just give the email).
   const EMAIL_INTENT = /(e-?mail|gmail|contact|get in touch|reach (?:out|him|jc|you)|how (?:can|do|to|would) i .*(?:contact|reach|email|message|connect)|connect with (?:him|jc)|his (?:email|contact)|your (?:email|contact)|mail address|hire (?:him|jc)|work with (?:him|jc))/i;
 
   const EMAIL_REPLIES = [
-    "You can reach JC directly at jcdcocampo@gmail.com. Use the buttons below to copy the address or open your mail app.",
-    "The best way to reach JC is by email at jcdcocampo@gmail.com. Tap below to copy it or start a message.",
-    "JC's email is jcdcocampo@gmail.com — feel free to copy it or send a message straight away using the buttons below."
+    "You can reach JC directly at " + JC_EMAIL_ADDR + ". Use the buttons below to copy the address or open your mail app.",
+    "The best way to reach JC is by email at " + JC_EMAIL_ADDR + ". Tap below to copy it or start a message.",
+    "JC's email is " + JC_EMAIL_ADDR + " — feel free to copy it or send a message straight away using the buttons below."
   ];
 
+  // Phrases that mean "I want more than the canned answer" → always LLM.
+  const FAQ_BYPASS = /\b(more detail|in detail|elaborate|explain (more|further)|go deeper|why|compare|versus|vs|difference between|opinion|think about|write|draft|summari[sz]e|translate|pros and cons)\b|\b(experience|skills?|background|good) (with|in|using|at) \w|\bdoes (he|jc) (know|use|have experience)\b/;
+
+  const FAQ_BY_ID = {};
+  FAQ_INTENTS.forEach(function (it) { FAQ_BY_ID[it.id] = it; });
+
+  function normalizeQuery(s) {
+    return String(s || '')
+      .toLowerCase()
+      .replace(/[’‘`]/g, "'")
+      .replace(/\b(engr\.?\s+)?jose\s+carlo(\s+david)?(\s+ocampo)?\b/g, 'jc')
+      .replace(/\bocampo\b/g, 'jc')
+      .replace(/\bj\.?\s?c\.?(?=\s|'|$)/g, 'jc')
+      .replace(/\bjc's\b/g, 'jc')
+      .replace(/'s\b/g, 's')              // "what's" → "whats", "he's" → "hes"
+      .replace(/[^a-z0-9\s-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  // Same as normalizeQuery, plus drops a leading greeting / filler so
+  // "hi mian, where does he work" still matches the current_job intent.
+  function stripLead(q) {
+    return q
+      .replace(/^(hi+|hello+|hey+|yo|good (morning|afternoon|evening))( there)?( mian)?\s+(?=\S)/, '')
+      .replace(/^(mian|please|pls|can you tell me|could you tell me|do you know|i want to know|i wanna know)\s+/, '')
+      .trim();
+  }
+
+  // Returns { id, replies } for exactly one matching intent, or null.
+  function matchFaq(rawText) {
+    const raw = String(rawText || '').trim();
+    if (!raw || raw.length > FAQ_MAX_LEN) return null;
+    if (EMAIL_INTENT.test(raw)) return { id: 'email', replies: EMAIL_REPLIES };
+
+    const base = normalizeQuery(raw);
+    if (!base || FAQ_BYPASS.test(base)) return null;
+
+    // Whole-message intents (greetings, thanks, bye) are tested on the
+    // untrimmed text, so "hello mian" is a greeting but "hi, where does
+    // he work?" is not.
+    for (const it of FAQ_INTENTS) {
+      if (it.whole && it.patterns.some(function (re) { return re.test(base); })) {
+        return { id: it.id, replies: it.replies };
+      }
+    }
+    const q = stripLead(base);
+    if (!q) return null;
+    // Two or more real questions in one message → let the LLM combine them.
+    if ((raw.match(/\?/g) || []).length > 1) return null;
+
+    const hits = [];
+    for (const it of FAQ_INTENTS) {
+      if (it.whole) continue;
+      if (it.patterns.some(function (re) { return re.test(q); })) hits.push(it);
+    }
+    if (hits.length !== 1) return null;
+    const it = hits[0];
+    return { id: it.id, replies: it.replies };
+  }
+
+  // Random variant, never the same as the last one used for that intent.
+  const _lastVariant = {};
+  function pickVariant(id, replies) {
+    if (!replies || !replies.length) return '';
+    let i = Math.floor(Math.random() * replies.length);
+    if (replies.length > 1 && i === _lastVariant[id]) i = (i + 1) % replies.length;
+    _lastVariant[id] = i;
+    return replies[i];
+  }
+
+  // Quick-start chips map straight onto FAQ intents.
+  const CHIP_INTENTS = {
+    'Tell me about JC': 'about_jc',
+    'Is he open to work?': 'open_to_work',
+    "What's his experience?": 'experience'
+  };
+
+  // Console helper for testing patterns: __mianMatch("where did he study")
+  window.__mianMatch = function (t) {
+    const m = matchFaq(t);
+    return m ? { intent: m.id, normalized: normalizeQuery(t) } : { intent: null, normalized: normalizeQuery(t), note: 'goes to LLM' };
+  };
+  // ================== END MIAN FAQ CACHE ==================
   if (window.__mianChatbotLoaded) return;
   window.__mianChatbotLoaded = true;
 
@@ -1149,6 +1563,11 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       padding: 4px 0;
     }
     .cb-textarea::placeholder { color: var(--text-tertiary, #aeaeb2); }
+    /* iOS Safari zooms the page when focusing any field under 16px.
+       Use 16px on phones / touch screens so opening Mian never zooms. */
+    @media (max-width: 767px), (pointer: coarse) {
+      .cb-textarea { font-size: 16px; line-height: 1.35; }
+    }
     .cb-send {
       width: 32px;
       height: 32px;
@@ -1644,7 +2063,7 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
 
     glowManager.init(ring);
 
-    // Chip click: answer instantly from CACHED_REPLIES — no LLM call.
+    // Chip click: answer instantly from the FAQ cache — no LLM call.
     // Falls back to the normal send() path if a chip label somehow
     // isn't in the cache, so nothing silently breaks.
     chipsRow.querySelectorAll('.cb-chip').forEach(chip => {
@@ -1652,7 +2071,7 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
         if (!panelReady || isSending) return;
         const label = chip.textContent.trim();
         chipsRow.querySelectorAll('.cb-chip').forEach(c => c.classList.add('cb-chip-gone'));
-        if (CACHED_REPLIES[label]) {
+        if (CHIP_INTENTS[label] && FAQ_BY_ID[CHIP_INTENTS[label]]) {
           sendCachedChip(label);
         } else {
           textarea.value = label;
@@ -1751,7 +2170,7 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
         if (mianEl._cbDragged) return;
         if (isPanelOpen()) { closePanel(); } else { openPanel(); }
       });
-      mianEl.addEventListener('pointerdown', function() {
+      mianEl.addEventListener('pointerdown', function(event) {
         mianEl._cbDragged = false;
         mianEl._cbStartX = event.clientX;
         mianEl._cbStartY = event.clientY;
@@ -2148,21 +2567,24 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
 
       // Contact/email questions get an instant cached answer (with the
       // Copy/Send email buttons) instead of hitting the LLM.
-      if (EMAIL_INTENT.test(text)) {
-        await replyInstant(EMAIL_REPLIES[Math.floor(Math.random() * EMAIL_REPLIES.length)]);
+      // Common questions (and contact/email requests) get an instant
+      // answer from the FAQ cache instead of hitting the LLM.
+      const faq = matchFaq(text);
+      if (faq) {
+        await replyInstant(pickVariant(faq.id, faq.replies));
       } else {
         await attemptReply();
       }
     }
 
     // Instant reply for the quick-question chips — pulls a random
-    // pre-written variant from CACHED_REPLIES instead of calling the
+    // pre-written variant from the FAQ cache instead of calling the
     // API, so the first answer feels immediate. Still logs into
     // `history` so a follow-up question has real context for the LLM.
     async function sendCachedChip(label) {
       if (isSending) return;
-      const variants = CACHED_REPLIES[label];
-      if (!variants || !variants.length) return;
+      const intent = FAQ_BY_ID[CHIP_INTENTS[label]];
+      if (!intent || !intent.replies.length) return;
 
       isSending = true;
       updateUI();
@@ -2176,7 +2598,7 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       const typingEl = addTyping();
       glowManager.pauseIdle();
 
-      const reply = variants[Math.floor(Math.random() * variants.length)];
+      const reply = pickVariant(intent.id, intent.replies);
 
       // Small natural-feeling pause before the reply appears — this is
       // the only "wait," and it's local, not a network round trip.
