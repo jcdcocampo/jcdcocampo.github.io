@@ -795,9 +795,23 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
         /\bportfolio (work|pieces?|projects?)\b/
       ],
       replies: [
-        "JC's projects include Mian (that's me, his AI portfolio assistant), Aguila (an energy-efficient vehicle built with Mapua's Cardinal One team for the Shell Eco-marathon), an IEEE-recognized thesis using a feedforward neural network to predict Lakatan banana shelf life from transport sensor data, and EEG exoskeleton research on brain-computer interfaces. Ask about any of them for more.",
-        "A few highlights: Aguila, an energy-efficient vehicle for the Shell Eco-marathon with Mapua Cardinal One; his IEEE-recognized banana shelf-life neural network research; EEG exoskeleton (brain-computer interface) research; and Mian, the assistant you're talking to now. The Projects page has the full details.",
-        "JC has worked on Mian (this AI assistant), the Aguila energy-efficient vehicle for the Shell Eco-marathon, an IEEE-recognized neural network for predicting banana shelf life, and EEG exoskeleton research. Want details on any one of them?"
+        "JC's projects include BusHop (a bus tracker for the Zambales Line with its own AI assistant, BusBoy), Mian (that's me, his AI portfolio assistant), Aguila (an energy-efficient vehicle built with Mapua's Cardinal One team for the Shell Eco-marathon), an IEEE-recognized thesis using a neural network to predict Lakatan banana shelf life from transport sensor data, and EEG exoskeleton research on brain-computer interfaces. Ask about any of them for more.",
+        "A few highlights: BusHop, a map-based bus tracking app for the Zambales Line; Aguila, an energy-efficient vehicle for the Shell Eco-marathon with Mapua Cardinal One; his IEEE-recognized banana shelf-life neural network research; EEG exoskeleton (brain-computer interface) research; and Mian, the assistant you're talking to now. The Projects page has the full details.",
+        "JC has built BusHop (a Zambales Line bus tracker with the BusBoy chatbot), Mian (this AI assistant), and the Aguila energy-efficient vehicle for the Shell Eco-marathon. On the research side, there's his IEEE-recognized banana shelf-life neural network and EEG exoskeleton work. Want details on any one of them?"
+      ]
+    },
+    {
+      id: 'project_bushop',
+      patterns: [
+        /\bbus ?hop\b/,
+        /\bbus ?boy\b/,
+        /\bbus (tracker|tracking|app)\b/,
+        /\bzambales\b/
+      ],
+      replies: [
+        "BusHop is a personal project by JC: a web app that tracks buses along the Zambales Line on a live map. You can set an origin and destination, see buses moving along the route, and check local weather. It also has its own AI assistant, BusBoy, that answers commuter questions. The current version is a demo with simulated buses. Try it at jcdcocampo.github.io/bushop.",
+        "BusHop is JC's bus tracking web app for the Zambales Line. It shows buses on an interactive map, lets you plan a trip from your origin to your destination, displays the current weather, and includes BusBoy, an AI chatbot for route and fare questions. It currently runs as a demo with simulated bus data. You can open it at jcdcocampo.github.io/bushop.",
+        "JC built BusHop, a map-based bus tracker for the Zambales Line, plus BusBoy, its built-in AI assistant (a sibling of mine!). It's a demo for now, using simulated buses, and it's live at jcdcocampo.github.io/bushop."
       ]
     },
     {
@@ -2802,6 +2816,7 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
      are the same no matter which page the palette is opened from. ── */
   var CONTENT = [
     { group: 'Projects', label: 'Mian: An Intelligent Portfolio Assistant', hint: 'Personal Project', icon: ICON.proj, url: 'mian.html', keywords: 'mian chatbot ai assistant portfolio javascript' },
+    { group: 'Projects', label: 'BusHop: Zambales Line Bus Tracker', hint: 'Personal Project · with BusBoy AI assistant', icon: ICON.proj, url: 'https://jcdcocampo.github.io/bushop/', keywords: 'bushop busboy bus hop tracker tracking zambales line map transit commute chatbot app' },
     { group: 'Projects', label: 'Aguila — Energy-Efficient Vehicle', hint: 'Mapua Cardinal One · Shell Eco-marathon', icon: ICON.proj, url: 'aguila.html', keywords: 'aguila shell eco-marathon vehicle energy efficient cardinal one' },
     { group: 'Projects', label: 'Banana Shelf Life Neural Network', hint: 'IEEE research', icon: ICON.proj, url: 'banana-shelflife.html', keywords: 'banana shelf life neural network lakatan ieee sensor prediction' },
     { group: 'Projects', label: 'EEG Exoskeleton (BCI)', hint: 'Brain-computer interface research', icon: ICON.proj, url: 'eeg-exoskeleton.html', keywords: 'eeg exoskeleton brain computer interface bci rehabilitation' },
