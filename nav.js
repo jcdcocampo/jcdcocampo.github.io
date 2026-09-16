@@ -1403,6 +1403,13 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       border-bottom-left-radius: 4px;
       align-self: flex-start;
     }
+    .cb-msg-bot a {
+      color: var(--accent, #007aff);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      word-break: break-word;
+    }
+    .cb-msg-bot a:hover { opacity: 0.8; }
     .cb-msg-user {
       background: var(--accent, #007aff);
       color: #fff;
@@ -2253,7 +2260,7 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       const avatar = buildSmallAvatar();
       const bubble = document.createElement('div');
       bubble.className = 'cb-msg cb-msg-bot';
-      bubble.textContent = text; // textContent — safe
+      cbLinkify(bubble, text); // text nodes plus real links — safe
 
       row.appendChild(avatar);
       row.appendChild(bubble);
@@ -2281,6 +2288,34 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
       return { row, bubble };
     }
 
+    /* Turns URLs in a finished bot reply into real links.
+       Text is still inserted as text nodes, never as innerHTML, so nothing in a
+       reply can inject markup. Emails are left alone. */
+    const CB_URL_RE = /((?:https?:\/\/|www\.)[^\s<>]+|(?:[a-z0-9-]+\.)+(?:com|org|net|io|ph|dev|app|ai|me|co|edu|gov)(?:\.[a-z]{2})?(?:\/[^\s<>]*)?)/gi;
+
+    function cbLinkify(el, text) {
+      el.textContent = '';
+      let last = 0;
+      let m;
+      CB_URL_RE.lastIndex = 0;
+      while ((m = CB_URL_RE.exec(text)) !== null) {
+        let raw = m[0];
+        const start = m.index;
+        if (start > 0 && /[@\w]/.test(text.charAt(start - 1))) continue; // part of an email or word
+        const trimmed = raw.replace(/[.,;:!?)\]'"]+$/, '');              // keep sentence punctuation outside the link
+        if (!/[a-z]{2}/i.test(trimmed)) continue;
+        if (start > last) el.appendChild(document.createTextNode(text.slice(last, start)));
+        const a = document.createElement('a');
+        a.href = /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = trimmed;
+        el.appendChild(a);
+        last = start + trimmed.length;
+      }
+      if (last < text.length) el.appendChild(document.createTextNode(text.slice(last)));
+    }
+
     function typeIntoBubble(bubble, text) {
       return new Promise((resolve) => {
         const total = text.length;
@@ -2288,7 +2323,7 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
 
         let i = 0;
         function step() {
-          if (i >= total) { resolve(); return; }
+          if (i >= total) { cbLinkify(bubble, text); resolve(); return; } // swap plain text for real links
           const ch = text.charAt(i);
           bubble.textContent += ch;
           messagesEl.scrollTop = messagesEl.scrollHeight;
