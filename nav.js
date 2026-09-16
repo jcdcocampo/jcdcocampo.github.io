@@ -795,9 +795,9 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
         /\bportfolio (work|pieces?|projects?)\b/
       ],
       replies: [
-        "JC's projects include BusHop (a bus tracker for the Zambales Line with its own AI assistant, BusBoy), Mian (that's me, his AI portfolio assistant), Aguila (an energy-efficient vehicle built with Mapua's Cardinal One team for the Shell Eco-marathon), an IEEE-recognized thesis using a neural network to predict Lakatan banana shelf life from transport sensor data, and EEG exoskeleton research on brain-computer interfaces. Ask about any of them for more.",
-        "A few highlights: BusHop, a map-based bus tracking app for the Zambales Line; Aguila, an energy-efficient vehicle for the Shell Eco-marathon with Mapua Cardinal One; his IEEE-recognized banana shelf-life neural network research; EEG exoskeleton (brain-computer interface) research; and Mian, the assistant you're talking to now. The Projects page has the full details.",
-        "JC has built BusHop (a Zambales Line bus tracker with the BusBoy chatbot), Mian (this AI assistant), and the Aguila energy-efficient vehicle for the Shell Eco-marathon. On the research side, there's his IEEE-recognized banana shelf-life neural network and EEG exoskeleton work. Want details on any one of them?"
+        "JC's projects include BusHop (a team capstone that tracks Victory Liner buses across four Luzon lines, with its own AI assistant, BusBoy), Mian (that's me, his AI portfolio assistant), Aguila (an energy-efficient vehicle built with Mapua's Cardinal One team for the Shell Eco-marathon), an IEEE-recognized thesis using a neural network to predict Lakatan banana shelf life from transport sensor data, and EEG exoskeleton research on brain-computer interfaces. Ask about any of them for more.",
+        "A few highlights: BusHop, a Victory Liner bus tracking and trip planning app covering the Zambales, Pangasinan, Baguio and Cagayan Valley lines; Aguila, an energy-efficient vehicle for the Shell Eco-marathon with Mapua Cardinal One; his IEEE-recognized banana shelf-life neural network research; EEG exoskeleton (brain-computer interface) research; and Mian, the assistant you're talking to now. The Projects page has the full details.",
+        "JC has worked on BusHop (a four-line Victory Liner bus tracker with the BusBoy chatbot, built as a team capstone), Mian (this AI assistant), and the Aguila energy-efficient vehicle for the Shell Eco-marathon. On the research side, there's his IEEE-recognized banana shelf-life neural network and EEG exoskeleton work. Want details on any one of them?"
       ]
     },
     {
@@ -806,12 +806,13 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
         /\bbus ?hop\b/,
         /\bbus ?boy\b/,
         /\bbus (tracker|tracking|app)\b/,
-        /\bzambales\b/
+        /\bzambales\b/,
+        /\bvictory ?liner\b/
       ],
       replies: [
-        "BusHop is a personal project by JC: a web app that tracks buses along the Zambales Line on a live map. You can set an origin and destination, see buses moving along the route, and check local weather. It also has its own AI assistant, BusBoy, that answers commuter questions. The current version is a demo with simulated buses. Try it at jcdcocampo.github.io/bushop.",
-        "BusHop is JC's bus tracking web app for the Zambales Line. It shows buses on an interactive map, lets you plan a trip from your origin to your destination, displays the current weather, and includes BusBoy, an AI chatbot for route and fare questions. It currently runs as a demo with simulated bus data. You can open it at jcdcocampo.github.io/bushop.",
-        "JC built BusHop, a map-based bus tracker for the Zambales Line, plus BusBoy, its built-in AI assistant (a sibling of mine!). It's a demo for now, using simulated buses, and it's live at jcdcocampo.github.io/bushop."
+        "BusHop is a capstone project JC and his team built at Accenture's Digital Core Elite Bootcamp: a web app that tracks Victory Liner buses on a live map across four lines (Zambales, Pangasinan, Baguio and Cagayan Valley). It plans trips with transfers, estimates fares, and shows where you can board. It also has its own AI assistant, BusBoy, that answers commuter questions. It's a working prototype with simulated buses. Try it at jcdcocampo.github.io/bushop.",
+        "BusHop is a bus tracking and trip planning web app for Victory Liner's Zambales, Pangasinan, Baguio and Cagayan Valley lines, built by JC and his team as their Accenture bootcamp capstone. It shows around 900 buses on an interactive map, plans trips end to end, estimates fares, and includes BusBoy, an AI chatbot for route and fare questions. The buses are simulated for now. You can open it at jcdcocampo.github.io/bushop.",
+        "JC and his capstone team built BusHop, a map-based tracker for four Victory Liner lines (Zambales, Pangasinan, Baguio and Cagayan Valley), plus BusBoy, its built-in AI assistant (a sibling of mine!). It's a prototype for now, using simulated buses, and it's live at jcdcocampo.github.io/bushop."
       ]
     },
     {
@@ -2851,7 +2852,7 @@ _themeObserver.observe(document.documentElement, { attributes: true, attributeFi
      are the same no matter which page the palette is opened from. ── */
   var CONTENT = [
     { group: 'Projects', label: 'Mian: An Intelligent Portfolio Assistant', hint: 'Personal Project', icon: ICON.proj, url: 'mian.html', keywords: 'mian chatbot ai assistant portfolio javascript' },
-    { group: 'Projects', label: 'BusHop: Zambales Line Bus Tracker', hint: 'Personal Project · with BusBoy AI assistant', icon: ICON.proj, url: 'https://jcdcocampo.github.io/bushop/', keywords: 'bushop busboy bus hop tracker tracking zambales line map transit commute chatbot app' },
+    { group: 'Projects', label: 'BusHop: Victory Liner Bus Tracker', hint: 'Capstone Project · 4 lines · with BusBoy AI assistant', icon: ICON.proj, url: 'https://jcdcocampo.github.io/bushop/', keywords: 'bushop busboy bus hop tracker tracking victory liner zambales pangasinan baguio cagayan capstone accenture line map transit commute chatbot app' },
     { group: 'Projects', label: 'Aguila — Energy-Efficient Vehicle', hint: 'Mapua Cardinal One · Shell Eco-marathon', icon: ICON.proj, url: 'aguila.html', keywords: 'aguila shell eco-marathon vehicle energy efficient cardinal one' },
     { group: 'Projects', label: 'Banana Shelf Life Neural Network', hint: 'IEEE research', icon: ICON.proj, url: 'banana-shelflife.html', keywords: 'banana shelf life neural network lakatan ieee sensor prediction' },
     { group: 'Projects', label: 'EEG Exoskeleton (BCI)', hint: 'Brain-computer interface research', icon: ICON.proj, url: 'eeg-exoskeleton.html', keywords: 'eeg exoskeleton brain computer interface bci rehabilitation' },
