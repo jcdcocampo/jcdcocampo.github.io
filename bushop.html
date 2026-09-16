@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/jpeg" href="assets/favicon.jpg" />
+  <link rel="apple-touch-icon" href="assets/favicon.jpg" />
+  <title>BusHop: Live Bus Tracking and Trip Planning for Victory Liner Routes | Engr. Jose Carlo David Ocampo</title>
+  <meta name="description" content="BusHop is a capstone project from Accenture's Digital Core Elite Bootcamp: a web application that shows where Victory Liner buses are, when the next one arrives, what the fare costs, and exactly where a commuter can board." />
+  <meta name="author" content="Jose Carlo David Ocampo" />
+  <meta name="robots" content="index, follow" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://jcdcocampo.github.io/bushop.html" />
+  <meta property="og:title" content="BusHop: Live Bus Tracking and Trip Planning for Victory Liner Routes" />
+  <meta property="og:description" content="A capstone project from Accenture's Digital Core Elite Bootcamp: live bus tracking, fares and boarding points for Victory Liner routes across Central and Northern Luzon." />
+  <meta property="og:image" content="https://jcdcocampo.github.io/assets/projects/bushop.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="BusHop: Live Bus Tracking and Trip Planning for Victory Liner Routes" />
+  <meta name="twitter:description" content="A capstone project from Accenture's Digital Core Elite Bootcamp: live bus tracking, fares and boarding points for Victory Liner routes across Central and Northern Luzon." />
+  <meta name="twitter:image" content="https://jcdcocampo.github.io/assets/projects/bushop.jpg" />
+  <script>
+    (function(){
+      try {
+        if (localStorage.getItem('theme') === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch(e){}
+    })();
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sf: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+            'Helvetica Neue', Arial, sans-serif;
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --sub-card: #f0f0f5;
+      --sub-hover: #e5e5ea;
+      --text-primary: #1c1c1e;
+      --text-secondary: #636366;
+      --text-tertiary: #aeaeb2;
+      --accent: #007aff;
+      --separator: #e5e5ea;
+      --radius-inner: 14px;
+      --radius-outer: 18px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.07);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.12);
+      --transition: 0.18s ease;
+    }
+
+    [data-theme="dark"] {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --sub-card: #2c2c2e;
+      --sub-hover: #2c2c2e;
+      --text-primary: #ffffff;
+      --text-secondary: #aeaeb2;
+      --text-tertiary: #636366;
+      --separator: #38383a;
+      --shadow: 0 2px 12px rgba(0,0,0,0.4);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.6);
+    }
+
+    html {
+      font-family: var(--sf);
+      background: var(--bg);
+      color: var(--text-primary);
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+    body { min-height: 100vh; background: var(--bg); transition: background 0.4s ease; padding-bottom: 100px; }
+
+    a { color: inherit; text-decoration: none; }
+
+    .fade-up {
+      opacity: 0;
+      transform: translateY(24px);
+      animation: fadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+    .fade-up.delay-0 { animation-delay: 0.00s; }
+    .fade-up.delay-1 { animation-delay: 0.10s; }
+    .fade-up.delay-2 { animation-delay: 0.20s; }
+    .fade-up.delay-3 { animation-delay: 0.30s; }
+    .fade-up.delay-4 { animation-delay: 0.40s; }
+    .fade-up.delay-5 { animation-delay: 0.50s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-up { animation: none; opacity: 1; transform: none; }
+    }
+
+    .top-bar {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 40px 0;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--text-primary);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
+    }
+    .back-link:hover {
+      background: var(--sub-hover);
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-1px);
+    }
+    .back-link:active { transform: scale(0.94); }
+    .back-link svg { width: 20px; height: 20px; }
+
+    .breadcrumb {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+    }
+
+    .article {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 60px 40px 40px;
+    }
+
+    .article-eyebrow {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 18px;
+    }
+
+    .article-title {
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -1.2px;
+      line-height: 1.05;
+      margin-bottom: 24px;
+      color: var(--text-primary);
+    }
+
+    .article-subtitle {
+      font-size: 22px;
+      font-weight: 400;
+      line-height: 1.4;
+      color: var(--text-secondary);
+      letter-spacing: -0.3px;
+      margin-bottom: 48px;
+      max-width: 820px;
+    }
+
+    .hero-image {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: var(--radius-outer);
+      overflow: hidden;
+      background: var(--sub-card);
+      box-shadow: var(--shadow);
+      margin-bottom: 56px;
+    }
+    .hero-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .article-body {
+      max-width: 720px;
+      margin: 0 auto;
+      font-size: 19px;
+      line-height: 1.65;
+      color: var(--text-primary);
+      letter-spacing: -0.1px;
+    }
+
+    .article-body p { margin-bottom: 24px; }
+
+    .article-body p.lead {
+      font-size: 21px;
+      font-weight: 500;
+      letter-spacing: -0.2px;
+      margin-bottom: 32px;
+    }
+
+    .article-body h2 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-top: 48px;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+    }
+
+    .article-body ul {
+      padding-left: 22px;
+      margin-bottom: 24px;
+    }
+    .article-body li { margin-bottom: 8px; }
+
+    /* ---------- VISIT SITE BUTTON ---------- */
+    .article-cta-row {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 56px;
+    }
+
+    .view-full-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 980px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: var(--sf);
+      cursor: pointer;
+      transition: opacity var(--transition), transform var(--transition);
+    }
+    .view-full-btn:hover { opacity: 0.85; transform: scale(1.02); }
+    .view-full-btn:active { transform: scale(0.97); }
+    .view-full-btn svg { width: 13px; height: 13px; }
+
+    .article-meta {
+      max-width: 720px;
+      margin: 56px auto 0;
+      padding-top: 32px;
+      border-top: 1px solid var(--separator);
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+    .article-meta strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px 20px 30px;
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--separator);
+      padding-top: 22px;
+      margin-top: 8px;
+      width: min(360px, 88%);
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .footer-links a {
+      color: var(--text-secondary);
+      font-size: 13px;
+      transition: color var(--transition);
+    }
+    .footer-links a:hover { color: var(--accent); }
+
+    @media (max-width: 767px) {
+      .top-bar { padding: 24px 20px 0; gap: 14px; }
+      .back-link { width: 26px; height: 26px; }
+      .back-link svg { width: 18px; height: 18px; }
+      .breadcrumb { font-size: 20px; }
+
+      .article { padding: 32px 20px 20px; }
+
+      .article-eyebrow { font-size: 12px; margin-bottom: 12px; }
+      .article-title { font-size: 32px; letter-spacing: -0.6px; margin-bottom: 16px; }
+      .article-subtitle { font-size: 17px; margin-bottom: 32px; }
+
+      .hero-image { border-radius: 14px; margin-bottom: 36px; }
+
+      .article-body { font-size: 17px; }
+      .article-body p.lead { font-size: 18px; }
+      .article-body h2 { font-size: 22px; margin-top: 36px; }
+
+      .article-meta { font-size: 14px; margin-top: 40px; padding-top: 24px; }
+      .view-full-btn { font-size: 12px; padding: 7px 16px; }
+      .view-full-btn svg { width: 12px; height: 12px; }
+      .article-cta-row { margin-bottom: 40px; }
+
+      footer { padding: 30px 16px 24px; }
+      .footer-links { gap: 14px; margin-bottom: 8px; }
+      .footer-links a { font-size: 12px; }
+    }
+  
+  
+  
+  
+  
+  
+  
+    /* ── Liquid Glass Nav ── */
+  #navc button{cursor:pointer;border:none;outline:none;background:none;font-family:inherit;-webkit-tap-highlight-color:transparent;touch-action:none;user-select:none;-webkit-user-select:none}
+  .nb{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 20px;min-width:74px;border-radius:9999px}
+  .bw{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 20px;min-width:74px;border:none;background:none;box-sizing:border-box;font-family:inherit;border-radius:980px;font-weight:600;pointer-events:none;color:#007aff}
+  #navc {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+  }
+  @media (min-width: 768px) {
+    #mian {
+      position: fixed !important;
+      bottom: 32px !important;
+      right: 32px !important;
+      left: auto !important;
+      top: auto !important;
+    }
+  }
+  @media (max-width: 767px) {
+    #navc {
+      bottom: 24px;
+    }
+    #mian {
+      position: fixed !important;
+      bottom: 24px;
+      top: auto !important;
+      right: auto !important;
+      left: 50%;
+    }
+  }
+
+
+  .top-bar-spacer {
+    height: 40px;
+  }
+  @media (max-width: 767px) {
+    .top-bar-spacer { height: 24px; }
+  }
+  /* ── Sticky top-bar ── */
+  .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 998;
+    background: rgba(242, 242, 247, 0.72);
+    backdrop-filter: blur(48px) saturate(200%);
+    -webkit-backdrop-filter: blur(48px) saturate(200%);
+    -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 32px), transparent 100%);
+    mask-image: linear-gradient(to bottom, black calc(100% - 32px), transparent 100%);
+    padding-bottom: 44px !important;
+    margin-bottom: 0 !important;
+    transition: background 0.4s ease;
+  }
+  [data-theme="dark"] .top-bar {
+    background: rgba(0, 0, 0, 0.72);
+  }
+
+  </style>
+</head>
+<body>
+
+  <div class="top-bar-spacer"></div>
+  <div class="top-bar fade-up delay-0">
+    <a class="back-link" href="projects.html" aria-label="Back to Projects">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="19" y1="12" x2="5" y2="12"/>
+        <polyline points="12 19 5 12 12 5"/>
+      </svg>
+    </a>
+    <span class="breadcrumb">Projects</span>
+  </div>
+
+  <article class="article">
+
+    <div class="article-eyebrow fade-up delay-1">Capstone Project &mdash; Mobility and Applied AI</div>
+
+    <h1 class="article-title fade-up delay-1">
+      BusHop: Live Bus Tracking and Trip Planning for Victory Liner Routes
+    </h1>
+
+    <p class="article-subtitle fade-up delay-2">
+      Our capstone project at Accenture's Digital Core Elite Bootcamp, a proposal for a web application that would tell a commuter where the bus is, when it arrives, what the fare costs, and exactly where they are allowed to board. The buses in the prototype are simulated, not live.
+    </p>
+
+    <div class="hero-image fade-up delay-2">
+      <img src="assets/projects/bushop.jpg" alt="BusHop live bus tracking application" />
+    </div>
+
+    <div class="article-cta-row fade-up delay-3">
+      <a class="view-full-btn" href="https://jcdcocampo.github.io/bushop/" target="_blank" rel="noopener">
+        Visit BusHop
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+          <polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </a>
+    </div>
+
+    <div class="article-body">
+
+      <p class="lead fade-up delay-3">
+        BusHop is a proposal, not a service that is running today. It is a working prototype built to show what live bus information could look like for provincial commuters, and the buses moving on its map are simulated rather than reported by real vehicles. Everything around them, the routes, the terminals, the boarding rules and the fares, is drawn from published Victory Liner information, government road data and fares confirmed by riders.
+      </p>
+
+      <p class="fade-up delay-3">
+        Anyone who has waited for a provincial bus knows the same three questions: is one actually coming, how long until it gets here, and how much will it cost. Printed schedules answer none of these, and on the expressway routes there is a fourth question that matters even more, whether a bus can legally stop for you at all.
+      </p>
+
+      <p class="fade-up delay-3">
+        BusHop is our proposed answer to those questions. It runs in any browser, with no installation and no account, and it covers Victory Liner services across Central and Northern Luzon: the Zambales, Pangasinan, Baguio and Cagayan Valley lines, in both their Express and Inner Cities forms.
+      </p>
+
+      <h2 class="fade-up delay-3">What It Does</h2>
+
+      <p class="fade-up delay-3">
+        Open the prototype and the map shows buses moving along the real road network, colour-coded by line. Set your location and you immediately see the nearest bus, its plate number, how many minutes away it is, and when it will reach you. Add a destination and the app plans the whole trip, including the fare, the arrival time, and whether the journey needs one bus or two.
+      </p>
+
+      <ul class="fade-up delay-3">
+        <li>Live tracking of around 900 buses across four lines, simulated in this prototype</li>
+        <li>Fare estimates calibrated against real Victory Liner fares</li>
+        <li>Boarding points with walking, motorcycle or car travel times</li>
+        <li>Automatic transfers at real terminals such as Dau, San Fernando and Urdaneta</li>
+        <li>BusBoy, a conversational assistant that answers in English, Filipino or a mix of both</li>
+      </ul>
+
+      <h2 class="fade-up delay-4">The Expressway Problem</h2>
+
+      <p class="fade-up delay-4">
+        The detail we spent the most time on is the one most commuters learn the hard way. Victory Liner's Express services run on NLEX, SCTEX and TPLEX, and buses cannot pick up passengers on an expressway. The exits are toll ramps, not bus stops.
+      </p>
+
+      <p class="fade-up delay-4">
+        So BusHop refuses to give a boarding point when your location falls on an expressway, and directs you instead to the places where buses actually stop, the Tabang bus stop in Guiguinto, the Dau terminal in Mabalacat, or the nearest terminal. Getting this right meant tracing the real route each service takes, verified against published route boards, government road data and expressway kilometre posts.
+      </p>
+
+      <h2 class="fade-up delay-4">How It Is Built</h2>
+
+      <p class="fade-up delay-4">
+        The entire application is a single HTML file served as a static page, with one small Cloudflare Worker behind the assistant so that no API key is ever exposed to the browser. The map is rendered with MapLibre GL JS over open map tiles, and the road shapes are traced against a public routing service, so the lines on screen follow the actual highways rather than straight approximations.
+      </p>
+
+      <p class="fade-up delay-4">
+        The buses themselves are simulated rather than fed by live GPS, which is the main thing that separates the proposal from a deployable service. In practice the positions would come from the operator's own GPS units. For now, each bus is generated from a seeded model, so every device shows the same fleet without any server, and their speeds respond to rush hour, night-time, weather and terrain. Fares come from a model calibrated against fares confirmed by riders, which is why BusBoy cannot invent a number: the assistant chooses which calculation to run, but the figures come from the fare matrix and the live simulation.
+      </p>
+
+      <h2 class="fade-up delay-4">The Team</h2>
+
+      <p class="fade-up delay-4">
+        BusHop was built as our capstone project at Accenture's Digital Core Elite Bootcamp, a programme focused on applying cloud, data and AI to real problems. It was a genuinely collaborative build, and the expressway rules, the fare model and the assistant each came out of long discussions about how commuters actually travel.
+      </p>
+
+      <div class="article-meta fade-up delay-4">
+        <p><strong>Team:</strong> Jose Carlo David Ocampo, Micheal Radislao, Jayrene Culasing, Nestor Morales III, Prince Mangahas</p>
+        <p><strong>Programme:</strong> Digital Core Elite Bootcamp, Accenture Philippines</p>
+        <p><strong>Type:</strong> Capstone project</p>
+        <p><strong>Status:</strong> Proposal and working prototype; bus positions are simulated, not live</p>
+        <p><strong>Coverage:</strong> Victory Liner Zambales, Pangasinan, Baguio and Cagayan Valley lines</p>
+        <p><strong>Live demo:</strong> <a href="https://jcdcocampo.github.io/bushop/" target="_blank" rel="noopener" style="color: var(--accent); text-decoration: none;">jcdcocampo.github.io/bushop</a></p>
+      </div>
+
+    </div>
+
+  </article>
+  <footer class="fade-up delay-5">
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms and Conditions</a>
+    </div>
+    &copy; 2026 Jose Carlo David Ocampo. All rights reserved.
+  </footer>
+
+  
+<script>
+(function(){
+  var tb=document.querySelector('.top-bar');
+  var title=tb&&(tb.querySelector('.page-title')||tb.querySelector('.breadcrumb'));
+  if(!tb||!title)return;
+  var origSize=parseFloat(getComputedStyle(title).fontSize);
+  var minSize=Math.max(16, origSize*0.7);
+  var ticking=false;
+  window.addEventListener('scroll',function(){
+    if(!ticking){ticking=true;requestAnimationFrame(function(){
+      var p=Math.min(1,window.scrollY/80);
+      title.style.fontSize=((1-p)*origSize+p*minSize)+'px';
+      ticking=false;
+    });}
+  },{passive:true});
+})();
+</script>
+
+
+
+<script>window.__navActive="projects";</script>
+<div id="navc" style="opacity:0;position:fixed;bottom:32px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;z-index:1000">
+    <div id="pill" style="position:relative;display:flex;align-items:stretch;padding:5px;border-radius:9999px;
+      background:linear-gradient(180deg,rgba(255,255,255,.18) 0%,rgba(245,245,255,.14) 100%);
+      backdrop-filter:blur(72px) saturate(240%) brightness(1.08);-webkit-backdrop-filter:blur(72px) saturate(240%) brightness(1.08);
+      box-shadow:0 0 0 .5px rgba(255,255,255,.5),0 0 0 1px rgba(0,0,0,.06),0 6px 30px rgba(0,0,0,.10),inset 0 1.5px 0 rgba(255,255,255,1),inset 0 -.5px 0 rgba(0,0,0,.04);
+      cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;
+      transition:background .45s,box-shadow .45s,transform .38s ease">
+      <div id="rpill" style="position:absolute;border-radius:9999px;pointer-events:none;z-index:0;
+        background:rgba(0,0,0,.10);opacity:1;transition:opacity .2s ease"></div>
+      <div id="ind" style="position:absolute;border-radius:9999px;pointer-events:none;z-index:1;
+        opacity:0;transition:opacity .18s ease;
+        background:rgba(0,122,255,.13);
+        backdrop-filter:blur(16px) saturate(400%) brightness(1.15);-webkit-backdrop-filter:blur(16px) saturate(400%) brightness(1.15);
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.68),inset 0 1.5px 0 rgba(255,255,255,.92),inset 0 -1px 0 rgba(0,0,0,.07),0 0 0 .5px rgba(255,255,255,.5),0 0 18px rgba(0,122,255,.18),0 3px 12px rgba(0,122,255,.13)">
+      </div>
+      <button class="nb" data-nav="home" style="color:rgba(0,0,0,.36)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span style="font-size:10px;font-weight:600;letter-spacing:.3px;line-height:1">Home</span>
+      </button>
+      <button class="nb" data-nav="experience" style="color:rgba(0,0,0,.36)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span style="font-size:10px;font-weight:600;letter-spacing:.3px;line-height:1">Experience</span>
+      </button>
+      <button class="nb" data-nav="projects" style="color:rgba(0,0,0,.36)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span style="font-size:10px;font-weight:600;letter-spacing:.3px;line-height:1">Projects</span>
+      </button>
+      <button class="nb" data-nav="certs" style="color:rgba(0,0,0,.36)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9.09 14L7 21l5-2 5 2-2.09-7"/></svg>
+        <span style="font-size:10px;font-weight:600;letter-spacing:.3px;line-height:1">Certs</span>
+      </button>
+      <div id="wl" style="position:absolute;inset:0;pointer-events:none;z-index:3;display:flex;align-items:stretch;padding:5px;gap:1px;will-change:clip-path">
+        <div class="bw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span style="font-size:10px;letter-spacing:.3px;line-height:1">Home</span></div>
+        <div class="bw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span style="font-size:10px;letter-spacing:.3px;line-height:1">Experience</span></div>
+        <div class="bw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span style="font-size:10px;letter-spacing:.3px;line-height:1">Projects</span></div>
+        <div class="bw"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9.09 14L7 21l5-2 5 2-2.09-7"/></svg><span style="font-size:10px;letter-spacing:.3px;line-height:1">Certs</span></div>
+      </div>
+    </div>
+  </div>
+<div id="mian" style="position:fixed;bottom:32px;right:32px;z-index:1001;width:60px;height:60px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer;
+      background:linear-gradient(180deg,rgba(255,255,255,.18) 0%,rgba(245,245,255,.14) 100%);
+      backdrop-filter:blur(72px) saturate(240%);-webkit-backdrop-filter:blur(72px) saturate(240%);
+      box-shadow:0 0 0 .5px rgba(255,255,255,.8),0 0 0 1px rgba(0,0,0,.06),0 8px 28px rgba(0,0,0,.09),inset 0 1.5px 0 rgba(255,255,255,1);
+      transition:background .45s,box-shadow .45s,transform .38s ease">
+      <div id="mind" style="position:absolute;width:60px;height:60px;border-radius:50%;pointer-events:none;z-index:1;will-change:transform;transform-origin:center;
+        background:rgba(0,122,255,.13);
+        backdrop-filter:blur(16px) saturate(400%) brightness(1.15);-webkit-backdrop-filter:blur(16px) saturate(400%) brightness(1.15);
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.68),inset 0 1.5px 0 rgba(255,255,255,.92),inset 0 -1px 0 rgba(0,0,0,.07),0 0 0 .5px rgba(255,255,255,.5),0 0 22px rgba(0,122,255,.22),0 4px 16px rgba(0,122,255,.16);
+        opacity:0;transition:opacity .25s ease"></div>
+      <svg id="mico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,.38)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:relative;z-index:4;pointer-events:none;transition:stroke .25s ease">
+        <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
+      </svg>
+    </div>
+<script src="nav.js" defer></script>
+<script>
+/* ── Eased "weighted" scroll (Apple investor-site style) ──
+   Mouse-wheel / trackpad input no longer jumps the page directly.
+   Instead each tick nudges a virtual target, and the real scroll
+   position eases toward it every frame — same idea as the smooth,
+   slightly heavy scroll on investor.apple.com. Touch scrolling on
+   phones/tablets is left completely native (no 'wheel' events fire
+   there), so mobile feel is untouched. */
+(function () {
+  var reduceMotion = window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) return;
+
+  var EASE = 0.085;       /* lower = heavier / more lag, like Apple's */
+  var MIN_DELTA = 0.05;   /* px threshold to stop the animation loop */
+
+  var current = window.scrollY || window.pageYOffset || 0;
+  var target  = current;
+  var rafId   = null;
+  var selfScroll = false;
+
+  function maxScroll() {
+    var doc = document.documentElement;
+    return Math.max(0, doc.scrollHeight - window.innerHeight);
+  }
+
+  function clamp(v) {
+    return Math.max(0, Math.min(v, maxScroll()));
+  }
+
+  function setScroll(y) {
+    selfScroll = true;
+    window.scrollTo(0, y);
+  }
+
+  function loop() {
+    current += (target - current) * EASE;
+    if (Math.abs(target - current) < MIN_DELTA) {
+      current = target;
+      setScroll(current);
+      rafId = null;
+      return;
+    }
+    setScroll(current);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function kick() {
+    if (!rafId) rafId = requestAnimationFrame(loop);
+  }
+
+  /* If the wheel/key event happened inside an element that has its
+     own internal scroll (e.g. a chat panel), let it scroll natively
+     instead of hijacking the page underneath it. */
+  function insideOwnScroller(el) {
+    while (el && el !== document.body && el !== document.documentElement) {
+      if (el.scrollHeight > el.clientHeight + 1) {
+        var oy = getComputedStyle(el).overflowY;
+        if (oy === 'auto' || oy === 'scroll') return true;
+      }
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  function onWheel(e) {
+    /* let ctrl/cmd + wheel (pinch-zoom gesture) behave natively */
+    if (e.ctrlKey || e.metaKey) return;
+    if (insideOwnScroller(e.target)) return;
+
+    var dy = e.deltaY;
+    if (e.deltaMode === 1) dy *= 16;              /* line mode   */
+    else if (e.deltaMode === 2) dy *= window.innerHeight; /* page mode */
+
+    e.preventDefault();
+    target = clamp(target + dy);
+    kick();
+  }
+
+  function onKey(e) {
+    var tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (/INPUT|TEXTAREA|SELECT/.test(tag)) return;
+    if (document.activeElement && document.activeElement.isContentEditable) return;
+    if (insideOwnScroller(document.activeElement || document.body)) return;
+
+    var step = window.innerHeight * 0.85;
+    var dy = 0;
+    switch (e.key) {
+      case 'ArrowDown': dy = 60; break;
+      case 'ArrowUp':   dy = -60; break;
+      case ' ':
+      case 'PageDown':  dy = e.shiftKey ? -step : step; break;
+      case 'PageUp':    dy = -step; break;
+      case 'Home':      target = 0; kick(); e.preventDefault(); return;
+      case 'End':       target = maxScroll(); kick(); e.preventDefault(); return;
+      default: return;
+    }
+    e.preventDefault();
+    target = clamp(target + dy);
+    kick();
+  }
+
+  /* Keep our virtual target in sync with any scroll we didn't cause
+     ourselves — anchor-link jumps, browser scroll restoration, etc. */
+  window.addEventListener('scroll', function () {
+    if (selfScroll) { selfScroll = false; return; }
+    current = target = window.scrollY || window.pageYOffset || 0;
+  }, { passive: true });
+
+  window.addEventListener('resize', function () {
+    target = clamp(target);
+  });
+
+  window.addEventListener('wheel', onWheel, { passive: false });
+  window.addEventListener('keydown', onKey, { passive: false });
+})();
+</script>
+</body>
+</html>
