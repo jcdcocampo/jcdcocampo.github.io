@@ -1,0 +1,26 @@
+{
+  "name": "Jose Carlo David Ocampo — Portfolio",
+  "short_name": "JC Ocampo",
+  "description": "Personal portfolio of Engr. Jose Carlo David Ocampo — Licensed Electronics Engineer in the Philippines. IoT, AI, and networking researcher.",
+  "start_url": "/",
+  "id": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f2f2f7",
+  "theme_color": "#007aff",
+  "icons": [
+    {
+      "src": "assets/favicon.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/favicon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}

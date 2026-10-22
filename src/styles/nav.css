@@ -1,0 +1,49 @@
+/* Shared navigation geometry and keyboard focus styling. */
+#navc button {
+  cursor: pointer;
+  border: 0;
+  outline: none;
+  background: none;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#navc button:focus-visible {
+  outline: 2px solid rgba(0, 122, 255, 0.8);
+  outline-offset: 2px;
+}
+.nb, .bw {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 20px;
+  min-width: 74px;
+  border-radius: var(--radius-pill);
+}
+.nb { position: relative; z-index: 2; }
+.bw {
+  box-sizing: border-box;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-weight: 600;
+  pointer-events: none;
+  color: #007aff;
+}
+#navc {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;}
+@media (min-width: 768px) {
+  #mian {position: fixed !important; bottom: 32px !important; right: 32px !important; left: auto !important; top: auto !important;}
+}
+@media (max-width: 767px) {
+  #navc {bottom: 24px;}
+  #mian {position: fixed !important; bottom: 24px; top: auto !important; right: auto !important; left: 50%;}
+}
