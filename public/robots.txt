@@ -1,8 +1,3 @@
-# robots.txt — https://jcdcocampo.github.io/
-# Crawlers are welcome to index the whole site.
-# When the custom domain goes live, change the Sitemap URL below to
-# https://jcdcocampo.com/sitemap.xml
-
 User-agent: *
 Allow: /
 
