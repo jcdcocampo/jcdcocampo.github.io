@@ -1,16 +1,16 @@
 # Image assets
 
-The React app loads public assets from root-relative paths such as `/images/hero/hero.JPG`. Keep the directory structure below intact when replacing or adding images.
+The React app loads public assets from root-relative paths such as `/images/optimized/hero.jpg`. Keep the directory structure below intact when replacing or adding images.
 
 | Folder | Contents |
 | --- | --- |
-| `hero/` | Landing portrait |
-| `experience/` | Accenture and Converge role photos and logos |
-| `education/` | Graduation photo, Mapúa, Cardinal One, IECEP-MUSC, and IEEE-MUSB artwork |
+| `optimized/` | Compressed, resized JPEG photos used by the page for faster loading |
+| `experience/` | Accenture and Converge logos |
+| `education/` | Mapúa logo |
 | `projects/` | 16:9 project hero images for Mian, BusHop, banana shelf-life research, Aguila, and EEG exoskeleton |
 | `certifications/` | PRC, Cisco, Google Cloud, and Google issuer logos |
 | `platforms/` | Credential and learning-profile logos |
-| `affiliation/` | IECEP affiliation photo and national logo |
+| `affiliation/` | IECEP national logo |
 | `social/` | LinkedIn and GitHub default and hover logos |
 | `mian/` | Mian chatbot avatar |
 

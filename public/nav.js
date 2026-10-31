@@ -1,5 +1,17 @@
 var PAGES={home:{t:'JC Ocampo',s:'Electronics Engineer · Manila, PH'},experience:{t:'Experience',s:'Roles, internships, and work history'},projects:{t:'Projects',s:'IEEE research, robots, and AI apps'},certs:{t:'Certifications',s:'PRC · Cisco · Google Cloud'}};
-var NAV_URLS={home:'/',experience:'/?page=experience',projects:'/?page=projects',certs:'/?page=licenses-certifications'};
+var NAV_URLS={home:'/',experience:'/experience',projects:'/projects',certs:'/licenses-and-certifications'};
+function portfolioRouteUrl(route){
+  if(route==='licenses'||route==='certs')return '/licenses-and-certifications';
+  if(route==='mian')return '/projects/mian';
+  if(route==='privacy')return '/privacy-policy';
+  if(route==='terms')return '/terms-and-conditions';
+  if(route==='home')return '/';
+  if(route.indexOf('project:')===0){
+    var slug=route.slice(8);
+    return '/projects/'+({bushop:'busboy','banana-shelflife':'feedforward'}[slug]||slug);
+  }
+  return NAV_URLS[route]||'/404.html';
+}
 var curId=window.__navActive||'home';
 
 /* ── Nav physics ── */
@@ -2479,13 +2491,8 @@ else setTimeout(init,0);
       if (!action) return;
       if (typeof window.__portfolioNavigate === 'function') {
         window.__portfolioNavigate(action.route);
-      } else if (action.route === 'home') {
-        window.location.href = '/';
-      } else if (action.route.startsWith('project:')) {
-        window.location.href = '/?page=project&project=' + encodeURIComponent(action.route.slice('project:'.length));
       } else {
-        const page = action.route === 'licenses' ? 'licenses-certifications' : action.route;
-        window.location.href = '/?page=' + encodeURIComponent(page);
+        window.location.href = portfolioRouteUrl(action.route);
       }
       if (action.section) {
         // Match Command-K's Jump to behavior: resolve the exact visible
@@ -3282,8 +3289,7 @@ else setTimeout(init,0);
         keywords: c.keywords, run: function () {
           if (c.route) {
             if (typeof window.__portfolioNavigate === 'function') window.__portfolioNavigate(c.route);
-            else if (c.route.indexOf('project:') === 0) window.location.href = '/?page=project&project=' + encodeURIComponent(c.route.slice(8));
-            else window.location.href = '/?page=' + (c.route === 'licenses' ? 'licenses-certifications' : c.route);
+            else window.location.href = portfolioRouteUrl(c.route);
             if (c.section) {
               var jumpToContent = function () {
                 var target = Array.prototype.find.call(document.querySelectorAll('[data-command-section]'), function (el) {

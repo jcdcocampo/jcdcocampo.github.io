@@ -43,7 +43,7 @@ button { font: inherit; -webkit-tap-highlight-color: transparent; }
 
 /* Landing: portrait stays crisp; a matching blurred fill and feather blend complete the wide canvas. */
 .hero { position: relative; min-height: min(780px, 82svh); display: flex; align-items: center; overflow: hidden; isolation: isolate; background: #d8d0d0; }
-.hero-backdrop { position: absolute; z-index: -2; inset: -35px; background: url('/images/hero/hero.JPG') center 35% / cover no-repeat; filter: blur(22px); opacity: .22; transform: scale(1.06); }
+.hero-backdrop { position: absolute; z-index: -2; inset: -35px; background: url('/images/optimized/hero.jpg') center 35% / cover no-repeat; filter: blur(22px); opacity: .22; transform: scale(1.06); }
 .hero::before { position: absolute; z-index: -1; inset: 0; content: ''; background: linear-gradient(90deg, transparent 20%, rgba(220,213,214,.18) 36%, #d8d0d0 58%, #d8d0d0 100%); }
 .hero::after { position: absolute; z-index: 1; right: 0; bottom: -1px; left: 0; height: clamp(80px, 13vw, 180px); content: ''; background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,.78) 72%, #000 100%); pointer-events: none; }
 .hero-inner { position: relative; display: flex; width: min(1440px, 100%); min-height: inherit; align-items: center; justify-content: flex-end; margin: 0 auto; padding: 64px var(--gutter) 112px; }
@@ -2173,12 +2173,13 @@ html { scroll-behavior: auto !important; }
   .licenses-filters button,
   .licenses-filters button.is-selected { padding-inline: 5px; font-size: 10px; }
   .licenses-row-track {
-    width: calc(var(--licenses-inset) + min(88vw, 380px));
+    width: 100vw;
     margin-left: calc((100% - 100vw) / 2);
     padding-left: var(--licenses-inset);
-    padding-right: 0;
-    grid-auto-columns: min(88vw, 380px);
+    padding-right: var(--licenses-inset);
+    grid-auto-columns: min(calc(100vw - var(--licenses-inset) - var(--licenses-inset)), 380px);
     gap: 14px;
+    scroll-padding-inline: var(--licenses-inset);
   }
   .licenses-row-track .licenses-record { scroll-snap-align: start; }
   .licenses-row-pagination { margin-top: 9px; }

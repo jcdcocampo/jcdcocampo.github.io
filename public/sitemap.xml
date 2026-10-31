@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://jcdcocampo.github.io/</loc><changefreq>monthly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://jcdcocampo.github.io/?page=experience</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://jcdcocampo.github.io/?page=projects</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://jcdcocampo.github.io/?page=licenses-certifications</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://jcdcocampo.github.io/?page=mian</loc><changefreq>yearly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://jcdcocampo.github.io/?page=project&amp;project=bushop</loc><changefreq>yearly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://jcdcocampo.github.io/?page=project&amp;project=banana-shelflife</loc><changefreq>yearly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://jcdcocampo.github.io/?page=project&amp;project=aguila</loc><changefreq>yearly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://jcdcocampo.github.io/?page=project&amp;project=eeg-exoskeleton</loc><changefreq>yearly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://jcdcocampo.github.io/?page=privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://jcdcocampo.github.io/?page=terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://jcdcocampo.github.io/experience</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://jcdcocampo.github.io/projects</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://jcdcocampo.github.io/licenses-and-certifications</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://jcdcocampo.github.io/projects/mian</loc><changefreq>yearly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://jcdcocampo.github.io/projects/busboy</loc><changefreq>yearly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://jcdcocampo.github.io/projects/feedforward</loc><changefreq>yearly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://jcdcocampo.github.io/projects/aguila</loc><changefreq>yearly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://jcdcocampo.github.io/projects/eeg-exoskeleton</loc><changefreq>yearly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://jcdcocampo.github.io/privacy-policy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://jcdcocampo.github.io/terms-and-conditions</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
 </urlset>

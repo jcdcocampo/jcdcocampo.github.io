@@ -3,6 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+    (function () {
+      var path = window.location.pathname.replace(/\/+$/, '') || '/';
+      var cleanPortfolioRoute = /^\/(?:experience|licenses-and-certifications|privacy-policy|terms-and-conditions|projects(?:\/[^/]+)?)$/.test(path);
+      if (!cleanPortfolioRoute) return;
+      try {
+        sessionStorage.setItem('portfolio-clean-route', path + window.location.search + window.location.hash);
+      } catch (error) {}
+      window.location.replace('/');
+    })();
+  </script>
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="apple-touch-icon" href="/favicon.png" />
   <title>Error 404</title>

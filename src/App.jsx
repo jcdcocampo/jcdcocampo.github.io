@@ -222,6 +222,54 @@ function cancelRailDrag(event, dragRef) {
 
 const email = 'mailto:jcdcocampo@gmail.com'
 const mobileSwipePages = ['home', 'experience', 'projects', 'licenses']
+const projectPathAliases = { bushop: 'busboy', 'banana-shelflife': 'feedforward' }
+function portfolioPathForPage(page) {
+  if (page === 'home') return '/'
+  if (page.startsWith('project:')) {
+    const slug = page.slice('project:'.length)
+    return `/projects/${projectPathAliases[slug] || slug}`
+  }
+  return ({
+    experience: '/experience',
+    projects: '/projects',
+    licenses: '/licenses-and-certifications',
+    mian: '/projects/mian',
+    privacy: '/privacy-policy',
+    terms: '/terms-and-conditions',
+  })[page] || '/404.html'
+}
+function portfolioPageFromLocation() {
+  const params = new URLSearchParams(window.location.search)
+  const legacyPage = params.get('page')
+  if (legacyPage === 'project') {
+    const slug = params.get('project') || ''
+    return institutionalProjectArticles[slug] ? `project:${slug}` : 'not-found'
+  }
+  const legacyRoutes = {
+    'licenses-certifications': 'licenses', projects: 'projects', mian: 'mian',
+    experience: 'experience', privacy: 'privacy', terms: 'terms',
+  }
+  if (legacyPage) return legacyRoutes[legacyPage] || 'not-found'
+
+  const path = window.location.pathname.replace(/\/+$/, '') || '/'
+  if (path === '/') return 'home'
+  const staticRoutes = {
+    '/experience': 'experience',
+    '/projects': 'projects',
+    '/licenses-and-certifications': 'licenses',
+    '/privacy-policy': 'privacy',
+    '/terms-and-conditions': 'terms',
+  }
+  if (staticRoutes[path]) return staticRoutes[path]
+  const projectPath = path.match(/^\/projects\/([^/]+)$/)
+  if (projectPath) {
+    if (projectPath[1] === 'mian') return 'mian'
+    const projectAliases = { busboy: 'bushop', bushop: 'bushop', feedforward: 'banana-shelflife', 'banana-shelflife': 'banana-shelflife' }
+    const slug = projectAliases[projectPath[1]] || projectPath[1]
+    return institutionalProjectArticles[slug] ? `project:${slug}` : 'not-found'
+  }
+  return 'not-found'
+}
 const pageSwipeInteractiveSelector = '#navc, input, textarea, select, option, [contenteditable="true"], [data-page-swipe-ignore]'
 const pageSwipeCarouselSelector = '.certification-track, .licenses-row-track, [data-carousel-track], [data-no-page-swipe]'
 function isPageSwipeExcluded(target, boundary) {
@@ -241,7 +289,7 @@ const socials = [
 ]
 
 function SectionTitle({ children }) { return <div className="section-title"><h2>{children}</h2></div> }
-function Photo({ src, alt, className = '' }) { return <div className={`photo ${className}`}><img src={src} alt={alt} loading="lazy" /></div> }
+function Photo({ src, alt, className = '' }) { return <div className={`photo ${className}`}><img src={src} alt={alt} loading="lazy" decoding="async" /></div> }
 function Logo({ src, label, className = '' }) { return <span className={`logo-frame ${className}`}><img src={src} alt={`${label} logo`} loading="lazy" /></span> }
 function ViewAll({ href, onClick }) { return href ? <a className="view-all" href={href} onClick={onClick}>View All</a> : <button className="view-all" type="button" aria-label="View All (coming later)">View All</button> }
 
@@ -262,7 +310,7 @@ function Hero() {
   return <section className="hero" id="home" data-command-section="Introduction">
     <div className="hero-backdrop" aria-hidden="true" />
     <div className="hero-inner">
-      <img className="hero-portrait" src="/images/hero/hero.JPG" alt="Jose Carlo David Ocampo" role="button" tabIndex={0} aria-label="Portrait of Jose Carlo David Ocampo" fetchPriority="high" onClick={countFaceClick} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); countFaceClick() } }} onLoad={(event) => event.currentTarget.classList.add('is-loaded')} />
+      <img className="hero-portrait" src="/images/optimized/hero.jpg" alt="Jose Carlo David Ocampo" role="button" tabIndex={0} aria-label="Portrait of Jose Carlo David Ocampo" fetchPriority="high" decoding="async" onClick={countFaceClick} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); countFaceClick() } }} onLoad={(event) => event.currentTarget.classList.add('is-loaded')} />
       <div className="hero-content">
         <h1>Engr. Jose Carlo<br />David Ocampo</h1>
         <p className="hero-role"><span className="role-primary">Application &amp; Cloud Support Associate</span><span className="role-divider" aria-hidden="true"> | </span><span className="role-secondary">Electronics Engineer</span></p>
@@ -293,22 +341,22 @@ function Experience() {
       onDragStart={(event) => event.preventDefault()}
       onClickCapture={(event) => { if (experienceDragRef.current?.moved) event.preventDefault(); experienceDragRef.current = null }}
       onScroll={(event) => { const track = event.currentTarget; const card = track.querySelector('.experience-card'); const step = (card?.getBoundingClientRect().width || 1) + (Number.parseFloat(getComputedStyle(track).gap) || 0); setActiveExperience(Math.max(0, Math.min(1, Math.round(track.scrollLeft / step)))) }}>
-      <article className="experience-card feature-card squircle-card" data-command-section="Application & Cloud Support Associate"><Photo src="/images/experience/accenture.PNG" alt="At Accenture office" className="experience-photo" /><div className="experience-shade" /><div className="experience-copy"><Logo src="/images/experience/accenture-logo.png" label="Accenture" className="experience-logo" /><span className="eyebrow accenture">Accenture, Inc.</span><h3>Application &amp; Cloud Support Associate</h3><p>2026 – Present</p></div></article>
-      <article className="experience-card feature-card squircle-card" data-command-section="Information Technology Helpdesk Intern"><Photo src="/images/experience/converge.png" alt="Converge ICT Solutions internship" className="experience-photo" /><div className="experience-shade" /><div className="experience-copy"><Logo src="/images/experience/converge-logo.png" label="Converge" className="experience-logo" /><span className="eyebrow cyan">Converge ICT Solutions, Inc.</span><h3>Information Technology Helpdesk Intern</h3><p>2025</p></div></article>
+      <article className="experience-card feature-card squircle-card" data-command-section="Application & Cloud Support Associate"><Photo src="/images/optimized/accenture.jpg" alt="At Accenture office" className="experience-photo" /><div className="experience-shade" /><div className="experience-copy"><Logo src="/images/experience/accenture-logo.png" label="Accenture" className="experience-logo" /><span className="eyebrow accenture">Accenture, Inc.</span><h3>Application &amp; Cloud Support Associate</h3><p>2026 – Present</p></div></article>
+      <article className="experience-card feature-card squircle-card" data-command-section="Information Technology Helpdesk Intern"><Photo src="/images/optimized/converge.jpg" alt="Converge ICT Solutions internship" className="experience-photo" /><div className="experience-shade" /><div className="experience-copy"><Logo src="/images/experience/converge-logo.png" label="Converge" className="experience-logo" /><span className="eyebrow cyan">Converge ICT Solutions, Inc.</span><h3>Information Technology Helpdesk Intern</h3><p>2025</p></div></article>
     </div>
     <div className="experience-pagination" aria-label={`Experience ${activeExperience + 1} of 2`}>{[0,1].map(index => <span key={index} className={index === activeExperience ? 'is-active' : ''} />)}</div>
   </div></section>
 }
 
 const groups = [
-  { name: 'Mapúa Cardinal One', role: 'Electronics Engineer, Media Manager', image: '/images/education/cardinal-one.png', href: 'https://www.facebook.com/mucardinalone/', tone: 'red', commandSection: 'Electronics Engineer & Media Manager' },
-  { name: 'IECEP-MUSC', role: 'Board Auditor, Treasurer', image: '/images/education/iecep-musc.png', href: 'https://www.facebook.com/iecep.musc/', tone: 'light-blue', commandSection: 'Board Auditor, Treasurer' },
-  { name: 'IEEE-MUSB', role: 'Finance Committee Head', image: '/images/education/ieee-musb.png', href: 'https://www.facebook.com/ieeemapuasb/', tone: 'dark-blue', commandSection: 'Finance Committee Head' },
+  { name: 'Mapúa Cardinal One', role: 'Electronics Engineer, Media Manager', image: '/images/optimized/cardinal-one.jpg', href: 'https://www.facebook.com/mucardinalone/', tone: 'red', commandSection: 'Electronics Engineer & Media Manager' },
+  { name: 'IECEP-MUSC', role: 'Board Auditor, Treasurer', image: '/images/optimized/iecep-musc.jpg', href: 'https://www.facebook.com/iecep.musc/', tone: 'light-blue', commandSection: 'Board Auditor, Treasurer' },
+  { name: 'IEEE-MUSB', role: 'Finance Committee Head', image: '/images/optimized/ieee-musb.jpg', href: 'https://www.facebook.com/ieeemapuasb/', tone: 'dark-blue', commandSection: 'Finance Committee Head' },
 ]
 function Education() {
   return <section className="section education-section" id="education" data-command-section="Education"><div className="container">
     <SectionTitle>Education</SectionTitle>
-    <article className="education-feature feature-card squircle-card" data-command-section="BS Electronics Engineering"><a className="education-photo-link" href="https://www.mapua.edu.ph/" target="_blank" rel="noreferrer" aria-label="Visit Mapúa University"><Photo src="/images/education/education.png" alt="Mapúa University graduation portrait" className="education-photo" /></a><div className="education-copy"><Logo src="/images/education/mapua-logo.png" label="Mapúa University" /><span className="eyebrow red">Mapúa University</span><h3>BS Electronics Engineering</h3><p>Advanced Internet Protocol Networking</p><time>2025</time></div></article>
+    <article className="education-feature feature-card squircle-card" data-command-section="BS Electronics Engineering"><a className="education-photo-link" href="https://www.mapua.edu.ph/" target="_blank" rel="noreferrer" aria-label="Visit Mapúa University"><Photo src="/images/optimized/education.jpg" alt="Mapúa University graduation portrait" className="education-photo" /></a><div className="education-copy"><Logo src="/images/education/mapua-logo.png" label="Mapúa University" /><span className="eyebrow red">Mapúa University</span><h3>BS Electronics Engineering</h3><p>Advanced Internet Protocol Networking</p><time>2025</time></div></article>
     <div className="education-grid">{groups.map(g => <a className="education-card secondary-card squircle-card" data-command-section={g.commandSection} href={g.href} target="_blank" rel="noreferrer" key={g.name}><Photo src={g.image} alt={`${g.name} organization photo`} /><div className="education-card-copy"><span className={`eyebrow ${g.tone}`}>{g.name}</span><h3>{g.role}</h3></div></a>)}</div>
   </div></section>
 }
@@ -320,9 +368,9 @@ const projects = [
 function Projects({ onViewAll, onMianClick, onProjectClick }) {
   return <section className="section projects-section" id="projects" data-command-section="Projects"><div className="container">
     <SectionTitle>Projects</SectionTitle>
-    <a className="project-feature feature-card squircle-card" href="/?page=mian" onClick={(event) => onMianClick(event)} aria-label="Mian: An Intelligent Portfolio Assistant"><Photo src="/images/projects/mian-hero.jpg" alt="Mian intelligent portfolio assistant" /><div className="project-feature-copy"><span className="eyebrow blue">Personal AI</span><h3>Mian:<br />An Intelligent<br />Portfolio Assistant</h3></div></a>
-    <div className="projects-grid">{projects.map(p => <a className="project-card secondary-card squircle-card" href={`/?page=project&project=${p.slug}`} onClick={(event) => onProjectClick(event, p.slug)} key={p.name}><Photo src={p.image} alt={p.name} /><div className="project-card-copy"><span className={`eyebrow ${p.tone || 'purple'}`}>{p.tag}</span><h3>{p.name}</h3><p>{p.organization}</p></div></a>)}</div>
-    <ViewAll href="/?page=projects" onClick={onViewAll} />
+    <a className="project-feature feature-card squircle-card" href={portfolioPathForPage('mian')} onClick={(event) => onMianClick(event)} aria-label="Mian: An Intelligent Portfolio Assistant"><Photo src="/images/projects/mian-hero.jpg" alt="Mian intelligent portfolio assistant" /><div className="project-feature-copy"><span className="eyebrow blue">Personal AI</span><h3>Mian:<br />An Intelligent<br />Portfolio Assistant</h3></div></a>
+    <div className="projects-grid">{projects.map(p => <a className="project-card secondary-card squircle-card" href={portfolioPathForPage(`project:${p.slug}`)} onClick={(event) => onProjectClick(event, p.slug)} key={p.name}><Photo src={p.image} alt={p.name} /><div className="project-card-copy"><span className={`eyebrow ${p.tone || 'purple'}`}>{p.tag}</span><h3>{p.name}</h3><p>{p.organization}</p></div></a>)}</div>
+    <ViewAll href={portfolioPathForPage('projects')} onClick={onViewAll} />
   </div></section>
 }
 
@@ -442,7 +490,7 @@ function ProjectArticlePage({ slug, onBack }) {
   if (!article) return null
   return <div className="projects-page project-article-page">
     <header className={`licenses-nav projects-nav ${compactHeader ? 'is-compact' : ''}`}>
-      <div className="licenses-nav-inner"><a className="licenses-back-button" href="/?page=projects" onClick={onBack} aria-label="Back to Projects"><ChevronLeft size={18} aria-hidden="true" /></a><h1>Projects</h1></div>
+      <div className="licenses-nav-inner"><a className="licenses-back-button" href={portfolioPathForPage('projects')} onClick={onBack} aria-label="Back to Projects"><ChevronLeft size={18} aria-hidden="true" /></a><h1>Projects</h1></div>
     </header>
     <main className="mian-article project-page-reveal" data-command-section="Overview">
       <span className={`eyebrow ${article.pillTone || 'blue'} mian-article-eyebrow`}>{article.eyebrow}</span>
@@ -527,7 +575,7 @@ function ProjectsPage({ onBack, onMianClick, onProjectClick, isActive = true }) 
     <main className="projects-library">
       <section className="projects-library-section project-page-reveal project-page-reveal-personal" data-command-section="Personal Project" aria-labelledby="personal-projects-title">
         <h2 className="projects-library-title" id="personal-projects-title">Personal Project</h2>
-        <a className="projects-library-feature squircle-card" href="/?page=mian" onClick={onMianClick} aria-label="Read about Mian: An Intelligent Portfolio Assistant">
+        <a className="projects-library-feature squircle-card" href={portfolioPathForPage('mian')} onClick={onMianClick} aria-label="Read about Mian: An Intelligent Portfolio Assistant">
           <Photo src={portfolioProjects.personal.image} alt={portfolioProjects.personal.alt} className="projects-library-art" />
           <div className="projects-library-shade" />
           <div className="projects-library-copy">
@@ -539,7 +587,7 @@ function ProjectsPage({ onBack, onMianClick, onProjectClick, isActive = true }) 
       <section className="projects-library-section projects-institutional project-page-reveal project-page-reveal-institutional" data-command-section="Institutional Research and Projects" aria-labelledby="institutional-projects-title">
         <h2 className="projects-library-title" id="institutional-projects-title">Institutional Research and Projects</h2>
         <div className="projects-library-grid">
-          {portfolioProjects.institutional.map((project) => <a className="projects-library-card squircle-card" href={`/?page=project&project=${project.slug}`} onClick={(event) => onProjectClick(event, project.slug)} key={project.title}>
+          {portfolioProjects.institutional.map((project) => <a className="projects-library-card squircle-card" href={portfolioPathForPage(`project:${project.slug}`)} onClick={(event) => onProjectClick(event, project.slug)} key={project.title}>
             <Photo src={project.image} alt={project.alt} className="projects-library-card-art" />
             <div className="projects-library-shade" />
             <div className="projects-library-card-copy">
@@ -559,7 +607,7 @@ function MianProjectPage({ onBack }) {
   return <div className="projects-page mian-project-page">
     <header className={`licenses-nav projects-nav ${compactHeader ? 'is-compact' : ''}`}>
       <div className="licenses-nav-inner">
-        <a className="licenses-back-button" href="/?page=projects" onClick={onBack} aria-label="Back to Projects"><ChevronLeft size={18} aria-hidden="true" /></a>
+        <a className="licenses-back-button" href={portfolioPathForPage('projects')} onClick={onBack} aria-label="Back to Projects"><ChevronLeft size={18} aria-hidden="true" /></a>
         <h1>Projects</h1>
       </div>
     </header>
@@ -611,14 +659,14 @@ const navItems = [
 function FloatingNavigation() {
   const syncNavOnLoad = useRef(null)
   useEffect(() => {
-    const route = new URLSearchParams(window.location.search).get('page')
-    window.__navActive = route === 'licenses-certifications' ? 'certs' : route || 'home'
+    const route = portfolioPageFromLocation()
+    window.__navActive = route === 'licenses' ? 'certs' : route === 'mian' || route.startsWith('project:') ? 'projects' : route === 'privacy' || route === 'terms' || route === 'not-found' ? 'home' : route
     const setCurrentNav = () => window.__setPortfolioNavActive?.(window.__navActive)
     if (window.__portfolioNavReady) { setCurrentNav(); return }
     if (!window.__portfolioNavPromise) {
       window.__portfolioNavPromise = new Promise((resolve) => {
         const script = document.createElement('script')
-        script.src = '/nav.js?v=mian-precise-navigation-20261101-6'
+        script.src = '/nav.js?v=mian-precise-navigation-20261101-8'
         script.async = true
         script.onload = () => { window.__portfolioNavReady = true; resolve() }
         script.onerror = resolve
@@ -709,7 +757,7 @@ function Certifications({ onViewAll }) {
     </div>
     <div className="certificate-pagination" aria-label={`Certificate ${activeCertificate + 1} of ${certifications.length}`}>{certifications.map((item, index) => <span key={item[0]} className={index === activeCertificate ? 'is-active' : ''} />)}</div>
     </div>
-    <ViewAll href="/?page=licenses-certifications" onClick={onViewAll} />
+    <ViewAll href={portfolioPathForPage('licenses')} onClick={onViewAll} />
     <div className="platform-heading"><h3>Credential &amp; Learning Profiles</h3></div>
     <div className="platform-grid">{platforms.map(([name,href,logo]) => <a className="platform-card squircle-card" href={href} target="_blank" rel="noreferrer" key={name} aria-label={`${name} profile`}><img src={logo} alt={name} loading="lazy" /></a>)}</div>
   </div></section>
@@ -831,36 +879,19 @@ function LicensesPage({ onBack, isActive = true }) {
 }
 
 function Affiliation() {
-  return <section className="section affiliation-section" id="affiliation" data-command-section="Affiliation"><div className="container"><SectionTitle>Affiliation</SectionTitle><article className="affiliation-card feature-card squircle-card"><a className="affiliation-photo-link" href="https://iecepnational.com/" target="_blank" rel="noreferrer" aria-label="Visit the Institute of Electronics Engineers of the Philippines"><Photo src="/images/affiliation/affiliation.png" alt="IECEP membership event" className="affiliation-photo"/></a><div className="affiliation-copy"><Logo src="/images/affiliation/iecep-national-logo.png" label="IECEP"/><span className="eyebrow blue">Member</span><h3>Institute of Electronics Engineers of the Philippines, Inc.</h3><time>2025</time></div></article></div></section>
+  return <section className="section affiliation-section" id="affiliation" data-command-section="Affiliation"><div className="container"><SectionTitle>Affiliation</SectionTitle><article className="affiliation-card feature-card squircle-card"><a className="affiliation-photo-link" href="https://iecepnational.com/" target="_blank" rel="noreferrer" aria-label="Visit the Institute of Electronics Engineers of the Philippines"><Photo src="/images/optimized/affiliation.jpg" alt="IECEP membership event" className="affiliation-photo"/></a><div className="affiliation-copy"><Logo src="/images/affiliation/iecep-national-logo.png" label="IECEP"/><span className="eyebrow blue">Member</span><h3>Institute of Electronics Engineers of the Philippines, Inc.</h3><time>2025</time></div></article></div></section>
 }
 function Footer({ onHome, onNavigate, homePage }) {
-  const params = new URLSearchParams(window.location.search)
   const path = window.location.pathname.replace(/\/+$/, '') || '/'
-  const isHome = homePage ?? (path === '/' && !params.has('page'))
-  const onPage = params.has('page') || path === '/licenses-certifications'
+  const isHome = homePage ?? path === '/'
+  const onPage = path !== '/'
   return <footer className="footer">
     {isHome && <><div className="footer-connect"><h2>Let’s Connect</h2><a href={email}>jcdcocampo@gmail.com</a><a className="footer-email-button" href={email}>Send Email</a></div><div className="footer-divider"/></>}
-    <div className="footer-bottom"><nav aria-label="Footer navigation"><a href={onPage ? '/' : '#home'} onClick={onPage ? onHome : undefined}>Home</a><a href="/?page=privacy" onClick={(event) => onNavigate?.(event, 'privacy')}>Privacy Policy</a><a href="/?page=terms" onClick={(event) => onNavigate?.(event, 'terms')}>Terms and Conditions</a></nav><p>© 2026 Jose Carlo David Ocampo. All rights reserved.</p></div>
+    <div className="footer-bottom"><nav aria-label="Footer navigation"><a href={onPage ? '/' : '#home'} onClick={onPage ? onHome : undefined}>Home</a><a href={portfolioPathForPage('privacy')} onClick={(event) => onNavigate?.(event, 'privacy')}>Privacy Policy</a><a href={portfolioPathForPage('terms')} onClick={(event) => onNavigate?.(event, 'terms')}>Terms and Conditions</a></nav><p>© 2026 Jose Carlo David Ocampo. All rights reserved.</p></div>
   </footer>
 }
 export default function App() {
-  const getPageFromLocation = () => {
-    const params = new URLSearchParams(window.location.search)
-    const page = params.get('page')
-    const path = window.location.pathname.replace(/\/+$/, '') || '/'
-    if (page === 'licenses-certifications') return 'licenses'
-    if (page === 'projects') return 'projects'
-    if (page === 'project') {
-      const slug = params.get('project') || ''
-      return institutionalProjectArticles[slug] ? `project:${slug}` : 'not-found'
-    }
-    if (page === 'privacy' || page === 'terms') return page
-    if (page === 'mian') return 'mian'
-    if (page === 'experience') return 'experience'
-    if (!page && path === '/') return 'home'
-    return 'not-found'
-  }
-  const [currentPage, setCurrentPage] = useState(getPageFromLocation)
+  const [currentPage, setCurrentPage] = useState(portfolioPageFromLocation)
   const [pageReloadKeys, setPageReloadKeys] = useState({})
   const [preloadedSwipePages, setPreloadedSwipePages] = useState([])
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.matchMedia('(max-width: 767px)').matches)
@@ -1119,10 +1150,9 @@ export default function App() {
     if (destination !== 'home') {
       if (destination.startsWith('project:')) {
         const slug = destination.slice('project:'.length)
-        window.history.pushState({ page: 'project', project: slug, portfolioRoute: true, previousPortfolioPage }, '', `/?page=project&project=${slug}`)
+        window.history.pushState({ page: 'project', project: slug, portfolioRoute: true, previousPortfolioPage }, '', portfolioPathForPage(destination))
       } else {
-        const query = { licenses: 'licenses-certifications', projects: 'projects', experience: 'experience', mian: 'mian', privacy: 'privacy', terms: 'terms' }[destination]
-        window.history.pushState({ page: destination, portfolioRoute: true, previousPortfolioPage }, '', `/?page=${query}`)
+        window.history.pushState({ page: destination, portfolioRoute: true, previousPortfolioPage }, '', portfolioPathForPage(destination))
       }
     } else {
       returnToTop.current = true
@@ -1223,13 +1253,23 @@ export default function App() {
     window.history.scrollRestoration = 'manual'
     // Mark the starting home entry so the in-app back button can return through
     // the same history stack that the browser's Back and Forward buttons use.
-    if (getPageFromLocation() === 'home') {
+    const initialPage = portfolioPageFromLocation()
+    if (initialPage !== 'not-found') {
+      const path = portfolioPathForPage(initialPage)
+      const pageState = initialPage.startsWith('project:')
+        ? { page: 'project', project: initialPage.slice('project:'.length) }
+        : { page: initialPage }
+      if (window.location.pathname !== path || window.location.search) {
+        window.history.replaceState({ ...(window.history.state || {}), ...pageState, portfolioRoute: true }, '', `${path}${window.location.hash}`)
+      }
+    }
+    if (initialPage === 'home') {
       window.history.replaceState({ ...(window.history.state || {}), page: 'home', portfolioRoute: true }, '', window.location.href)
     }
     const onPopState = () => {
       cancelPageSwipe()
       stopWheelScroll.current()
-      const nextPage = getPageFromLocation()
+      const nextPage = portfolioPageFromLocation()
       if (nextPage === 'home') returnToTop.current = true
       setCurrentPage(nextPage)
     }
