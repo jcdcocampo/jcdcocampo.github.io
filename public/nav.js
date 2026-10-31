@@ -1,40 +1,27 @@
 var PAGES={home:{t:'JC Ocampo',s:'Electronics Engineer · Manila, PH'},experience:{t:'Experience',s:'Roles, internships, and work history'},projects:{t:'Projects',s:'IEEE research, robots, and AI apps'},certs:{t:'Certifications',s:'PRC · Cisco · Google Cloud'}};
-var NAV_URLS={home:'/',experience:'/experience',projects:'/projects',certs:'/certifications'};
-/* Main-tab switches must stay inside the mounted React application. */
-function spaGo(u,source){ if(typeof window.__spaNavigate==='function') window.__spaNavigate(u,source); }
-function portfolioScrollToElement(el){
-  if(typeof window.__portfolioScrollToElement==='function') window.__portfolioScrollToElement(el);
-  else if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
-}
-function portfolioScrollToTop(){
-  if(typeof window.__portfolioScrollToTop==='function') window.__portfolioScrollToTop();
-  else window.scrollTo({top:0,behavior:'smooth'});
-}
-var isDark=false,curId=window.__navActive||'home';
+var NAV_URLS={home:'/',experience:'/?page=experience',projects:'/?page=projects',certs:'/?page=licenses-certifications'};
+var curId=window.__navActive||'home';
 
 /* ── Nav physics ── */
 var G={iL:0,iLv:0,tL:0,iW:74,iWv:0,tW:74,iTop:5,iH:54,sX:1,sXv:0,hS:1,hSv:0,tHS:1,holding:false,holdStart:0,dragging:false,dragVel:0,lastPx:0,startPx:0,raf:null,baseW:74};
+var restPillRevealTimer=null,restPillRipple=null;
 /* ── Mian state ── */
 var M={open:false,tapSx:0,tapSy:0};
 /* ── Mian indicator physics ── */
-var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,sX:1,sXv:0,holding:false,holdStart:0,dragging:false,lastPx:0,lastPy:0,startPx:0,startPy:0,dragVelX:0,dragVelY:0,angle:0,raf:null};
+var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,sX:1,sXv:0,holding:false,holdStart:0,dragging:false,pointerId:null,lastPx:0,lastPy:0,startPx:0,startPy:0,startOffsetX:0,startOffsetY:0,dragVelX:0,dragVelY:0,angle:0,raf:null};
 
-var SK=0.20,SD=0.67,HK=0.13,HD=0.73;
-/* Mian indicator max displacement from center (the "rock" stopping the "balloon") */
-var MIAN_MAX_R=16;
-
+var SK=0.20,SD=0.67,HK=0.13,HD=0.73;var MIAN_MAX_R=28;
+function softenMianDrag(x,y){
+  var distance=Math.sqrt(x*x+y*y);
+  if(distance<=MIAN_MAX_R||distance===0)return {x:x,y:y};
+  var softened=MIAN_MAX_R+(distance-MIAN_MAX_R)*0.35;
+  var ratio=softened/distance;
+  return {x:x*ratio,y:y*ratio};
+}
 /* ── Pill shadow presets ── */
 var PSH={
   lRest:'0 0 0 .5px rgba(255,255,255,.8),0 0 0 1px rgba(0,0,0,.06),0 6px 30px rgba(0,0,0,.10),inset 0 1.5px 0 rgba(255,255,255,1),inset 0 -.5px 0 rgba(0,0,0,.04)',
   lUp:'0 0 0 .5px rgba(255,255,255,.9),0 0 0 1px rgba(0,0,0,.05),0 12px 44px rgba(0,0,0,.15),0 0 20px rgba(0,122,255,.12),inset 0 1.5px 0 rgba(255,255,255,1)',
-  dRest:'0 0 0 .5px rgba(255,255,255,.14),0 12px 42px rgba(0,0,0,.7),inset 0 1.5px 0 rgba(255,255,255,.14),inset 0 -1px 0 rgba(0,0,0,.25)',
-  dUp:'0 0 0 .5px rgba(255,255,255,.2),0 14px 50px rgba(0,0,0,.85),0 0 24px rgba(0,122,255,.2),inset 0 1.5px 0 rgba(255,255,255,.18)'
-};
-var MSH={
-  lRest:'0 0 0 .5px rgba(255,255,255,.8),0 0 0 1px rgba(0,0,0,.06),0 8px 28px rgba(0,0,0,.09),inset 0 1.5px 0 rgba(255,255,255,1)',
-  lUp:'0 0 0 .5px rgba(255,255,255,.9),0 10px 36px rgba(0,0,0,.13),0 0 20px rgba(0,122,255,.14),inset 0 1.5px 0 rgba(255,255,255,1)',
-  dRest:'0 0 0 .5px rgba(255,255,255,.14),0 10px 30px rgba(0,0,0,.65),inset 0 1.5px 0 rgba(255,255,255,.14)',
-  dUp:'0 0 0 .5px rgba(255,255,255,.2),0 14px 40px rgba(0,0,0,.8),0 0 22px rgba(0,122,255,.28),inset 0 1.5px 0 rgba(255,255,255,.18)'
 };
 
 /* ── Clip #wl to current oval bounds every frame ── */
@@ -46,6 +33,20 @@ function updateClip(sx,sy){
   var cl=Math.max(0,cx-hw),cr=Math.max(0,pw-(cx+hw)),ct=Math.max(0,cy-hh),cb=Math.max(0,ph-(cy+hh));
   wl.style.clipPath='inset('+ct.toFixed(2)+'px '+cr.toFixed(2)+'px '+cb.toFixed(2)+'px '+cl.toFixed(2)+'px round 9999px)';
   wl.style.transform='none';
+}
+
+function paintMianGlass(){
+  var mind=document.getElementById('mind');
+  if(!mind)return;
+  var sx=Math.max(0.5,Math.min(2.0,MO.sX*MO.hS));
+  var sy=Math.max(0.5,Math.min(2.0,MO.hS/Math.pow(Math.max(MO.sX,0.65),0.5)));
+  var angle=Math.atan2(MO.y,MO.x)*(180/Math.PI);
+  var tx=MO.x.toFixed(2),ty=MO.y.toFixed(2);
+  var noScale=Math.abs(sx-1)<0.004&&Math.abs(sy-1)<0.004;
+  var noPos=Math.abs(MO.x)<0.1&&Math.abs(MO.y)<0.1;
+  if(noScale&&noPos)mind.style.transform='none';
+  else if(noScale)mind.style.transform='translate3d('+tx+'px,'+ty+'px,0)';
+  else mind.style.transform='translate3d('+tx+'px,'+ty+'px,0) rotate('+angle.toFixed(1)+'deg) scaleX('+sx.toFixed(3)+') scaleY('+sy.toFixed(3)+') rotate(-'+angle.toFixed(1)+'deg)';
 }
 
 /* ── Nav anim loop — ONLY runs during active drag/hold, not for settle ── */
@@ -60,6 +61,8 @@ function animLoop(ts){
   ind.style.left=G.iL.toFixed(2)+'px';
   ind.style.width=G.iW.toFixed(2)+'px';
   var sx=Math.max(0.5,Math.min(2.0,G.sX*G.hS));
+  /* Preserve the liquid glass's vertical expansion on mobile; the indicator
+     scales around its center so the extra height grows evenly in both directions. */
   var sy=Math.max(0.5,Math.min(2.0,G.hS/Math.pow(Math.max(G.sX,0.65),0.5)));
   ind.style.transform=(Math.abs(sx-1)<0.004&&Math.abs(sy-1)<0.004)?'none':'scaleX('+sx.toFixed(3)+') scaleY('+sy.toFixed(3)+')';
   updateClip(sx,sy);
@@ -70,33 +73,22 @@ function animLoop(ts){
 
 /* ── Mian indicator loop: constrained spring + hold swell + drag stretch ── */
 function mindLoop(ts){
-  /* DRAG: follow pointer directly with zero lag. RELEASE: bouncy spring back to center. */
+  /* Track the active pointer directly; only the release uses the spring. */
   if(MO.dragging){
     MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;
   } else {
     var lxf=(MO.tX-MO.x)*SK;MO.xV=MO.xV*SD+lxf;MO.x+=MO.xV;
     var lyf=(MO.tY-MO.y)*SK;MO.yV=MO.yV*SD+lyf;MO.y+=MO.yV;
-    /* CLAMP on spring-back only (target is already clamped during drag) */
-    var dist=Math.sqrt(MO.x*MO.x+MO.y*MO.y);
-    if(dist>MIAN_MAX_R){MO.x=MO.x/dist*MIAN_MAX_R;MO.y=MO.y/dist*MIAN_MAX_R;MO.xV*=0.25;MO.yV*=0.25;}
   }
   /* Hold swell — same parameters as nav oval */
   if(MO.holding){var el=(ts-MO.holdStart)/1000;MO.tHS=1+0.18*(1-Math.exp(-el*2.4));}
   var hf=(MO.tHS-MO.hS)*HK;MO.hSv=MO.hSv*HD+hf;MO.hS+=MO.hSv;
-  /* Drag stretch (same formula as nav oval) */
-  var vel=Math.sqrt(MO.dragVelX*MO.dragVelX+MO.dragVelY*MO.dragVelY);
-  var tSX=MO.dragging?1+Math.min(vel*0.032,0.32):1;
-  var sf=(tSX-MO.sX)*0.22;MO.sXv=MO.sXv*0.66+sf;MO.sX+=MO.sXv;
+  /* Stretch follows the current offset, so reversing direction has no velocity lag. */
+  var displacement=Math.sqrt(MO.x*MO.x+MO.y*MO.y);
+  MO.sX=1+Math.min(displacement*0.004,0.2);
+  MO.sXv=0;
+  paintMianGlass();
   var mind=document.getElementById('mind');
-  var sx=Math.max(0.5,Math.min(2.0,MO.sX*MO.hS));
-  var sy=Math.max(0.5,Math.min(2.0,MO.hS/Math.pow(Math.max(MO.sX,0.65),0.5)));
-  var ang=MO.angle*(180/Math.PI);
-  var tx=MO.x.toFixed(2),ty=MO.y.toFixed(2);
-  var noScale=Math.abs(sx-1)<0.004&&Math.abs(sy-1)<0.004;
-  var noPos=Math.abs(MO.x)<0.1&&Math.abs(MO.y)<0.1;
-  if(noScale&&noPos) mind.style.transform='none';
-  else if(noScale) mind.style.transform='translate('+tx+'px,'+ty+'px)';
-  else mind.style.transform='translate('+tx+'px,'+ty+'px) rotate('+ang.toFixed(1)+'deg) scaleX('+sx.toFixed(3)+') scaleY('+sy.toFixed(3)+') rotate(-'+ang.toFixed(1)+'deg)';
   var stable=Math.abs(MO.xV)<0.04&&Math.abs(MO.yV)<0.04&&Math.abs(MO.sXv)<0.002&&Math.abs(MO.hSv)<0.002&&!MO.holding;
   if(!stable) MO.raf=requestAnimationFrame(mindLoop);
   else{MO.raf=null;mind.style.transform='none';}
@@ -113,6 +105,19 @@ function setRpill(id){
   if(!b||!rp)return;
   rp.style.left=b.offsetLeft+'px';rp.style.top=b.offsetTop+'px';
   rp.style.width=b.offsetWidth+'px';rp.style.height=b.offsetHeight+'px';
+}
+
+function rippleRestPill(rp){
+  if(!rp||!rp.animate)return;
+  if(restPillRipple){restPillRipple.cancel();restPillRipple=null;}
+  rp.style.transformOrigin='center';
+  restPillRipple=rp.animate([
+    {transform:'scaleX(.94)',offset:0},
+    {transform:'scaleX(1.18)',offset:.3},
+    {transform:'scaleX(.96)',offset:.68},
+    {transform:'scaleX(1)',offset:1}
+  ],{duration:340,easing:'cubic-bezier(.2,.7,.25,1)'});
+  restPillRipple.onfinish=function(){rp.style.transform='none';restPillRipple=null;};
 }
 
 /* ── Show/hide glass vs gray pill. On hide: also snaps clip to active item instantly. ── */
@@ -133,27 +138,35 @@ function setInteracting(on){
 function setPillLift(on){
   var pill=document.getElementById('pill');
   if(!pill)return;
+  var isMobile=window.matchMedia('(max-width: 767px)').matches;
   pill.style.transition=on?
     'transform .22s cubic-bezier(.34,1.56,.64,1),box-shadow .22s ease,background .45s':
-    'transform .38s ease,box-shadow .38s ease,background .45s';
-  pill.style.transform=on?'scale(1.032) translateY(-2px)':'none';
-  pill.style.boxShadow=on?(isDark?PSH.dUp:PSH.lUp):(isDark?PSH.dRest:PSH.lRest);
+    (isMobile?'transform .187s cubic-bezier(0.65,0,0.35,1),box-shadow .187s ease,background .45s':'transform .38s ease,box-shadow .38s ease,background .45s');
+  /* Match the web press response on mobile while scaling around the pill's
+     center, without translating it away from the dock. */
+  if(isMobile)pill.style.transformOrigin='center center';
+  pill.style.transform=on?(isMobile?'scale(1.032)':'scale(1.032) translateY(-2px)'):'none';
+  pill.style.boxShadow=on?PSH.lUp:PSH.lRest;
 }
 
 /* ── Mian lift: same behaviour on Mian circle ── */
 function setMianLift(on){
   var mian=document.getElementById('mian');
+  if(!mian)return;
   mian.style.transition=on?
     'transform .22s cubic-bezier(.34,1.56,.64,1),box-shadow .22s ease,background .45s':
     'transform .38s ease,box-shadow .38s ease,background .45s';
-  mian.style.transform=on?'scale(1.07) translateY(-3px)':'none';
-  mian.style.boxShadow=on?(isDark?MSH.dUp:MSH.lUp):(isDark?MSH.dRest:MSH.lRest);
+  mian.style.transform=on?'scale(1.032) translateY(-2px)':'none';
+  mian.style.boxShadow=on?PSH.lUp:PSH.lRest;
 }
 
 function getItemAt(rx){var best=null,bd=Infinity;document.querySelectorAll('.nb').forEach(function(b){var c=b.offsetLeft+b.offsetWidth/2,d=Math.abs(rx-c);if(d<bd){bd=d;best=b.dataset.nav;}});return best;}
 
-function setActive(id){
+function setActive(id,fromRelease){
+  if(restPillRevealTimer){clearTimeout(restPillRevealTimer);restPillRevealTimer=null;}
+  if(restPillRipple){restPillRipple.cancel();restPillRipple=null;}
   curId=id;
+  window.__navActive=id;
   if(id==='__none__')return;
   /* Re-enable clip layer if it was hidden (privacy/terms pages) */
   var wl=document.getElementById('wl');
@@ -172,6 +185,19 @@ function setActive(id){
   G.hS=1;G.hSv=0;G.sX=1;G.sXv=0;G.tHS=1;
   var b=document.querySelector('[data-nav="'+id+'"]');
   var ind=document.getElementById('ind');
+  var swipeAlreadySettled=false;
+  if(window.__navSwipeSettledId===id&&b&&ind){
+    window.__navSwipeSettledId=null;
+    swipeAlreadySettled=true;
+    fromRelease=true;
+    if(G.raf){cancelAnimationFrame(G.raf);G.raf=null;}
+    G.dragging=false;G.holding=false;G.iL=G.tL=b.offsetLeft;G.iW=G.tW=b.offsetWidth;
+    ind.style.transition='none';ind.style.left=G.iL+'px';ind.style.width=G.iW+'px';ind.style.transform='none';
+    if(wl)wl.style.transition='none';updateClip(1,1);setRpill(id);
+    if(wl)wl.style.transition='';ind.style.transition='';
+    var settledTitle=document.getElementById('pgt'),settledSub=document.getElementById('pgs');
+    if(settledTitle)settledTitle.textContent=PAGES[id].t;if(settledSub)settledSub.textContent=PAGES[id].s;
+  }
   if(b){
     var ease='0.187s cubic-bezier(0.65,0,0.35,1)';
     ind.style.transition='left '+ease+',width '+ease+',opacity 0.18s ease';
@@ -184,25 +210,67 @@ function setActive(id){
     updateClip(1,1);
   }
   /* After glide finishes: move gray pill to target, restore fade, then show it */
+  if(fromRelease&&rpEl){
+    restPillRevealTimer=setTimeout(function(){
+      restPillRevealTimer=null;
+      setRpill(id);
+      rpEl.style.transition='opacity 120ms ease-out';
+      rpEl.style.opacity='.34';
+      rippleRestPill(rpEl);
+    },145);
+  }
   setTimeout(function(){
     setRpill(id);             /* re-position gray pill at the new active button */
-    if(rpEl)rpEl.style.transition='';  /* restore default opacity transition */
-    setInteracting(false);
+    if(rpEl&&fromRelease){
+      rpEl.style.transition='opacity 120ms ease-out';
+      setInteracting(false);
+      setTimeout(function(){rpEl.style.transition='';},150);
+    } else {
+      if(rpEl)rpEl.style.transition='';
+      setInteracting(false);
+    }
     ind.style.transition='opacity 0.18s ease';
     if(wl) wl.style.transition='';
   },210);
   var pg=document.getElementById('pgt'),ps=document.getElementById('pgs');
-  if(pg){pg.style.opacity='0';pg.style.transform='translateY(8px)';ps.style.opacity='0';}
-  setTimeout(function(){if(pg){pg.textContent=PAGES[id].t;ps.textContent=PAGES[id].s;pg.style.opacity='1';pg.style.transform='translateY(0)';ps.style.opacity='1';}},165);
+  if(!swipeAlreadySettled){
+    if(pg){pg.style.opacity='0';pg.style.transform='translateY(8px)';ps.style.opacity='0';}
+    setTimeout(function(){if(pg){pg.textContent=PAGES[id].t;ps.textContent=PAGES[id].s;pg.style.opacity='1';pg.style.transform='translateY(0)';ps.style.opacity='1';}},165);
+  }
 }
+window.__setPortfolioNavActive=function(id){if(id==='licenses')id='certs';if(PAGES[id]&&id!==curId)setActive(id);};
+window.__setPortfolioNavSwipeProgress=function(fromId,toId,progress){
+  if(fromId==='licenses')fromId='certs';if(toId==='licenses')toId='certs';
+  var from=document.querySelector('[data-nav="'+fromId+'"]'),to=document.querySelector('[data-nav="'+toId+'"]');
+  var ind=document.getElementById('ind'),wl=document.getElementById('wl');
+  if(!from||!to||!ind)return;
+  progress=Math.max(0,Math.min(1,progress));
+  if(G.raf){cancelAnimationFrame(G.raf);G.raf=null;}
+  setInteracting(true);
+  var left=from.offsetLeft+(to.offsetLeft-from.offsetLeft)*progress;
+  var width=from.offsetWidth+(to.offsetWidth-from.offsetWidth)*progress;
+  G.iL=G.tL=left;G.iW=G.tW=width;
+  ind.style.transition='none';ind.style.left=left+'px';ind.style.width=width+'px';
+  ind.style.transform='scaleX('+(1+Math.sin(progress*Math.PI)*0.07).toFixed(3)+')';
+  updateClip(1+Math.sin(progress*Math.PI)*0.07,1);
+  if(wl)wl.style.transition='none';
+};
+window.__resetPortfolioNavSwipe=function(){
+  var b=document.querySelector('[data-nav="'+curId+'"]'),ind=document.getElementById('ind'),wl=document.getElementById('wl');
+  if(!b||!ind)return;
+  G.dragging=false;G.holding=false;G.iL=G.tL=b.offsetLeft;G.iW=G.tW=b.offsetWidth;
+  ind.style.transition='none';ind.style.left=G.iL+'px';ind.style.width=G.iW+'px';ind.style.transform='none';
+  if(wl)wl.style.transition='none';updateClip(1,1);setInteracting(false);
+  if(wl)wl.style.transition='';ind.style.transition='';
+};
 
 function updateMian(){
-  var d=isDark;
   var mind=document.getElementById('mind');var mico=document.getElementById('mico');
+  if(!mind||!mico)return;
   mind.style.opacity=M.open?'1':'0';
   mind.style.pointerEvents=M.open?'auto':'none';
   /* Icon: blue when open, visible gray (matching nav idle) when closed */
-  mico.setAttribute('stroke',M.open?(d?'#fff':'#007aff'):(d?'rgba(255,255,255,.65)':'rgba(0,0,0,.38)'));
+  mico.setAttribute('stroke',M.open?'#007aff':'rgba(0,0,0,.38)');
   if(!M.open){
     MO.x=0;MO.xV=0;MO.tX=0;MO.y=0;MO.yV=0;MO.tY=0;
     MO.hS=1;MO.hSv=0;MO.tHS=1;MO.sX=1;MO.sXv=0;
@@ -215,7 +283,9 @@ function updateMian(){
 /* ── Nav pill events: NO hover follow, only hold+drag ── */
 function setupPill(){
   var pill=document.getElementById('pill');
+  var pressedId=null;
   pill.addEventListener('pointerdown',function(e){
+    syncNavOverlayGeometry();
     /* Strip CSS transitions — JS physics runs during drag */
     var ind=document.getElementById('ind');var wl=document.getElementById('wl');
     /* Privacy/terms only: pre-position indicator at pressed button so it appears
@@ -234,6 +304,8 @@ function setupPill(){
     ind.style.transition='opacity 0.18s ease';wl.style.transition='';
     G.holding=true;G.holdStart=performance.now();G.tHS=1;G.hS=1;G.hSv=0;G.sX=1;G.sXv=0;
     G.lastPx=e.clientX;G.startPx=e.clientX;G.dragVel=0;G.dragging=false;
+    var pressed=e.target.closest&&e.target.closest('[data-nav]');
+    pressedId=pressed?pressed.dataset.nav:getItemAt(e.clientX-pill.getBoundingClientRect().left);
     /* Glass stays at curId during hold — no spring travel, no overshoot.
        CSS transition in setActive handles the exact slide to target on release. */
     pill.setPointerCapture(e.pointerId);pill.style.cursor='grabbing';
@@ -248,20 +320,22 @@ function setupPill(){
     if(!G.dragging&&Math.abs(e.clientX-G.startPx)>7)G.dragging=true;
     if(G.dragging){
       var pr=pill.getBoundingClientRect(),rx=e.clientX-pr.left,bw=G.baseW;
-      G.tL=Math.max(5,Math.min(pr.width-5-bw,rx-bw/2));G.tW=bw;kick();
+      var minLeft=5,maxLeft=pr.width-5-bw;
+      G.tL=Math.max(minLeft,Math.min(maxLeft,rx-bw/2));G.tW=bw;kick();
     }
   });
   pill.addEventListener('pointerup',function(e){
+    var wasDragged=G.dragging;
     G.holding=false;G.tHS=1;G.dragging=false;G.dragVel=0;pill.style.cursor='grab';
-    var rx=e.clientX-pill.getBoundingClientRect().left;
-    var target=getItemAt(rx)||curId;
+    var target=(wasDragged?getItemAt(G.tL+G.tW/2):pressedId)||curId;
+    pressedId=null;
     setPillLift(false); /* lower pill */
-    setActive(target);  /* spring glass to target, then fade to gray pill */
-    /* Navigate to the target page — even if it's the active section
-       (e.g. clicking Projects while on aguila.html returns to /projects.html) */
-    if(NAV_URLS[target]){
-      setTimeout(function(){spaGo(NAV_URLS[target],'tab');},180);
-    }
+    setActive(target,true);  /* spring glass to target, then ripple into the gray pill */
+    /* Let the React app handle page changes without leaving its route model. */
+    if(NAV_URLS[target])setTimeout(function(){
+      if(typeof window.__portfolioNavigate==='function')window.__portfolioNavigate(target);
+      else window.location.href=NAV_URLS[target];
+    },180);
     kick();
   });
   pill.addEventListener('lostpointercapture',function(){
@@ -277,154 +351,142 @@ function setupPill(){
    Long-press+drag on closed Mian → opens glass and moves it in one gesture. ── */
 function setupMian(){
   var mian=document.getElementById('mian');
-  /* wasOpen: track state at press time to decide open/close on release */
-  var wasOpen=false;
-
+  if(!mian)return;
   mian.addEventListener('pointerdown',function(e){
-    if(e.target===document.getElementById('mind'))return;
-    wasOpen=M.open;
-    M.tapSx=e.clientX;M.tapSy=e.clientY;
-    /* Open glass IMMEDIATELY — even if closed — so long-press+drag works */
+    if(MO.holding)return;
+    MO.pointerId=e.pointerId;M.tapSx=e.clientX;M.tapSy=e.clientY;
     if(!M.open){M.open=true;updateMian();}
-    /* Start indicator physics so drag works in this same gesture */
     MO.holding=true;MO.holdStart=performance.now();MO.tHS=1;MO.hS=1;MO.hSv=0;
-    MO.tX=MO.x;MO.tY=MO.y;MO.sX=1;MO.sXv=0;
-    MO.dragging=false;MO.dragVelX=0;MO.dragVelY=0;
+    MO.tX=MO.x;MO.tY=MO.y;MO.sX=1;MO.sXv=0;MO.dragging=false;
+    MO.dragVelX=0;MO.dragVelY=0;
     MO.lastPx=e.clientX;MO.lastPy=e.clientY;MO.startPx=e.clientX;MO.startPy=e.clientY;
-    mian.setPointerCapture(e.pointerId);setMianLift(true);kickMO();e.preventDefault();
-  });
+    MO.startOffsetX=MO.x;MO.startOffsetY=MO.y;
+    try{mian.setPointerCapture(e.pointerId);}catch(error){}
+    setMianLift(true);kickMO();e.preventDefault();
+  },{passive:false});
   mian.addEventListener('pointermove',function(e){
-    if(!MO.holding)return;
+    if(!MO.holding||e.pointerId!==MO.pointerId)return;
     var dx=e.clientX-MO.lastPx,dy=e.clientY-MO.lastPy;
     MO.dragVelX=MO.dragVelX*0.55+dx*0.45;MO.dragVelY=MO.dragVelY*0.55+dy*0.45;
     MO.lastPx=e.clientX;MO.lastPy=e.clientY;
-    var totalX=e.clientX-MO.startPx,totalY=e.clientY-MO.startPy;
-    if(!MO.dragging&&(Math.abs(totalX)>5||Math.abs(totalY)>5))MO.dragging=true;
+    var totalX=MO.startOffsetX+e.clientX-MO.startPx,totalY=MO.startOffsetY+e.clientY-MO.startPy;
+    if(!MO.dragging&&(Math.abs(e.clientX-MO.startPx)>2||Math.abs(e.clientY-MO.startPy)>2))MO.dragging=true;
     if(MO.dragging){
-      var tdist=Math.sqrt(totalX*totalX+totalY*totalY);
-      if(tdist>MIAN_MAX_R){totalX=totalX/tdist*MIAN_MAX_R;totalY=totalY/tdist*MIAN_MAX_R;}
-      MO.tX=totalX;MO.tY=totalY;MO.angle=Math.atan2(MO.dragVelY,MO.dragVelX);kickMO();
+      var offset=softenMianDrag(totalX,totalY);
+      MO.tX=offset.x;MO.tY=offset.y;MO.angle=Math.atan2(offset.y,offset.x);kickMO();
+      MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;
+      paintMianGlass();
     }
   });
   mian.addEventListener('pointerup',function(e){
-    if(e.target===document.getElementById('mind'))return;
+    if(!MO.holding||e.pointerId!==MO.pointerId)return;
     var wasDrag=MO.dragging;
-    MO.holding=false;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.dragVelX=0;MO.dragVelY=0;
+    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.dragVelX=0;MO.dragVelY=0;
     kickMO();setMianLift(false);
-    if(!wasDrag){
-      /* Tap: if was already open → close; if was closed → keep open (we opened it on press) */
-      if(wasOpen){M.open=false;updateMian();}
-    }
-    /* Dragged: glass springs back to center, Mian stays open */
+    if(!wasDrag){if(window.__isMianOpen?.())window.__closeMian?.();else window.__openMian?.();}
+  });
+  mian.addEventListener('pointercancel',function(e){
+    if(e.pointerId!==MO.pointerId)return;
+    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.dragVelX=0;MO.dragVelY=0;
+    kickMO();setMianLift(false);
   });
   mian.addEventListener('lostpointercapture',function(){
-    MO.holding=false;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;kickMO();setMianLift(false);
+    if(!MO.holding)return;
+    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.dragVelX=0;MO.dragVelY=0;
+    kickMO();setMianLift(false);
   });
 }
-
-/* ── Mian indicator events: hold + constrained drag + tap to close ── */
-function setupMind(){
-  var mind=document.getElementById('mind');
-  mind.addEventListener('pointerdown',function(e){
-    MO.holding=true;MO.holdStart=performance.now();MO.tHS=1;MO.hS=1;MO.hSv=0;
-    MO.tX=MO.x;MO.tY=MO.y;MO.sX=1;MO.sXv=0;
-    MO.dragging=false;MO.dragVelX=0;MO.dragVelY=0;
-    MO.lastPx=e.clientX;MO.lastPy=e.clientY;MO.startPx=e.clientX;MO.startPy=e.clientY;
-    mind.setPointerCapture(e.pointerId);setMianLift(true);kickMO();e.preventDefault();
-  });
-  mind.addEventListener('pointermove',function(e){
-    if(!MO.holding)return;
-    var dx=e.clientX-MO.lastPx,dy=e.clientY-MO.lastPy;
-    MO.dragVelX=MO.dragVelX*0.55+dx*0.45;MO.dragVelY=MO.dragVelY*0.55+dy*0.45;
-    MO.lastPx=e.clientX;MO.lastPy=e.clientY;
-    var totalX=e.clientX-MO.startPx,totalY=e.clientY-MO.startPy;
-    if(!MO.dragging&&(Math.abs(totalX)>5||Math.abs(totalY)>5))MO.dragging=true;
-    if(MO.dragging){
-      /* Clamp drag target to MIAN_MAX_R — the rock stops the balloon */
-      var tdist=Math.sqrt(totalX*totalX+totalY*totalY);
-      if(tdist>MIAN_MAX_R){totalX=totalX/tdist*MIAN_MAX_R;totalY=totalY/tdist*MIAN_MAX_R;}
-      MO.tX=totalX;MO.tY=totalY;
-      MO.angle=Math.atan2(MO.dragVelY,MO.dragVelX);
-      kickMO();
+/* Place every blue overlay item on the exact rendered box of its gray item.
+   Independent flex layout can drift by fractional pixels across fonts/devices. */
+function syncNavOverlayGeometry(){
+  var overlay=document.getElementById('wl');
+  if(!overlay)return;
+  var pill=document.getElementById('pill');
+  var indicator=document.getElementById('ind');
+  var overlayRect=overlay.getBoundingClientRect();
+  var buttons=document.querySelectorAll('.nb');
+  var copies=overlay.querySelectorAll('.bw');
+  /* Use fractional rendered geometry so compact mobile sizing cannot leave
+     the glass a fraction of a pixel off the nav buttons. */
+  var activeButton=document.querySelector('.nb[data-nav="'+curId+'"]')||buttons[0];
+  if(pill&&indicator&&activeButton){
+    var pillRect=pill.getBoundingClientRect();
+    var activeRect=activeButton.getBoundingClientRect();
+    G.iTop=activeRect.top-pillRect.top;
+    G.iH=activeRect.height;
+    indicator.style.top=G.iTop+'px';
+    indicator.style.height=G.iH+'px';
+    if(window.matchMedia('(max-width: 767px)').matches)indicator.style.transformOrigin='center center';
+  }
+  buttons.forEach(function(button,index){
+    var copy=copies[index];
+    if(!copy)return;
+    var rect=button.getBoundingClientRect();
+    var style=getComputedStyle(button);
+    copy.style.position='absolute';
+    copy.style.left=(rect.left-overlayRect.left)+'px';
+    copy.style.top=(rect.top-overlayRect.top)+'px';
+    copy.style.width=rect.width+'px';
+    copy.style.height=rect.height+'px';
+    copy.style.minWidth='0';
+    copy.style.boxSizing='border-box';
+    copy.style.padding=style.padding;
+    copy.style.margin='0';
+    var sourceIcon=button.querySelector('svg');
+    var copyIcon=copy.querySelector('svg');
+    if(sourceIcon&&copyIcon){
+      var exactIcon=sourceIcon.cloneNode(true);
+      copyIcon.replaceWith(exactIcon);
+      copyIcon=exactIcon;
+      copyIcon.style.transform='none';
+      var sourceIconRect=sourceIcon.getBoundingClientRect();
+      var copyIconRect=copyIcon.getBoundingClientRect();
+      copyIcon.style.position='relative';
+      copyIcon.style.left=(sourceIconRect.left-copyIconRect.left)+'px';
+      copyIcon.style.top=(sourceIconRect.top-copyIconRect.top)+'px';
+      copyIcon.style.width=sourceIconRect.width+'px';
+      copyIcon.style.height=sourceIconRect.height+'px';
     }
   });
-  mind.addEventListener('pointerup',function(e){
-    var wasDrag=MO.dragging;
-    MO.holding=false;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.dragVelX=0;MO.dragVelY=0;
-    kickMO();setMianLift(false);
-    if(!wasDrag){M.open=false;updateMian();}
-  });
-  mind.addEventListener('lostpointercapture',function(){
-    MO.holding=false;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;kickMO();setMianLift(false);
-  });
 }
 
-/* ── Dark mode ── */
-var ui={dark:function(){
-  isDark=!isDark;var d=isDark;
-  /* ── Only update elements that actually exist (portfolio has no demo root/blobs) ── */
-  var _el=function(id){return document.getElementById(id);};
-  var _set=function(id,prop,val){var e=_el(id);if(e)e.style[prop]=val;};
-  var _set2=function(id,prop,val,prop2,val2){var e=_el(id);if(e){e.style[prop]=val;e.style[prop2]=val2;}};
-  _set('pgt','color',d?'rgba(255,255,255,.82)':'#1c1c1e');
-  _set('pgs','color',d?'rgba(255,255,255,.35)':'rgba(0,0,0,.32)');
-  document.querySelectorAll('.fc').forEach(function(c){c.style.background=d?'rgba(255,255,255,.07)':'rgba(0,0,0,.05)';});
-  _set2('bdg','background',d?'rgba(255,255,255,.09)':'rgba(0,0,0,.07)','color',d?'rgba(255,255,255,.5)':'rgba(0,0,0,.42)');
-  _set2('tog','background',d?'rgba(255,255,255,.12)':'rgba(0,0,0,.08)','color',d?'rgba(255,255,255,.82)':'rgba(0,0,0,.68)');
-  var togi=_el('togi'),togt=_el('togt');
-  if(togi)togi.textContent=d?'☀':'🌙';
-  if(togt)togt.textContent=d?'Light':'Dark';
-  var pBg=d?'linear-gradient(180deg,rgba(20,20,30,.28) 0%,rgba(10,10,18,.34) 100%)':'linear-gradient(180deg,rgba(255,255,255,.16) 0%,rgba(245,245,255,.12) 100%)';
-  _set('pill','background',pBg);
-  _set('mian','background',d?'linear-gradient(180deg,rgba(20,20,30,.28) 0%,rgba(10,10,18,.34) 100%)':'linear-gradient(180deg,rgba(255,255,255,.16) 0%,rgba(245,245,255,.12) 100%)');
-  /* Update rest pill color */
-  _set('rpill','background',d?'rgba(255,255,255,.16)':'rgba(0,0,0,.10)');
-  /* Update glass oval + mian indicator shadows */
-  var iBg=d?'rgba(0,122,255,.22)':'rgba(0,122,255,.13)';
-  var iSh=d?'inset 0 0 0 1px rgba(255,255,255,.6),inset 0 1.5px 0 rgba(255,255,255,.88),0 0 24px rgba(30,140,255,.5),0 4px 14px rgba(0,100,255,.38)':'inset 0 0 0 1px rgba(255,255,255,.68),inset 0 1.5px 0 rgba(255,255,255,.92),inset 0 -1px 0 rgba(0,0,0,.07),0 0 18px rgba(0,122,255,.18),0 3px 12px rgba(0,122,255,.13)';
-  _set2('ind','background',iBg,'boxShadow',iSh);
-  _set2('mind','background',iBg,'boxShadow',iSh);
-  /* Dark mode: nav idle icons more visible (light gray) */
-  var idle=d?'rgba(255,255,255,.65)':'rgba(0,0,0,.36)';
-  document.querySelectorAll('.nb').forEach(function(b){b.style.color=idle;});
-  /* Blue clip layer: white in dark, blue in light */
-  var cc=d?'#fff':'#007aff';
-  document.querySelectorAll('.bw').forEach(function(b){b.style.color=cc;});
-  /* Re-apply rest shadows at correct dark/light values */
-  setPillLift(false);setMianLift(false);
-  updateMian();
-}};
-
-/* ── Mobile alignment: keep [pill + gap + Mian] as one centred group ──
-   On most phones the pill (4 buttons) + gap + Mian fits comfortably.
-   On narrow phones (iPhone SE, iPhone 12/13 mini/Pro @375-390px) the
-   group is wider than the viewport, so left-clamping alone pushes
-   Mian's right edge off-screen. We detect that case and compact the
-   pill's own buttons + gaps just enough to fit — wider phones never
-   hit this branch, so their layout is byte-for-byte unchanged. */
 function setNbCompact(on){
-  document.querySelectorAll('.nb,.bw').forEach(function(b){
-    b.style.minWidth = on ? '54px' : '';
-    b.style.padding  = on ? '8px 8px' : '';
+  var pill=document.getElementById('pill');
+  if(pill)pill.classList.toggle('is-mobile-compact',on);
+  document.querySelectorAll('.nb,.bw').forEach(function(button){
+    button.style.minWidth=on?'0':'';
+    button.style.flex=on?'1 1 0%':'';
+    button.style.padding=on?'8px 2px':'';
   });
 }
 
-function layoutMobileNav(){
+function layoutMobileNav(forceVertical){
   var navc=document.getElementById('navc');
   var pill=document.getElementById('pill');
   var mian=document.getElementById('mian');
-  if(!navc||!pill||!mian)return;
+  var dock=document.querySelector('.floating-controls-dock');
+  if(!navc||!pill||!mian||!dock)return;
   var isMobile=window.matchMedia('(max-width: 767px)').matches;
+  var viewport=window.visualViewport;
+  var vw=Math.min(window.innerWidth,viewport?viewport.width:window.innerWidth);
+  var visualLeft=viewport?viewport.offsetLeft:0;
   if(!isMobile){
-    navc.style.left='';navc.style.right='';navc.style.transform='';navc.style.bottom='';
-    mian.style.left='';mian.style.right='';mian.style.bottom='';
+    navc.style.left='';navc.style.right='';navc.style.transform='';navc.style.bottom='';navc.style.top='';
+    mian.style.left='';mian.style.right='';mian.style.bottom='';mian.style.top='';
+    dock.style.left='';dock.style.right='';dock.style.transform='';dock.style.bottom='';dock.style.top='';dock.style.gap='';dock.style.width='';
+    pill.style.width='';pill.style.maxWidth='';
+    mian.style.width='';mian.style.height='';mian.style.flexBasis='';
     setNbCompact(false);
+    syncNavOverlayGeometry();
     return;
   }
-  var vw=window.innerWidth,BOTTOM=24;
 
   /* Try the normal, spacious sizing first (unchanged behaviour). */
   setNbCompact(false);
+  /* A previous narrow-width layout may have set a forced pill width; clear it
+     before measuring again so rotation/resizing can expand back naturally. */
+  pill.style.width='';pill.style.maxWidth='';
+  mian.style.width='';mian.style.height='';mian.style.flexBasis='';
   var GAP=14,SIDE=12;
   var pw=pill.offsetWidth,mw=mian.offsetWidth||60;
   var fits=(pw+GAP+mw+SIDE*2)<=vw;
@@ -433,25 +495,31 @@ function layoutMobileNav(){
     /* Doesn't fit at normal size — compact the pill buttons + tighten
        gaps just enough to bring Mian fully back on-screen. */
     setNbCompact(true);
-    GAP=6;SIDE=6;
-    pw=pill.offsetWidth;mw=mian.offsetWidth||60;
+    GAP=6;SIDE=Math.max(18,Math.min(28,Math.round(vw*.055)));
+    mw=mian.offsetWidth||60;
+    /* On compact layouts give the tabs an explicit share of the available
+       width. Intrinsic label widths otherwise keep the pill wide enough to
+       push Mian off-screen on narrow phones. */
+    var availablePillWidth=Math.max(0,vw-SIDE*2-GAP-mw);
+    pill.style.width=availablePillWidth+'px';
+    pill.style.maxWidth=availablePillWidth+'px';
+    pw=pill.getBoundingClientRect().width;
   }
 
-  var ph=pill.offsetHeight,mh=mian.offsetHeight||60;
   var groupW=pw+GAP+mw;
-  var groupLeft=(vw-groupW)/2;
-  if(groupLeft<SIDE)groupLeft=SIDE;
-  if(groupLeft+groupW>vw-SIDE)groupLeft=Math.max(SIDE,vw-SIDE-groupW);
-  navc.style.left=groupLeft+'px';
-  navc.style.right='auto';
-  navc.style.transform='none';
-  navc.style.bottom=BOTTOM+'px';
-  var mianBottom=BOTTOM+((ph-mh)/2);
-  mian.style.left=(groupLeft+pw+GAP)+'px';
-  mian.style.right='auto';
-  mian.style.bottom=mianBottom+'px';
+  var groupLeft=visualLeft+(vw-groupW)/2;
+  if(groupLeft<visualLeft+SIDE)groupLeft=visualLeft+SIDE;
+  if(groupLeft+groupW>visualLeft+vw-SIDE)groupLeft=Math.max(visualLeft+SIDE,visualLeft+vw-SIDE-groupW);
+  dock.style.width=groupW+'px';
+  dock.style.left=groupLeft+'px';
+  dock.style.transform='none';
+  dock.style.top='';
+  dock.style.bottom='';
+  dock.style.gap=GAP+'px';
+  navc.style.left='';navc.style.right='';navc.style.transform='';navc.style.bottom='';navc.style.top='';
+  mian.style.left='';mian.style.right='';mian.style.transform='';mian.style.bottom='';mian.style.top='';
+  syncNavOverlayGeometry();
 }
-
 function init(){
   var pill=document.getElementById('pill');
   if(pill){
@@ -491,16 +559,20 @@ function init(){
       }
     }
     try{setupPill();}catch(e){console.warn('setupPill:',e);}
+    if(window.ResizeObserver){
+      var navGeometryObserver=new ResizeObserver(syncNavOverlayGeometry);
+      navGeometryObserver.observe(pill);
+    }
+    if(document.fonts&&document.fonts.ready){document.fonts.ready.then(function(){layoutMobileNav(true);});}
     /* Show the settled gray-pill state immediately (not the white glass indicator) */
     if(startId!=='__none__'){setInteracting(false);}
     window.addEventListener('resize',function(){try{layoutMobileNav();}catch(e){}setRpill(curId);if(!G.dragging)snapTo(curId);});
-    window.addEventListener('orientationchange',function(){try{layoutMobileNav();}catch(e){}});
+    window.addEventListener('orientationchange',function(){try{layoutMobileNav(true);}catch(e){}});
     window.addEventListener('load',function(){try{layoutMobileNav();}catch(e){}});
     try{window.matchMedia('(max-width: 767px)').addEventListener('change',function(){try{layoutMobileNav();}catch(e){}});}catch(e){}
   }
   /* ── Always set up Mian — works with or without nav pill ── */
   try{setupMian();}catch(e){console.warn('setupMian:',e);}
-  try{setupMind();}catch(e){console.warn('setupMind:',e);}
   try{updateMian();}catch(e){console.warn('updateMian:',e);}
   /* Reveal Mian (and nav pill if present) after positioning — smooth fade-in */
   requestAnimationFrame(function(){
@@ -509,100 +581,23 @@ function init(){
     if(navc){navc.style.transition='opacity .2s ease';navc.style.opacity='1';}
     if(mianEl){mianEl.style.transition='opacity .2s ease';mianEl.style.opacity='1';}
   });
-  /* Apply correct theme colors to nav elements */
-  try{
-    var wantsDark=document.documentElement.getAttribute('data-theme')==='dark';
-    isDark=!wantsDark; /* set opposite so ui.dark() toggle produces the wanted state */
-    ui.dark();
-  }catch(e){}
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
 else setTimeout(init,0);
 
-/* ── Sync nav dark mode with portfolio [data-theme] ── */
-function syncNavDark() {
-  var wantsDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  /* Force isDark to opposite of wantsDark so ui.dark() toggles to correct state */
-  if (wantsDark !== isDark) { isDark = !wantsDark; ui.dark(); }
-}
 
-/* Apply on load */
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', syncNavDark);
-} else {
-  setTimeout(syncNavDark, 0);
-}
-
-/* Watch for theme changes (portfolio toggle button sets data-theme on <html>) */
-var _themeObserver = new MutationObserver(function(mutations) {
-  mutations.forEach(function(m) {
-    if (m.attributeName === 'data-theme') syncNavDark();
-  });
-});
-_themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-
-/* ── SPA route sync ─────────────────────────────────────────────
-   Called by the React layout after every route change so the glass
-   indicator follows the URL (back/forward, links, ⌘K, swipes…).
-   id: 'home' | 'experience' | 'projects' | 'certs' | 'none'          */
-window.__navSetRoute = function (id) {
-  window.__navActive = id;
-  var ind = document.getElementById('ind'), wl = document.getElementById('wl'), rp = document.getElementById('rpill');
-  if (!ind || !wl) return;
-  if (id === 'none') {
-    curId = '__none__';
-    ind.style.opacity = '0';
-    wl.style.clipPath = 'inset(0 100% 0 0)';
-    wl.style.display = 'none';
-    if (rp) rp.style.opacity = '0';
-    document.querySelectorAll('.nb').forEach(function (b) { b.classList.remove('active'); });
-    return;
-  }
-  if (curId === id && wl.style.display !== 'none') return;   /* pill tap already moved it */
-  setActive(id);
-};
-
-/* ── Swipe support: the glass indicator follows the finger from one tab to the next (Instagram-style) ── */
-window.__navSwipe = {
-  begin: function (fromId) {
-    var b = document.querySelector('[data-nav="' + fromId + '"]');
-    var wl = document.getElementById('wl'), ind = document.getElementById('ind'), rp = document.getElementById('rpill');
-    if (!b || !wl || !ind) return;
-    if (wl.style.display === 'none') wl.style.display = '';
-    if (rp) rp.style.transition = 'none';
-    ind.style.transition = 'opacity 0.18s ease'; wl.style.transition = '';
-    G.iL = G.tL = b.offsetLeft; G.iW = G.tW = b.offsetWidth; G.iLv = 0; G.iWv = 0;
-    G.hS = 1; G.hSv = 0; G.tHS = 1; G.sX = 1; G.sXv = 0;
-    setInteracting(true);
-    updateClip(1, 1);
-    kick();
-  },
-  move: function (fromId, toId, p) {
-    var a = document.querySelector('[data-nav="' + fromId + '"]'), c = document.querySelector('[data-nav="' + toId + '"]');
-    if (!a || !c) return;
-    p = Math.max(0, Math.min(1, p));
-    G.tL = G.iL = a.offsetLeft + (c.offsetLeft - a.offsetLeft) * p;
-    G.tW = G.iW = a.offsetWidth + (c.offsetWidth - a.offsetWidth) * p;
-    G.iLv = 0; G.iWv = 0;
-    kick();
-  },
-  end: function (id) { window.__navActive = id; setActive(id); }   /* glide to the tab we ended on (the original one if the swipe was cancelled) */
-};
 
 /* ============================================================
-   Mian chatbot — merged into nav.js
+   Mian assistant — loaded by the React portfolio navigation
    ============================================================ */
 (function () {
   'use strict';
 /* ============================================================
-   Mian — JC's Personal AI Assistant (drop-in widget)
-   ------------------------------------------------------------
-   Usage: add this single line before </body> on any page:
-     <script src="chatbot.js" defer></script>
-
-   To swap backends later, only edit the CONFIG block and the
-   sendToAI() function at the bottom of this file.
+   Mian — JC's personal AI assistant
+   Loaded once by FloatingNavigation in src/App.jsx. Keep all
+   provider credentials in the separately hosted server Worker;
+   browser code and its API endpoint are public.
    ============================================================ */
 (function () {
   'use strict';
@@ -618,7 +613,7 @@ window.__navSwipe = {
     // Profile picture. Recommended size: 512x512 PNG so it stays crisp
     // at every place we render it (28px small avatar, 48px header,
     // 140px ID-card portrait), including 2x/3x retina displays.
-    avatarUrl: '/assets/mian.png',
+    avatarUrl: '/images/mian/mian.png',
 
     // ID-card popup text
     cardDedication: 'Created on April 2026. Dedicated to the love of my life.',
@@ -823,6 +818,44 @@ window.__navSwipe = {
       ]
     },
     {
+      id: 'electronics_engineering_license',
+      patterns: [/\belectronics engineering license\b/, /\belectronics engineer license\b/, /\b(ece|electronics engineer)\b.*\blicense\b/],
+      replies: ["JC holds a Philippine PRC Electronics Engineering License." ]
+    },
+    {
+      id: 'electronics_technician_license',
+      patterns: [/\belectronics technician license\b/, /\b(ect|electronics technician)\b.*\blicense\b/],
+      replies: ["JC also holds a Philippine PRC Electronics Technician License."]
+    },
+    {
+      id: 'network_fundamentals_certificate',
+      patterns: [/\bnetwork fundamentals\b/],
+      replies: ["JC's Cisco credential is Network Fundamentals, issued by Cisco Learning and Certifications."]
+    },
+    {
+      id: 'ccna_enterprise_certificate',
+      patterns: [/\bccna\b.*\benterprise networking\b/, /\benterprise networking\b.*\bccna\b/],
+      replies: ["JC holds CCNA: Enterprise Networking, Security, and Automation from Cisco Networking Academy."]
+    },
+    {
+      id: 'ccna_switching_certificate',
+      patterns: [/\bccna\b.*\b(switching|routing|wireless)\b/, /\b(switching|routing|wireless)\b.*\bccna\b/],
+      replies: ["JC holds CCNA: Switching, Routing, and Wireless Essentials from Cisco Networking Academy."]
+    },
+    {
+      id: 'cybersecurity_foundations_certificate',
+      patterns: [/\bfoundations of cybersecurity\b/, /\bcybersecurity certificate\b/],
+      replies: ["JC's cybersecurity certificate is Foundations of Cybersecurity from Google."]
+    },
+    {
+      id: 'google_cloud_certificate',
+      patterns: [/\bgoogle cloud\b/, /\bgcp\b/],
+      replies: [
+        "JC's Google Cloud credential is Google Cloud Fundamentals, issued by Google Cloud Training Online. Use the button below to jump straight to its card.",
+        "The certificate you're looking for is Google Cloud Fundamentals from Google Cloud Training Online. The button below opens its exact card.",
+      ]
+    },
+    {
       id: 'certifications',
       patterns: [
         /\bcert(s|ification|ifications|ificate|ificates|ified)?\b/,
@@ -882,11 +915,11 @@ window.__navSwipe = {
     },
     {
       id: 'project_thesis',
-      patterns: [/\bbanana\b/, /\blakatan\b/, /\bshelf ?-?life\b/, /\bthesis\b/, /\bneural network\b/, /\bieee (paper|research|publication)\b/, /\b(his|jc) research\b/],
+      patterns: [/\bbananas?\b/, /\blakatan\b/, /\bshelf ?-?life\b/, /\bthesis\b/, /\bneural network\b/, /\bieee (paper|research|publication)\b/, /\b(his|jc) research\b/],
       replies: [
-        "JC's thesis is an IEEE-recognized study titled \"Feedforward Neural Network for Real-time Prediction of Lakatan Banana Shelf Life using Sensor Data from Transport Conditions.\" It uses sensor readings collected during transport to predict how long Lakatan bananas will stay fresh.",
-        "His IEEE-recognized thesis applies a feedforward neural network to sensor data from transport conditions to predict the shelf life of Lakatan bananas in real time.",
-        "For his thesis, JC built a feedforward neural network that predicts Lakatan banana shelf life in real time from transport sensor data. The work was recognized by IEEE, and the details are on the Banana Shelf Life project page."
+        "JC's banana project is his IEEE-published thesis, \"Feedforward Neural Network for Real-time Prediction of Lakatan Banana Shelf Life using Sensor Data from Transport Conditions.\" It uses transport sensor data to predict how long Lakatan bananas will stay fresh. I've added a button below to open the project page.",
+        "The banana project is JC's thesis on predicting Lakatan banana shelf life from transport-condition sensor data. Its full title is \"Feedforward Neural Network for Real-time Prediction of Lakatan Banana Shelf Life using Sensor Data from Transport Conditions,\" and it was published in IEEE Xplore. You can open its project page below.",
+        "JC's research project about bananas is his feedforward neural network thesis. It predicts Lakatan banana shelf life using sensor data gathered during transport. The project page is available from the button below."
       ]
     },
     {
@@ -968,6 +1001,16 @@ window.__navSwipe = {
       ]
     },
     {
+      id: 'ieee_student_role',
+      patterns: [/\bfinance committee head\b/, /\bieee.{0,40}(role|position|finance|committee)\b/, /\b(role|position|finance|committee).{0,40}\bieee\b/],
+      replies: ["JC served as Finance Committee Head of the IEEE Mapúa University Student Branch."]
+    },
+    {
+      id: 'iecep_student_role',
+      patterns: [/\b(treasurer|board auditor)\b/, /\biecep.{0,40}(role|position|treasurer|auditor)\b/, /\b(role|position|treasurer|auditor).{0,40}\biecep\b/],
+      replies: ["JC served as Treasurer and Board Auditor of the IECEP Mapúa University Student Chapter."]
+    },
+    {
       id: 'leadership',
       patterns: [
         /\bleadership\b/,
@@ -995,22 +1038,6 @@ window.__navSwipe = {
         "JC's profiles: LinkedIn at linkedin.com/in/jcdcocampo, GitHub at github.com/jcdcocampo, and Credly at credly.com/users/jcdcocampo. If you need his résumé, reach him at " + JC_EMAIL_ADDR + ".",
         "He's on LinkedIn (jcdcocampo), GitHub (jcdcocampo), and Credly (jcdcocampo). The links are also in the Social Links section of the home page. For a résumé, just email " + JC_EMAIL_ADDR + "."
       ]
-    },
-    {
-      id: 'learning_platforms',
-      patterns: [
-        /\bskillsoft\b/,
-        /\bmicrosoft learn(ing)?\b/,
-        /\bgoogle skills\b/,
-        /\baws skill ?builder\b/,
-        /\blive ?labs\b/,
-        /\blearning (platforms?|profiles?)\b/
-      ],
-      replies: [
-        "JC's learning profiles are linked at the bottom of the Certifications page: Credly, Skillsoft, Google Skills, and Microsoft Learn, plus shortcuts to AWS Skill Builder and Oracle University.",
-        "You can find his credentials on Credly, Skillsoft, Google Skills, and Microsoft Learn. The Credentials & Learning section at the bottom of the Certifications page links to each, along with AWS Skill Builder and Oracle University.",
-        "The Certifications page ends with a Credentials & Learning section: Credly, Skillsoft, Google Skills, Microsoft Learn, AWS Skill Builder, and Oracle University. The first four go straight to JC's profiles."
-      ]
     }
   ];
 
@@ -1025,7 +1052,7 @@ window.__navSwipe = {
   ];
 
   // Phrases that mean "I want more than the canned answer" → always LLM.
-  const FAQ_BYPASS = /\b(more detail|in detail|elaborate|explain (more|further)|go deeper|why|compare|versus|vs|difference between|opinion|think about|write|draft|summari[sz]e|translate|pros and cons)\b|\b(experience|skills?|background|good) (with|in|using|at) \w|\bdoes (he|jc) (know|use|have experience)\b/;
+  const FAQ_BYPASS = /\b(more detail|in detail|elaborate|explain (more|further)|go deeper|why|compare|versus|vs|difference between|opinion|think about|write|draft|summari[sz]e|translate|pros and cons|awards?|recognition|team members?|how it is built|how it was built|what it does)\b|\bwhat (does|can) .{1,40} do\b|\bhow (is|was) .{1,40} built\b|\bseason \d{4}\b|\b(experience|skills?|background|good) (with|in|using|at) \w|\bdoes (he|jc) (know|use|have experience)\b/;
 
   const FAQ_BY_ID = {};
   FAQ_INTENTS.forEach(function (it) { FAQ_BY_ID[it.id] = it; });
@@ -1074,6 +1101,28 @@ window.__navSwipe = {
     if (!q) return null;
     // Two or more real questions in one message → let the LLM combine them.
     if ((raw.match(/\?/g) || []).length > 1) return null;
+
+    // Resolve named items before broad intents such as "projects" or
+    // "certifications", so a focused question gets a focused answer.
+    const specificDetailIntentIds = [
+      'ieee_student_role', 'iecep_student_role',
+      'electronics_engineering_license', 'electronics_technician_license',
+      'network_fundamentals_certificate', 'ccna_enterprise_certificate',
+      'ccna_switching_certificate', 'google_cloud_certificate', 'cybersecurity_foundations_certificate',
+      'project_thesis', 'project_bushop', 'project_aguila', 'project_eeg', 'project_mian'
+    ];
+    const specificDetailMatches = [];
+    for (const id of specificDetailIntentIds) {
+      const intent = FAQ_BY_ID[id];
+      if (intent && intent.patterns.some(function (re) { return re.test(q); })) {
+        specificDetailMatches.push(intent);
+      }
+    }
+    if (specificDetailMatches.length === 1) {
+      const intent = specificDetailMatches[0];
+      return { id: intent.id, replies: intent.replies };
+    }
+    if (specificDetailMatches.length > 1) return null;
 
     const hits = [];
     for (const it of FAQ_INTENTS) {
@@ -1161,7 +1210,7 @@ window.__navSwipe = {
       max-width: calc(100vw - 32px);
       height: 560px;
       max-height: calc(100vh - 140px);
-      border-radius: var(--radius-xl);
+      border-radius: 18px;
       z-index: 9998;
       pointer-events: none;
       background: conic-gradient(
@@ -1206,7 +1255,7 @@ window.__navSwipe = {
 
     @media (max-width: 480px) {
       .cb-siri-ring {
-        bottom: calc(32px + 60px + 16px);
+        bottom: calc(40px + 60px + 16px);
         left: 8px;
         right: 8px;
         width: auto;
@@ -1214,7 +1263,7 @@ window.__navSwipe = {
         height: calc(100dvh - 140px);
         max-height: none;
         transform: translateX(0);
-        border-radius: var(--radius-xl);
+        border-radius: 16px;
       }
     }
 
@@ -1225,7 +1274,7 @@ window.__navSwipe = {
       right: 24px;
       width: 60px;
       height: 60px;
-      border-radius: var(--radius-circle);
+      border-radius: 50%;
       background: var(--accent, #007aff);
       color: #fff;
       border: none;
@@ -1267,8 +1316,11 @@ window.__navSwipe = {
       height: 560px;
       max-height: calc(100vh - 140px);
       background: var(--card, #ffffff);
-      border-radius: var(--radius-xl);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.22);
+      --corner-radius: 32px;
+      border-radius: 32px;
+      corner-shape: squircle;
+      box-shadow: none;
+      filter: drop-shadow(0 10px 24px rgba(0,0,0,.2));
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -1329,9 +1381,6 @@ window.__navSwipe = {
       line-height: 1;
       pointer-events: none;
     }
-    [data-theme="dark"] .cb-close::after {
-      color: #1c1c1e;
-    }
     .cb-header {
       padding: 10px 16px;
       display: flex;
@@ -1343,7 +1392,7 @@ window.__navSwipe = {
     .cb-avatar {
       width: 48px;
       height: 48px;
-      border-radius: var(--radius-circle);
+      border-radius: 50%;
       background: var(--sub-card, #f0f0f5);
       color: var(--text-primary, #1c1c1e);
       display: flex;
@@ -1380,7 +1429,7 @@ window.__navSwipe = {
     .cb-status-dot {
       width: 8px;
       height: 8px;
-      border-radius: var(--radius-circle);
+      border-radius: 50%;
       background: #34c759;
       display: inline-block;
       flex-shrink: 0;
@@ -1389,7 +1438,7 @@ window.__navSwipe = {
     .cb-close {
       width: 20px;
       height: 20px;
-      border-radius: var(--radius-circle);
+      border-radius: 50%;
       background: #ff5f57;
       color: #fff;
       flex-shrink: 0;
@@ -1399,6 +1448,8 @@ window.__navSwipe = {
       align-items: center;
       justify-content: center;
       position: relative;
+      margin-right: 8px;
+      top: 2px;
       font-size: 13px;
       font-weight: 600;
       line-height: 1;
@@ -1431,12 +1482,14 @@ window.__navSwipe = {
     .cb-msg {
       max-width: 85%;
       padding: 10px 14px;
-      border-radius: var(--radius-xl);
+      border-radius: 16px;
       font-size: 14px;
+      font-weight: 400;
       line-height: 1.45;
       word-wrap: break-word;
       animation: cbFadeIn 0.25s ease;
     }
+    .cb-msg strong, .cb-msg b { font-weight: 400; }
     @keyframes cbFadeIn {
       from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -1455,7 +1508,7 @@ window.__navSwipe = {
     .cb-msg-avatar {
       width: 28px;
       height: 28px;
-      border-radius: var(--radius-circle);
+      border-radius: 50%;
       flex-shrink: 0;
       background: var(--sub-card, #f0f0f5);
       color: var(--text-primary, #1c1c1e);
@@ -1496,41 +1549,6 @@ window.__navSwipe = {
       border-bottom-left-radius: 4px;
       align-self: flex-start;
     }
-    [data-theme="dark"] .cb-msg-error {
-      background: #3a1f1f;
-      color: #ff7b72;
-      border-color: #5a2a2a;
-    }
-
-    .cb-retry-row {
-      display: flex;
-      align-self: flex-start;
-      margin-left: 36px; /* aligns under the bot bubble, past the avatar */
-      animation: cbFadeIn 0.25s ease;
-    }
-    .cb-retry-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      border-radius: var(--radius-pill);
-      border: 1px solid var(--separator, #e5e5ea);
-      background: var(--sub-card, #f9f9fb);
-      color: var(--text-secondary, #636366);
-      font-size: 12.5px;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-    }
-    .cb-retry-btn:hover {
-      background: var(--sub-hover, #ececf2);
-      color: var(--text-primary, #1c1c1e);
-      border-color: var(--text-tertiary, #aeaeb2);
-    }
-    .cb-retry-btn:active { transform: scale(0.97); }
-    .cb-retry-btn svg { flex-shrink: 0; }
-    .cb-retry-btn:disabled { opacity: 0.5; cursor: default; }
 
     .cb-email-row {
       display: flex;
@@ -1544,7 +1562,7 @@ window.__navSwipe = {
       align-items: center;
       gap: 6px;
       padding: 6px 12px;
-      border-radius: var(--radius-pill);
+      border-radius: 999px;
       border: 1px solid var(--separator, #e5e5ea);
       background: var(--sub-card, #f9f9fb);
       color: var(--text-secondary, #636366);
@@ -1562,6 +1580,7 @@ window.__navSwipe = {
     }
     .cb-email-btn:active { transform: scale(0.97); }
     .cb-email-btn svg { flex-shrink: 0; }
+    .cb-email-btn.cb-retry-btn:disabled { opacity: 0.5; cursor: default; }
     .cb-email-btn.cb-email-copied {
       background: var(--accent, #007aff);
       color: #fff;
@@ -1570,7 +1589,7 @@ window.__navSwipe = {
 
     .cb-typing { display: inline-flex; gap: 4px; align-items: center; padding: 4px 0; }
     .cb-typing span {
-      width: 7px; height: 7px; border-radius: var(--radius-circle);
+      width: 7px; height: 7px; border-radius: 50%;
       background: var(--text-tertiary, #aeaeb2);
       animation: cbBounce 1.2s infinite ease-in-out;
     }
@@ -1605,7 +1624,7 @@ window.__navSwipe = {
       background: var(--sub-card, #f0f0f5);
       color: var(--accent, #007aff);
       border: 1.5px solid var(--accent, #007aff);
-      border-radius: var(--radius-pill);
+      border-radius: 980px;
       padding: 5px 13px;
       font-size: 12.5px;
       font-weight: 600;
@@ -1623,6 +1642,40 @@ window.__navSwipe = {
     .cb-chip:hover  { background: var(--accent, #007aff); color: #fff; box-shadow: 0 2px 8px rgba(0,122,255,0.22); }
     .cb-chip:active { transform: scale(0.95); }
     .cb-chip.cb-chip-gone { display: none; }
+    .cb-navigation-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      align-self: flex-start;
+      margin: 0 16px 2px 36px;
+      animation: cbFadeIn 0.25s ease;
+    }
+    .cb-navigation-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--separator, #e5e5ea);
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: var(--sub-card, #f9f9fb);
+      color: var(--text-secondary, #636366);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      opacity: 1;
+      transform: none;
+      animation: none;
+      transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cb-navigation-action:hover {
+      background: var(--sub-hover, #ececf2);
+      border-color: var(--text-tertiary, #aeaeb2);
+      color: var(--text-primary, #1c1c1e);
+    }
+    .cb-navigation-action:focus-visible { outline: 2px solid var(--accent, #007aff); outline-offset: 2px; }
     @keyframes cbChipSlideIn {
       to { opacity: 1; transform: translateX(0); }
     }
@@ -1639,7 +1692,7 @@ window.__navSwipe = {
       align-items: flex-end;
       gap: 8px;
       background: var(--sub-card, #f0f0f5);
-      border-radius: var(--radius-2xl);
+      border-radius: 20px;
       padding: 6px 6px 6px 14px;
     }
     .cb-textarea {
@@ -1650,13 +1703,14 @@ window.__navSwipe = {
       resize: none;
       font-family: inherit;
       font-size: 14px;
+      font-weight: 400;
       line-height: 1.4;
       color: var(--text-primary, #1c1c1e);
       max-height: 100px;
       min-height: 22px;
       padding: 4px 0;
     }
-    .cb-textarea::placeholder { color: var(--text-tertiary, #aeaeb2); }
+    .cb-textarea::placeholder { color: var(--text-tertiary, #aeaeb2); font-weight: 400; }
     /* iOS Safari zooms the page when focusing any field under 16px.
        Use 16px on phones / touch screens so opening Mian never zooms. */
     @media (max-width: 767px), (pointer: coarse) {
@@ -1665,7 +1719,7 @@ window.__navSwipe = {
     .cb-send {
       width: 32px;
       height: 32px;
-      border-radius: var(--radius-circle);
+      border-radius: 50%;
       background: var(--accent, #007aff);
       color: #fff;
       border: none;
@@ -1705,7 +1759,10 @@ window.__navSwipe = {
       display: flex;
       align-items: center;
       justify-content: center;
+      align-items: safe center;
+      justify-content: safe center;
       padding: 20px;
+      overflow-y: auto;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.22s ease;
@@ -1719,13 +1776,17 @@ window.__navSwipe = {
     .cb-card {
       background: var(--card, #ffffff);
       color: var(--text-primary, #1c1c1e);
-      border-radius: var(--radius-2xl);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      --corner-radius: 32px;
+      border-radius: 32px;
+      corner-shape: squircle;
+      box-shadow: none;
+      filter: drop-shadow(0 20px 34px rgba(0,0,0,.3));
       padding: 36px 28px 28px;
       width: 100%;
-      max-width: 320px;
+      max-width: 420px;
       text-align: center;
       position: relative;
+      flex: 0 0 auto;
       transform: scale(0.92);
       transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
       font-family: var(--sf, -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif);
@@ -1735,11 +1796,11 @@ window.__navSwipe = {
     .cb-card-close {
       background: #ff3b30 !important; color: #fff !important;
       position: absolute;
-      top: 12px;
-      right: 12px;
+      top: 18px;
+      right: 18px;
       width: 20px;
       height: 20px;
-      border-radius: var(--radius-circle);
+      border-radius: 50%;
       background: var(--sub-card, #f0f0f5);
       color: var(--text-primary, #1c1c1e);
       border: none;
@@ -1750,15 +1811,14 @@ window.__navSwipe = {
       transition: background 0.18s ease, transform 0.18s ease;
     }
     .cb-card-close:hover  { background: #e6342b !important; }
-    [data-theme="dark"] .cb-card-close { color: #000 !important; }
     .cb-card-close:active { transform: scale(0.92); }
     .cb-card-close svg { width: 11px; height: 11px; }
 
     .cb-card-avatar {
-      width: 200px;
-      height: 200px;
-      border-radius: var(--radius-circle);
-      margin: 0 auto 18px;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      margin: 0 auto 22px;
       overflow: hidden;
       background: var(--sub-card, #f0f0f5);
       color: var(--text-primary, #1c1c1e);
@@ -1800,13 +1860,12 @@ window.__navSwipe = {
       .cb-panel {
         width: calc(100vw - 16px);
         height: calc(100dvh - 140px);
-        bottom: calc(24px + 60px + 16px);
+        bottom: calc(40px + 60px + 16px);
         left: 8px;
         right: 8px;
         max-width: none;
         transform-origin: bottom right;
         transform: translateY(24px) scaleY(0.08) scaleX(0.88);
-        border-radius: var(--radius-xl);
       }
       .cb-panel.cb-open {
         transform: translateY(0) scaleY(1) scaleX(1);
@@ -1819,8 +1878,8 @@ window.__navSwipe = {
 
       .cb-avatar { width: 44px; height: 44px; font-size: 16px; }
 
-      .cb-card { max-width: 280px; padding: 32px 22px 24px; }
-      .cb-card-avatar { width: 120px; height: 120px; font-size: 44px; margin-bottom: 16px; }
+      .cb-card { max-width: 360px; padding: 42px 24px 30px; }
+      .cb-card-avatar { width: min(240px, 72vw); height: min(240px, 72vw); font-size: 56px; margin-bottom: 20px; }
       .cb-card-name { font-size: 22px; }
       .cb-card-role { font-size: 14px; }
       .cb-card-dedication { font-size: 11.5px; }
@@ -1980,9 +2039,10 @@ window.__navSwipe = {
     // Built entirely with DOM APIs — no innerHTML with user-derived
     // values, so no risk of HTML injection from config fields.
     const panel = document.createElement('div');
-    panel.className = 'cb-panel';
+    panel.className = 'cb-panel squircle-card';
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', CONFIG.botName);
+    panel.setAttribute('data-page-swipe-ignore', '');
 
     // Header
     const header = document.createElement('div');
@@ -2100,7 +2160,7 @@ window.__navSwipe = {
     overlay.setAttribute('aria-label', CONFIG.botName + ' profile card');
 
     const card = document.createElement('div');
-    card.className = 'cb-card';
+    card.className = 'cb-card squircle-card';
 
     const cardCloseBtn = document.createElement('button');
     cardCloseBtn.className = 'cb-card-close';
@@ -2255,34 +2315,6 @@ window.__navSwipe = {
     // ── Wire nav Mian button to toggle panel ──────────────────
     // The nav's setupMian() calls this after its own pointerup tap logic.
     // We listen on the #mian element: tap (no drag) toggles the chat panel.
-    function wireMianNav() {
-      var mianEl = document.getElementById('mian');
-      if (!mianEl) return;
-      mianEl.addEventListener('pointerup', function(e) {
-        // Only act on tap (no drag). The nav's own MO.dragging flag is
-        // read-only from here, so we track drag ourselves.
-        if (mianEl._cbDragged) return;
-        if (isPanelOpen()) { closePanel(); } else { openPanel(); }
-      });
-      mianEl.addEventListener('pointerdown', function(event) {
-        mianEl._cbDragged = false;
-        mianEl._cbStartX = event.clientX;
-        mianEl._cbStartY = event.clientY;
-      });
-      mianEl.addEventListener('pointermove', function(e) {
-        if (!mianEl._cbStartX) return;
-        var dx = e.clientX - mianEl._cbStartX;
-        var dy = e.clientY - mianEl._cbStartY;
-        if (Math.sqrt(dx*dx + dy*dy) > 6) mianEl._cbDragged = true;
-      });
-    }
-    // Wire after DOM is ready (nav init already ran)
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', wireMianNav);
-    } else {
-      wireMianNav();
-    }
-
     // ---- ID card popup ----
     function openCard()  { overlay.classList.add('cb-open'); }
     function closeCard() { overlay.classList.remove('cb-open'); }
@@ -2313,6 +2345,179 @@ window.__navSwipe = {
       messagesEl.querySelectorAll('.cb-msg-avatar').forEach(a => {
         a.classList.add('cb-avatar-hidden');
       });
+    }
+
+    const NAVIGATION_ACTIONS = {
+      'experience': { label: 'View Experience', route: 'experience', section: 'Experience' },
+      'section:introduction': { label: 'Jump to Introduction', route: 'home', section: 'Introduction' },
+      'section:contact': { label: 'Jump to Contact and Social Links', route: 'home', section: 'Contact and Social Links' },
+      'section:affiliation': { label: 'Jump to Affiliation', route: 'home', section: 'Affiliation' },
+      'section:home-projects': { label: 'Jump to Home Projects', route: 'home', section: 'Projects' },
+      'section:home-certifications': { label: 'Jump to Home Licenses and Certifications', route: 'home', section: 'Licenses and Certifications' },
+      'role:accenture': { label: 'View Accenture Role', route: 'experience', section: 'Application & Cloud Support Associate' },
+      'role:converge': { label: 'View Converge Internship', route: 'experience', section: 'Information Technology Helpdesk Intern' },
+      'role:cardinal-one': { label: 'View Cardinal One Role', route: 'home', section: 'Electronics Engineer & Media Manager' },
+      'education:cardinal-one': { label: 'View Cardinal One', route: 'home', section: 'Electronics Engineer & Media Manager' },
+      'education:iecep': { label: 'View IECEP-MUSC Role', route: 'home', section: 'Board Auditor, Treasurer' },
+      'education:ieee': { label: 'View IEEE-MUSB Role', route: 'home', section: 'Finance Committee Head' },
+      'education:degree': { label: 'View Electronics Engineering Degree', route: 'home', section: 'BS Electronics Engineering' },
+      'education': { label: 'View Education', route: 'home', section: 'Education' },
+      'projects': { label: 'View Projects', route: 'projects', section: 'Personal Project' },
+      'projects:personal': { label: 'Jump to Personal Project', route: 'projects', section: 'Personal Project' },
+      'projects:institutional': { label: 'Jump to Institutional Research and Projects', route: 'projects', section: 'Institutional Research and Projects' },
+      'licenses': { label: 'View Licenses and Certifications', route: 'licenses', section: 'Licenses' },
+      'licenses:prc': { label: 'Jump to PRC Licenses', route: 'licenses', section: 'Philippine Professional Regulation Commission' },
+      'licenses:cisco': { label: 'Jump to Cisco Certificates', route: 'licenses', section: 'Cisco' },
+      'licenses:google': { label: 'Jump to Google Certificates', route: 'licenses', section: 'Google' },
+      'licenses:certificates': { label: 'Jump to Certificates', route: 'licenses', section: 'Certificates' },
+      'licenses:profiles': { label: 'Jump to Learning Profiles', route: 'licenses', section: 'Credentials and Learning Profiles' },
+      'credential:google-cloud-fundamentals': { label: 'View Google Cloud Fundamentals', route: 'licenses', section: 'Google Cloud Fundamentals' },
+      'credential:electronics-engineering-license': { label: 'View Electronics Engineering License', route: 'licenses', section: 'Electronics Engineering License' },
+      'credential:electronics-technician-license': { label: 'View Electronics Technician License', route: 'licenses', section: 'Electronics Technician License' },
+      'credential:network-fundamentals': { label: 'View Network Fundamentals', route: 'licenses', section: 'Network Fundamentals' },
+      'credential:ccna-enterprise': { label: 'View CCNA Enterprise Networking', route: 'licenses', section: 'CCNA: Enterprise Networking, Security, and Automation' },
+      'credential:ccna-switching': { label: 'View CCNA Switching, Routing, and Wireless', route: 'licenses', section: 'CCNA: Switching, Routing, and Wireless Essentials' },
+      'credential:cybersecurity-foundations': { label: 'View Foundations of Cybersecurity', route: 'licenses', section: 'Foundations of Cybersecurity' },
+      'mian': { label: 'Read About Mian', route: 'mian', section: 'About Mian' },
+      'mian:what-she-does': { label: 'Jump to What Mian Does', route: 'mian', section: 'What Mian Does' },
+      'privacy:chat': { label: 'Jump to Chat Privacy', route: 'privacy', section: 'What Happens to Your Chat Messages' },
+      'privacy:overview': { label: 'Jump to Privacy Overview', route: 'privacy', section: 'Overview' },
+      'privacy:data': { label: 'Jump to Site Data Collection', route: 'privacy', section: 'Data Collection by the Site Owner' },
+      'privacy:assistant': { label: 'Jump to Mian Privacy Details', route: 'privacy', section: 'The AI Chatbot (“Mian”)' },
+      'privacy:sensitive': { label: 'Jump to Sensitive Information Guidance', route: 'privacy', section: 'Please Do Not Share Sensitive Information' },
+      'privacy:external': { label: 'Jump to External Links Privacy', route: 'privacy', section: 'External Links' },
+      'privacy:changes': { label: 'Jump to Privacy Policy Changes', route: 'privacy', section: 'Changes to This Policy' },
+      'privacy:contact': { label: 'Jump to Privacy Contact', route: 'privacy', section: 'Contact' },
+      'terms:chat': { label: 'Jump to Chatbot Terms', route: 'terms', section: 'Use of the Chatbot' },
+      'terms:acceptance': { label: 'Jump to Terms Acceptance', route: 'terms', section: 'Acceptance of Terms' },
+      'terms:purpose': { label: 'Jump to Site Purpose', route: 'terms', section: 'Purpose of the Site' },
+      'terms:assistant': { label: 'Jump to Mian Terms', route: 'terms', section: 'About the AI Assistant' },
+      'terms:advice': { label: 'Jump to Professional Advice Disclaimer', route: 'terms', section: 'No Professional Advice' },
+      'terms:ip': { label: 'Jump to Intellectual Property Terms', route: 'terms', section: 'Intellectual Property' },
+      'terms:disclaimer': { label: 'Jump to Liability Disclaimer', route: 'terms', section: 'Disclaimer and Limitation of Liability' },
+      'terms:external': { label: 'Jump to Terms External Links', route: 'terms', section: 'External Links' },
+      'terms:changes': { label: 'Jump to Terms Changes', route: 'terms', section: 'Changes to These Terms' },
+      'terms:contact': { label: 'Jump to Terms Contact', route: 'terms', section: 'Contact' },
+      'project:bushop': { label: 'View BusHop Project', route: 'project:bushop', section: 'Overview' },
+      'project:bushop:what-it-does': { label: 'Jump to What BusHop Does', route: 'project:bushop', section: 'What It Does' },
+      'project:bushop:how-built': { label: 'Jump to How BusHop Is Built', route: 'project:bushop', section: 'How It Is Built' },
+      'project:bushop:team': { label: 'Jump to the BusHop Team', route: 'project:bushop', section: 'The Team' },
+      'project:banana-shelflife': { label: 'View Banana Research', route: 'project:banana-shelflife', section: 'Overview' },
+      'project:banana-shelflife:awards': { label: 'Jump to Banana Research Recognition', route: 'project:banana-shelflife', section: 'Awards and Recognition' },
+      'project:aguila': { label: 'View Aguila Project', route: 'project:aguila', section: 'Overview' },
+      'project:aguila:season-2024': { label: 'Jump to Aguila Season 2024', route: 'project:aguila', section: 'Season 2024: Back on the Track' },
+      'project:aguila:season-2025': { label: 'Jump to Aguila Season 2025', route: 'project:aguila', section: 'Season 2025: Development Continues' },
+      'project:aguila:season-2026': { label: 'Jump to Aguila Season 2026', route: 'project:aguila', section: 'Season 2026: A New Frontier' },
+      'project:eeg-exoskeleton': { label: 'View EEG Exoskeleton Project', route: 'project:eeg-exoskeleton', section: 'Overview' },
+      'project:eeg-exoskeleton:awards': { label: 'Jump to EEG Research Recognition', route: 'project:eeg-exoskeleton', section: 'Awards and Recognition' },
+      'role:cardinal-one-apprentice': { label: 'Jump to Cardinal One Apprenticeship', route: 'project:aguila', section: 'Overview' },
+    };
+
+    const FAQ_NAVIGATION_ACTIONS = {
+      experience: 'experience', current_job: 'role:accenture', internship: 'role:converge',
+      education: 'education:degree', license: 'licenses', certifications: 'licenses',
+      electronics_engineering_license: 'credential:electronics-engineering-license',
+      electronics_technician_license: 'credential:electronics-technician-license',
+      network_fundamentals_certificate: 'credential:network-fundamentals',
+      ccna_enterprise_certificate: 'credential:ccna-enterprise',
+      ccna_switching_certificate: 'credential:ccna-switching',
+      cybersecurity_foundations_certificate: 'credential:cybersecurity-foundations',
+      project_aguila: 'project:aguila', leadership: 'education',
+      ieee_student_role: 'education:ieee', iecep_student_role: 'education:iecep',
+      google_cloud_certificate: 'credential:google-cloud-fundamentals',
+      projects: 'projects', project_bushop: 'project:bushop',
+      project_thesis: 'project:banana-shelflife', project_eeg: 'project:eeg-exoskeleton', project_mian: 'mian', about_mian: 'mian',
+    };
+
+    const LOCATION_QUESTION = /\bwhere\s+(?:(?:can|could|do|would)\s+i\s+)?(?:find|see|locate)\b|\bwhere\s+(?:is|are)\b|\b(?:show|take|bring)\s+me\s+to\b|\b(?:help me )?find\b/i;
+    function describeNavigationLocation(key) {
+      const action = NAVIGATION_ACTIONS[key];
+      if (!action) return '';
+      if (key.startsWith('credential:')) return `the ${action.section} card on Licenses and Certificates`;
+      if (key === 'licenses:prc') return 'the PRC issuer row on Licenses and Certificates';
+      if (key === 'licenses:cisco') return 'the Cisco issuer row on Licenses and Certificates';
+      if (key === 'licenses:google') return 'the Google issuer row on Licenses and Certificates';
+      if (key === 'licenses:profiles') return 'Credentials and Learning Profiles on Licenses and Certificates';
+      if (key.startsWith('licenses:')) return `the ${action.section} section on Licenses and Certificates`;
+      if (key.startsWith('project:')) {
+        const projectNames = {
+          bushop: 'BusHop',
+          'banana-shelflife': 'banana shelf-life research',
+          aguila: 'Aguila',
+          'eeg-exoskeleton': 'EEG exoskeleton',
+        };
+        const project = action.route.slice('project:'.length);
+        const section = action.section === 'Overview' ? 'overview' : `the ${action.section} section`;
+        return `${section} of the ${projectNames[project] || 'project'} article`;
+      }
+      if (key.startsWith('role:')) {
+        return action.route === 'experience'
+          ? `the ${action.section} card on Experience`
+          : `the ${action.section} entry in Education on Home`;
+      }
+      if (key.startsWith('education:') || key === 'education') return `the ${action.section} entry in Education on Home`;
+      if (key.startsWith('section:')) return `the ${action.section} section on Home`;
+      if (key === 'projects' || key.startsWith('projects:')) return `the ${action.section} section on the Projects page`;
+      if (key.startsWith('mian:')) return `the ${action.section} section in the Mian article`;
+      if (key === 'mian') return 'the Mian article';
+      if (key === 'experience') return 'the Experience page';
+      if (key === 'licenses') return 'the Licenses and Certificates page';
+      return `the ${action.section} section`;
+    }
+
+    function parseNavigationReply(text) {
+      let target = null;
+      const cleanText = String(text || '').replace(/\[\[NAV:([a-z:-]+)\]\]/g, (marker, key) => {
+        if (!target && NAVIGATION_ACTIONS[key]) target = key;
+        return '';
+      }).replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+      return { text: cleanText, target };
+    }
+
+    function navigateToSiteAction(key) {
+      const action = NAVIGATION_ACTIONS[key];
+      if (!action) return;
+      if (typeof window.__portfolioNavigate === 'function') {
+        window.__portfolioNavigate(action.route);
+      } else if (action.route === 'home') {
+        window.location.href = '/';
+      } else if (action.route.startsWith('project:')) {
+        window.location.href = '/?page=project&project=' + encodeURIComponent(action.route.slice('project:'.length));
+      } else {
+        const page = action.route === 'licenses' ? 'licenses-certifications' : action.route;
+        window.location.href = '/?page=' + encodeURIComponent(page);
+      }
+      if (action.section) {
+        // Match Command-K's Jump to behavior: resolve the exact visible
+        // data-command-section label after navigation, then smooth-scroll it.
+        const jump = () => {
+          const section = Array.prototype.find.call(
+            document.querySelectorAll('[data-command-section]'),
+            (element) => element.getAttribute('data-command-section') === action.section && !element.closest('[inert]')
+          );
+          if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+        window.requestAnimationFrame(() => window.requestAnimationFrame(jump));
+      }
+    }
+
+    function addNavigationAction(key) {
+      const action = NAVIGATION_ACTIONS[key];
+      if (!action) return;
+      const row = document.createElement('div');
+      row.className = 'cb-navigation-actions';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'cb-navigation-action';
+      button.textContent = action.label;
+      button.setAttribute('aria-label', action.label);
+      button.addEventListener('click', () => {
+        if (window.matchMedia('(max-width: 767px)').matches && isPanelOpen()) closePanel();
+        navigateToSiteAction(key);
+      });
+      row.appendChild(button);
+      messagesEl.appendChild(row);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
     function addMessage(role, text) {
@@ -2525,9 +2730,9 @@ window.__navSwipe = {
     // follows the system prompt's instruction to suggest emailing JC.
     const EMAIL_PATTERN = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
 
-    function addEmailActions(email) {
-      const wrap = document.createElement('div');
-      wrap.className = 'cb-email-row';
+    function addEmailActions(email, existingRow) {
+      const wrap = existingRow || document.createElement('div');
+      if (!existingRow) wrap.className = 'cb-email-row';
 
       const copyBtn = document.createElement('button');
       copyBtn.type = 'button';
@@ -2566,8 +2771,10 @@ window.__navSwipe = {
 
       wrap.appendChild(copyBtn);
       wrap.appendChild(sendBtn);
-      messagesEl.appendChild(wrap);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
+      if (!existingRow) {
+        messagesEl.appendChild(wrap);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
       return wrap;
     }
 
@@ -2578,16 +2785,17 @@ window.__navSwipe = {
       if (match) addEmailActions(match[0]);
     }
 
-    function addRetryButton(errorRow) {
+    function addRetryButton(errorRow, fallbackText) {
       const wrap = document.createElement('div');
-      wrap.className = 'cb-retry-row';
+      wrap.className = 'cb-email-row';
 
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'cb-retry-btn';
+      btn.className = 'cb-email-btn cb-retry-btn';
+      btn.setAttribute('aria-label', 'Retry response');
+      btn.title = 'Retry';
       btn.innerHTML =
-        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>' +
-        '<span>Retry</span>';
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
 
       btn.addEventListener('click', async () => {
         if (isSending) return;
@@ -2600,6 +2808,8 @@ window.__navSwipe = {
       });
 
       wrap.appendChild(btn);
+      const emailMatch = fallbackText && fallbackText.match(EMAIL_PATTERN);
+      if (emailMatch) addEmailActions(emailMatch[0], wrap);
       messagesEl.appendChild(wrap);
       messagesEl.scrollTop = messagesEl.scrollHeight;
       return wrap;
@@ -2615,13 +2825,15 @@ window.__navSwipe = {
 
       try {
         const rawReply = await sendToAI(history);
-        const reply = stripMarkdown(rawReply);
+        const parsedReply = parseNavigationReply(stripMarkdown(rawReply));
+        const reply = parsedReply.text;
         if (typingEl._anticipationTimers) typingEl._anticipationTimers.forEach(clearTimeout);
         if (typingEl._countUpInterval) clearInterval(typingEl._countUpInterval);
         typingEl.remove();
 
         const { bubble } = addBotBubbleForTyping();
         await typeIntoBubble(bubble, reply);
+        if (parsedReply.target) addNavigationAction(parsedReply.target);
         maybeAddEmailActions(reply);
 
         history.push({ role: 'assistant', content: reply });
@@ -2634,8 +2846,7 @@ window.__navSwipe = {
         const { row, bubble } = addBotBubbleForTyping({ error: true });
         const fallbackText = "Sorry, I'm having trouble connecting right now. Please try again in a moment, or reach JC directly at jcdcocampo@gmail.com.";
         await typeIntoBubble(bubble, fallbackText);
-        addRetryButton(row);
-        maybeAddEmailActions(fallbackText);
+        addRetryButton(row, fallbackText);
       } finally {
         isSending = false;
         updateUI();
@@ -2647,7 +2858,7 @@ window.__navSwipe = {
     // Types a locally-provided reply into a bubble with the same feel as a
     // real answer (typing indicator + natural pause), but no network call.
     // Used for the email-intent instant reply.
-    async function replyInstant(reply) {
+    async function replyInstant(reply, navigationTarget) {
       const typingEl = addTyping();
       glowManager.pauseIdle();
 
@@ -2659,6 +2870,7 @@ window.__navSwipe = {
 
       const { bubble } = addBotBubbleForTyping();
       await typeIntoBubble(bubble, reply);
+      if (navigationTarget) addNavigationAction(navigationTarget);
       maybeAddEmailActions(reply);
 
       history.push({ role: 'assistant', content: reply });
@@ -2693,7 +2905,13 @@ window.__navSwipe = {
       // answer from the FAQ cache instead of hitting the LLM.
       const faq = matchFaq(text);
       if (faq) {
-        await replyInstant(pickVariant(faq.id, faq.replies));
+        const target = FAQ_NAVIGATION_ACTIONS[faq.id];
+        if (LOCATION_QUESTION.test(text) && target && NAVIGATION_ACTIONS[target]) {
+          const location = describeNavigationLocation(target);
+          await replyInstant(`It’s in ${location}. Use the button below to go straight there.`, target);
+        } else {
+          await replyInstant(pickVariant(faq.id, faq.replies), target);
+        }
       } else {
         await attemptReply();
       }
@@ -2732,6 +2950,7 @@ window.__navSwipe = {
 
       const { bubble } = addBotBubbleForTyping();
       await typeIntoBubble(bubble, reply);
+      if (FAQ_NAVIGATION_ACTIONS[intent.id]) addNavigationAction(FAQ_NAVIGATION_ACTIONS[intent.id]);
       maybeAddEmailActions(reply);
 
       history.push({ role: 'assistant', content: reply });
@@ -2786,8 +3005,6 @@ window.__navSwipe = {
 })();
 })();
 
-/* Horizontal gestures are handled by the persistent React section deck. */
-
 /* ══════════════════════════════════════════════════════════════════
    COMMAND PALETTE  (⌘K / Ctrl+K) — Spotlight-style
    Site-wide quick launcher, lives in nav.js so every page gets it.
@@ -2810,10 +3027,7 @@ window.__navSwipe = {
            'stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
   }
   var ICON = {
-    mian:    svg('<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>'),
-    moon:    svg('<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'),
-    sun:     svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>'),
-    section: svg('<line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>'),
+    mian:    svg('<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>'),    section: svg('<line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>'),
     page:    svg('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'),
     contact: svg('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2.2"/><path d="M5.5 17c.7-2.1 2.2-3.2 3.5-3.2s2.8 1.1 3.5 3.2"/><line x1="14" y1="9" x2="18" y2="9"/><line x1="14" y1="12.5" x2="18" y2="12.5"/>'),
     mail:    svg('<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>'),
@@ -2829,48 +3043,31 @@ window.__navSwipe = {
     certs:      ICON.cert
   };
 
-  var SECTION_LABELS = {
-    'section-about':          'About',
-    'section-experience':     'Experience',
-    'section-projects':       'Projects',
-    'section-education':      'Education',
-    'section-leadership':     'Leadership & Activities',
-    'section-certifications': 'Certifications & Licenses',
-    'section-organization':   'Organization',
-    'section-social':         'Social Links'
-  };
-
   /* ── Static content index — real titles from the site's own pages, so
      a search actually finds things, not just menu commands. Kept as data
      here (rather than scraped from the current page's DOM) so results
      are the same no matter which page the palette is opened from. ── */
   var CONTENT = [
-    { group: 'Projects', label: 'Mian: An Intelligent Portfolio Assistant', hint: 'Personal Project', icon: ICON.proj, url: '/mian', keywords: 'mian chatbot ai assistant portfolio javascript' },
-    { group: 'Projects', label: 'BusHop: Zambales Line Bus Tracker', hint: 'Personal Project · with BusBoy AI assistant', icon: ICON.proj, url: 'https://jcdcocampo.github.io/bushop/', keywords: 'bushop busboy bus hop tracker tracking zambales line map transit commute chatbot app' },
-    { group: 'Projects', label: 'Aguila — Energy-Efficient Vehicle', hint: 'Mapua Cardinal One · Shell Eco-marathon', icon: ICON.proj, url: '/aguila', keywords: 'aguila shell eco-marathon vehicle energy efficient cardinal one' },
-    { group: 'Projects', label: 'Banana Shelf Life Neural Network', hint: 'IEEE research', icon: ICON.proj, url: '/banana-shelflife', keywords: 'banana shelf life neural network lakatan ieee sensor prediction' },
-    { group: 'Projects', label: 'EEG Exoskeleton (BCI)', hint: 'Brain-computer interface research', icon: ICON.proj, url: '/eeg-exoskeleton', keywords: 'eeg exoskeleton brain computer interface bci rehabilitation' },
+    { group: 'Projects', label: 'Mian: An Intelligent Portfolio Assistant', hint: 'Personal Project', icon: ICON.proj, route: 'mian', section: 'About Mian', keywords: 'mian chatbot ai assistant portfolio javascript' },
+    { group: 'Projects', label: 'BusHop: Live Bus Tracking and Trip Planning', hint: 'Accenture Digital Core Bootcamp', icon: ICON.proj, route: 'project:bushop', section: 'Overview', keywords: 'bushop busboy bus hop tracker tracking zambales line map transit commute chatbot app' },
+    { group: 'Projects', label: 'Aguila — Energy-Efficient Vehicle', hint: 'Mapua Cardinal One · Shell Eco-marathon', icon: ICON.proj, route: 'project:aguila', section: 'Overview', keywords: 'aguila shell eco-marathon vehicle energy efficient cardinal one' },
+    { group: 'Projects', label: 'Banana Shelf Life Neural Network', hint: 'IEEE research', icon: ICON.proj, route: 'project:banana-shelflife', section: 'Overview', keywords: 'banana shelf life neural network lakatan ieee sensor prediction' },
+    { group: 'Projects', label: 'EEG Exoskeleton (BCI)', hint: 'Brain-computer interface research', icon: ICON.proj, route: 'project:eeg-exoskeleton', section: 'Overview', keywords: 'eeg exoskeleton brain computer interface bci rehabilitation' },
 
-    { group: 'Certifications', label: 'Electronics Engineer License', hint: 'PRC', icon: ICON.cert, url: '/certifications#section-licenses', keywords: 'prc electronics engineer license' },
-    { group: 'Certifications', label: 'Electronics Technician License', hint: 'PRC', icon: ICON.cert, url: '/certifications#section-licenses', keywords: 'prc electronics technician license' },
-    { group: 'Certifications', label: 'Network Fundamentals', hint: 'Cisco', icon: ICON.cert, url: '/certifications#section-networking', keywords: 'cisco network fundamentals networking' },
-    { group: 'Certifications', label: 'CCNA: Enterprise Networking, Security, and Automation', hint: 'Cisco', icon: ICON.cert, url: '/certifications#section-networking', keywords: 'ccna cisco enterprise networking security automation' },
-    { group: 'Certifications', label: 'CCNA: Switching, Routing, and Wireless Essentials', hint: 'Cisco', icon: ICON.cert, url: '/certifications#section-networking', keywords: 'ccna cisco switching routing wireless essentials' },
-    { group: 'Certifications', label: 'Google Cloud Fundamentals', hint: 'Google Cloud', icon: ICON.cert, url: '/certifications#section-cloud-computing', keywords: 'google cloud fundamentals gcp cloud computing' },
-    { group: 'Certifications', label: 'Foundations of Cybersecurity', hint: 'Google / Coursera', icon: ICON.cert, url: '/certifications#section-cybersecurity', keywords: 'cybersecurity foundations security' },
-    { group: 'Certifications', label: 'Credly', hint: 'Digital badges', icon: ICON.cert, url: 'https://credly.com/users/jcdcocampo', keywords: 'credly badges digital credentials profile learning platform profile' },
-    { group: 'Certifications', label: 'Skillsoft', hint: 'Digital badges wallet', icon: ICON.cert, url: 'https://skillsoft.digitalbadges.skillsoft.com/profile/jcdcocampo/wallet', keywords: 'skillsoft badges wallet digital learning learning platform profile' },
-    { group: 'Certifications', label: 'Google Skills', hint: 'Partner profile', icon: ICON.cert, url: 'https://partner.skills.google/public_profiles/1231c0d6-211f-43d0-a4c6-0075b5e86a16', keywords: 'google skills partner profile cloud badges learning platform profile' },
-    { group: 'Certifications', label: 'Microsoft Learn', hint: 'Learning profile', icon: ICON.cert, url: 'https://learn.microsoft.com/en-us/users/jcdcocampo/', keywords: 'microsoft learn azure learning profile learning platform profile' },
-    { group: 'Certifications', label: 'AWS Skill Builder', hint: 'Credentials & learning', icon: ICON.cert, url: 'https://skillbuilder.aws/', keywords: 'aws amazon skill builder cloud learning learning platform profile' },
-    { group: 'Certifications', label: 'Oracle University', hint: 'Credentials & learning', icon: ICON.cert, url: 'https://education.oracle.com/', keywords: 'oracle university livelabs training courses learning learning platform profile' },
+    { group: 'Certifications', label: 'Electronics Engineer License', hint: 'PRC', icon: ICON.cert, route: 'licenses', section: 'Electronics Engineering License', keywords: 'prc electronics engineer license' },
+    { group: 'Certifications', label: 'Electronics Technician License', hint: 'PRC', icon: ICON.cert, route: 'licenses', section: 'Electronics Technician License', keywords: 'prc electronics technician license' },
+    { group: 'Certifications', label: 'Network Fundamentals', hint: 'Cisco', icon: ICON.cert, route: 'licenses', section: 'Network Fundamentals', keywords: 'cisco network fundamentals networking' },
+    { group: 'Certifications', label: 'CCNA: Enterprise Networking, Security, and Automation', hint: 'Cisco', icon: ICON.cert, route: 'licenses', section: 'CCNA: Enterprise Networking, Security, and Automation', keywords: 'ccna cisco enterprise networking security automation' },
+    { group: 'Certifications', label: 'CCNA: Switching, Routing, and Wireless Essentials', hint: 'Cisco', icon: ICON.cert, route: 'licenses', section: 'CCNA: Switching, Routing, and Wireless Essentials', keywords: 'ccna cisco switching routing wireless essentials' },
+    { group: 'Certifications', label: 'Google Cloud Fundamentals', hint: 'Google Cloud', icon: ICON.cert, route: 'licenses', section: 'Google Cloud Fundamentals', keywords: 'google cloud fundamentals gcp cloud computing' },
+    { group: 'Certifications', label: 'Foundations of Cybersecurity', hint: 'Google / Coursera', icon: ICON.cert, route: 'licenses', section: 'Foundations of Cybersecurity', keywords: 'cybersecurity foundations security' },
 
-    { group: 'Experience', label: 'Application & Cloud Support Associate', hint: 'Accenture, Inc. · 2026', icon: ICON.exp, url: '/experience#section-current', keywords: 'accenture cloud support associate engineer application current job' },
-    { group: 'Experience', label: 'IT Helpdesk Intern', hint: 'Converge ICT Solutions Inc. · 2025', icon: ICON.exp, url: '/experience#section-past', keywords: 'converge ict helpdesk intern' },
-    { group: 'Experience', label: 'Electronics Engineer & Media Manager', hint: 'Mapua University Cardinal One', icon: ICON.exp, url: '/experience#section-past', keywords: 'cardinal one electronics engineer media manager' },
-    { group: 'Experience', label: 'Apprentice', hint: 'Mapua University Cardinal One', icon: ICON.exp, url: '/experience#section-past', keywords: 'cardinal one apprentice' },
+    { group: 'Experience', label: 'Application & Cloud Support Associate', hint: 'Accenture, Inc. · 2026', icon: ICON.exp, route: 'experience', section: 'Application & Cloud Support Associate', keywords: 'accenture cloud support associate engineer application current job' },
+    { group: 'Experience', label: 'IT Helpdesk Intern', hint: 'Converge ICT Solutions Inc. · 2025', icon: ICON.exp, route: 'experience', section: 'Information Technology Helpdesk Intern', keywords: 'converge ict helpdesk intern' },
+    { group: 'Experience', label: 'Electronics Engineer & Media Manager', hint: 'Mapua University Cardinal One', icon: ICON.exp, route: 'home', section: 'Electronics Engineer & Media Manager', keywords: 'cardinal one electronics engineer media manager' },
+    { group: 'Experience', label: 'Apprentice', hint: 'Mapua University Cardinal One', icon: ICON.exp, route: 'project:aguila', section: 'Overview', keywords: 'cardinal one apprentice' },
 
-    { group: 'Education', label: 'BS Electronics Engineering', hint: 'Mapua University · 2025', icon: ICON.edu, url: '/experience#section-education', keywords: 'mapua university bs electronics engineering degree' }
+    { group: 'Education', label: 'BS Electronics Engineering', hint: 'Mapua University · 2025', icon: ICON.edu, route: 'home', section: 'BS Electronics Engineering', keywords: 'mapua university bs electronics engineering degree' }
   ];
 
   /* ── Styles — Spotlight-flavored: quieter icons, group label sits
@@ -2882,45 +3079,34 @@ window.__navSwipe = {
       'padding:15vh 20px 20px;opacity:0;pointer-events:none;background:rgba(0,0,0,.18);' +
       'backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);transition:opacity .18s ease;}' +
     '.cmdk-overlay.cmdk-show{opacity:1;pointer-events:auto;}' +
-    '[data-theme="dark"] .cmdk-overlay{background:rgba(0,0,0,.45);}' +
-    '.cmdk-panel{width:100%;max-width:560px;border-radius:var(--radius-lg);overflow:hidden;' +
+    '.cmdk-panel{width:100%;max-width:560px;border-radius:30px;corner-shape:squircle;overflow:hidden;' +
       "font-family:var(--sf,-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif);" +
       'background:rgba(255,255,255,.92);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);' +
       'box-shadow:0 0 0 .5px rgba(0,0,0,.08),0 24px 60px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.7);' +
       'transform:translateY(-8px) scale(.98);opacity:0;transition:transform .2s cubic-bezier(.22,1,.36,1),opacity .2s ease;}' +
     '.cmdk-show .cmdk-panel{transform:none;opacity:1;}' +
-    '[data-theme="dark"] .cmdk-panel{background:rgba(30,30,32,.9);' +
-      'box-shadow:0 0 0 .5px rgba(255,255,255,.12),0 24px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08);}' +
-    '.cmdk-inputwrap{display:flex;align-items:center;gap:10px;padding:14px 16px;}' +
+    '.cmdk-inputwrap{display:flex;align-items:center;gap:10px;padding:16px 22px;}' +
     '.cmdk-inputwrap svg{width:19px;height:19px;color:#8e8e93;flex-shrink:0;}' +
     '.cmdk-input{flex:1;border:0;outline:0;background:transparent;font:inherit;font-size:18px;font-weight:400;color:#1c1c1e;padding:0;}' +
     '.cmdk-input::placeholder{color:#c7c7cc;}' +
-    '[data-theme="dark"] .cmdk-input{color:#fff;}' +
-    '[data-theme="dark"] .cmdk-input::placeholder{color:#68686d;}' +
     '.cmdk-divider{height:.5px;background:rgba(0,0,0,.09);margin:0 14px;}' +
-    '[data-theme="dark"] .cmdk-divider{background:rgba(255,255,255,.12);}' +
-    '.cmdk-list{max-height:min(52vh,400px);overflow-y:auto;padding:8px 8px 0;}' +
+    '.cmdk-list{max-height:min(52vh,400px);overflow-y:auto;padding:10px 12px 0;}' +
     '.cmdk-group{font-size:11.5px;font-weight:600;color:#8e8e93;padding:10px 10px 3px;}' +
-    '[data-theme="dark"] .cmdk-group{color:#8e8e93;}' +
-    '.cmdk-row{display:flex;align-items:center;gap:10px;padding:7px 10px;margin:0 2px;border-radius:var(--radius-xs);cursor:pointer;}' +
+    '.cmdk-row{display:flex;align-items:center;gap:10px;padding:7px 10px;margin:0 2px;border-radius:7px;cursor:pointer;}' +
     '.cmdk-row.cmdk-sel{background:rgba(0,122,255,.13);}' +
-    '[data-theme="dark"] .cmdk-row.cmdk-sel{background:rgba(10,132,255,.28);}' +
     '.cmdk-ic{width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#98989d;}' +
     '.cmdk-ic svg{width:16px;height:16px;}' +
     '.cmdk-row.cmdk-sel .cmdk-ic{color:#007aff;}' +
-    '[data-theme="dark"] .cmdk-row.cmdk-sel .cmdk-ic{color:#0a84ff;}' +
     '.cmdk-txt{display:flex;flex-direction:column;gap:0;min-width:0;flex:1;}' +
     '.cmdk-label{font-size:14.5px;font-weight:450;color:#1c1c1e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
-    '[data-theme="dark"] .cmdk-label{color:#f2f2f2;}' +
     '.cmdk-hint{font-size:12px;color:#98989d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
     '.cmdk-empty{padding:30px 16px;text-align:center;color:#8e8e93;font-size:14px;}' +
-    '.cmdk-foot{display:flex;align-items:center;justify-content:flex-end;gap:14px;padding:8px 14px;font-size:11.5px;color:#98989d;}' +
+    '.cmdk-foot{display:flex;align-items:center;justify-content:flex-end;gap:14px;padding:10px 20px;font-size:11.5px;color:#98989d;}' +
     '.cmdk-foot .cmdk-hints{display:flex;gap:14px;margin-right:auto;}' +
     '.cmdk-foot span{display:inline-flex;align-items:center;gap:4px;}' +
     '.cmdk-foot kbd{font-family:inherit;background:rgba(0,0,0,.06);border-radius:4px;padding:1px 5px;font-size:10.5px;line-height:1.5;}' +
-    '[data-theme="dark"] .cmdk-foot kbd{background:rgba(255,255,255,.12);}' +
     '.cmdk-count{font-variant-numeric:tabular-nums;}' +
-    '@media (max-width:600px){.cmdk-overlay{padding:10vh 14px 14px;}.cmdk-foot .cmdk-hints{display:none;}}';
+    '@media (max-width:600px){.cmdk-overlay{padding:10vh 14px 14px;}.cmdk-panel{border-radius:24px;}.cmdk-inputwrap{padding:15px 18px;}.cmdk-list{padding-inline:10px;}.cmdk-foot{padding-inline:16px;}.cmdk-foot .cmdk-hints{display:none;}}';
     var st = document.createElement('style');
     st.id = 'cmdk-style';
     st.textContent = css;
@@ -2946,7 +3132,8 @@ window.__navSwipe = {
     overlay.setAttribute('aria-label', 'Search');
 
     panel = document.createElement('div');
-    panel.className = 'cmdk-panel';
+    panel.className = 'cmdk-panel squircle-card';
+    panel.style.setProperty('--corner-radius', '32px');
 
     var iw = document.createElement('div');
     iw.className = 'cmdk-inputwrap';
@@ -2992,19 +3179,6 @@ window.__navSwipe = {
     input.addEventListener('input', function () { filter(input.value); });
   }
 
-  /* ── Theme toggle: reuse the page's own toggle button if present ── */
-  function toggleTheme() {
-    var btn = document.getElementById('themeToggle') || document.getElementById('stickyThemeToggle');
-    if (btn) { btn.click(); return; }
-    var root = document.documentElement;
-    var dark = root.getAttribute('data-theme') === 'dark';
-    if (dark) { root.removeAttribute('data-theme'); }
-    else { root.setAttribute('data-theme', 'dark'); }
-    try { localStorage.setItem('theme', dark ? 'light' : 'dark'); } catch (e) {}
-    var m = document.getElementById('themeColorMeta');
-    if (m) m.setAttribute('content', dark ? '#f2f2f7' : '#000000');
-  }
-
   /* ── Copy-to-clipboard helper, with a safe fallback ── */
   function copyText(text) {
     return (navigator.clipboard && navigator.clipboard.writeText)
@@ -3024,7 +3198,7 @@ window.__navSwipe = {
 
   var JC_EMAIL = 'jcdcocampo@gmail.com';
 
-  /* ── Command list (rebuilt each open so theme label / current page stay fresh) ── */
+  /* ── Command list (rebuilt each open so current page stays fresh) ── */
   function buildCommands() {
     var out = [];
     var active = window.__navActive || 'home';
@@ -3043,11 +3217,12 @@ window.__navSwipe = {
       icon: ICON.contact, keywords: 'contact social links reach connect',
       run: function () {
         if (active === 'home') {
-          var sectionRoot = document.querySelector('.main-section-panel[data-active="true"]');
-          var el = sectionRoot ? Array.prototype.find.call(sectionRoot.querySelectorAll('[id]'), function (n) { return n.id === 'section-social'; }) : document.getElementById('section-social');
-          if (el) { portfolioScrollToElement(el); return; }
+          var el = Array.prototype.find.call(document.querySelectorAll('#section-social'), function(node){return !node.closest('[inert]');});
+          if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
         }
-        spaGo('/#section-social');
+        if (typeof window.__portfolioNavigate === 'function') window.__portfolioNavigate('home');
+        else window.location.href = '/#section-social';
+        setTimeout(function(){ var el=Array.prototype.find.call(document.querySelectorAll('#section-social'), function(node){return !node.closest('[inert]');}); if(el)el.scrollIntoView({behavior:'smooth',block:'start'}); }, 80);
       }
     });
     out.push({
@@ -3068,25 +3243,15 @@ window.__navSwipe = {
       icon: ICON.mail, keywords: 'send email mail compose message gmail',
       run: function () { window.location.href = 'mailto:' + JC_EMAIL; }
     });
-    var dark = document.documentElement.getAttribute('data-theme') === 'dark';
-    out.push({
-      group: 'Actions',
-      label: dark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
-      hint: 'Toggle appearance', icon: dark ? ICON.sun : ICON.moon,
-      keywords: 'theme dark light mode appearance color night day',
-      run: toggleTheme
-    });
 
     // Sections on the CURRENT page (scroll)
-    var sectionRoot = document.querySelector('.main-section-panel[data-active="true"]') || document.getElementById('route-root');
-    var secs = sectionRoot ? sectionRoot.querySelectorAll('[id^="section-"], [data-section-anchor]') : [];
+    var secs = Array.prototype.filter.call(document.querySelectorAll('[data-command-section]'), function(el){ return !el.closest('[inert]'); });
     Array.prototype.forEach.call(secs, function (el) {
-      var sectionId = el.getAttribute('data-section-anchor') || el.id;
-      var lbl = SECTION_LABELS[sectionId] || titleCase(sectionId.replace('section-', '').replace(/-/g, ' '));
+      var lbl = el.getAttribute('data-command-section') || titleCase(el.id.replace('section-', '').replace(/-/g, ' '));
       out.push({
         group: 'Jump to', label: lbl, hint: 'On this page', icon: ICON.section,
         keywords: 'section jump scroll ' + lbl,
-        run: function () { portfolioScrollToElement(el); }
+        run: function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
       });
     });
 
@@ -3102,8 +3267,9 @@ window.__navSwipe = {
           hint: meta.s || '', icon: PAGE_ICON[id] || ICON.page,
           keywords: 'page go to open navigate ' + id + ' ' + meta.t,
           run: function () {
-            if (isCur) { portfolioScrollToTop(); }
-            else { spaGo(NAV_URLS[id]); }
+            if (isCur) { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+            else if (typeof window.__portfolioNavigate === 'function') { window.__portfolioNavigate(id); }
+            else { window.location.href = NAV_URLS[id]; }
           }
         });
       });
@@ -3113,7 +3279,33 @@ window.__navSwipe = {
     CONTENT.forEach(function (c) {
       out.push({
         group: c.group, label: c.label, hint: c.hint, icon: c.icon,
-        keywords: c.keywords, run: function () { spaGo(c.url); }
+        keywords: c.keywords, run: function () {
+          if (c.route) {
+            if (typeof window.__portfolioNavigate === 'function') window.__portfolioNavigate(c.route);
+            else if (c.route.indexOf('project:') === 0) window.location.href = '/?page=project&project=' + encodeURIComponent(c.route.slice(8));
+            else window.location.href = '/?page=' + (c.route === 'licenses' ? 'licenses-certifications' : c.route);
+            if (c.section) {
+              var jumpToContent = function () {
+                var target = Array.prototype.find.call(document.querySelectorAll('[data-command-section]'), function (el) {
+                  return el.getAttribute('data-command-section') === c.section && !el.closest('[inert]');
+                });
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              };
+              window.requestAnimationFrame(function () { window.requestAnimationFrame(jumpToContent); });
+            }
+            return;
+          }
+          if (c.section) {
+            var jump = function(){ var el=document.getElementById(c.section); if(el)el.scrollIntoView({behavior:'smooth',block:'start'}); };
+            if (window.location.search || window.location.pathname !== '/') {
+              if (typeof window.__portfolioNavigate === 'function') window.__portfolioNavigate('home');
+              else { window.location.href = '/#' + c.section; return; }
+              setTimeout(jump, 80);
+            } else jump();
+            return;
+          }
+          if (c.url) window.location.href = c.url;
+        }
       });
     });
 
