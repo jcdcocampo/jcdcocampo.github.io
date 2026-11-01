@@ -117,6 +117,11 @@ function kick(){if(!G.raf)G.raf=requestAnimationFrame(animLoop);}
 function kickMO(){if(!MO.raf)MO.raf=requestAnimationFrame(mindLoop);}
 function snapTo(id){var b=document.querySelector('[data-nav="'+id+'"]');if(!b)return;G.tL=b.offsetLeft;G.tW=b.offsetWidth;kick();}
 
+function syncMianOpenState(){
+  M.open=!!(window.__isMianOpen&&window.__isMianOpen());
+  updateMian();
+}
+
 /* ── Rest pill: instant position snap (no position CSS transition to avoid mismatch) ── */
 function setRpill(id){
   var b=document.querySelector('[data-nav="'+id+'"]');
@@ -410,16 +415,17 @@ function setupMian(){
     MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.dragVelX=0;MO.dragVelY=0;
     kickMO();setMianLift(false);
     if(!wasDrag){if(window.__isMianOpen?.())window.__closeMian?.();else window.__openMian?.();}
+    else syncMianOpenState();
   });
   mian.addEventListener('pointercancel',function(e){
     if(e.pointerId!==MO.pointerId)return;
     MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.dragVelX=0;MO.dragVelY=0;
-    kickMO();setMianLift(false);
+    kickMO();setMianLift(false);syncMianOpenState();
   });
   mian.addEventListener('lostpointercapture',function(){
     if(!MO.holding)return;
     MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.dragVelX=0;MO.dragVelY=0;
-    kickMO();setMianLift(false);
+    kickMO();setMianLift(false);syncMianOpenState();
   });
 }
 /* Place every blue overlay item on the exact rendered box of its gray item.
