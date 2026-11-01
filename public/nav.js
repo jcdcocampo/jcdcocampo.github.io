@@ -408,20 +408,21 @@ function setupMian(){
     var dx=e.clientX-MO.lastPx,dy=e.clientY-MO.lastPy;
     MO.dragVelX=MO.dragVelX*0.55+dx*0.45;MO.dragVelY=MO.dragVelY*0.55+dy*0.45;
     MO.lastPx=e.clientX;MO.lastPy=e.clientY;
-    var totalX=MO.startOffsetX+e.clientX-MO.startPx,totalY=MO.startOffsetY+e.clientY-MO.startPy;
     if(!MO.dragging&&(Math.abs(e.clientX-MO.startPx)>2||Math.abs(e.clientY-MO.startPy)>2))MO.dragging=true;
     if(MO.dragging){
-      var offset=clampMianDrag(totalX,totalY);
-      MO.dragExcess=offset.excess;
-      MO.tEdgeStretch=Math.min(offset.excess*0.008,0.18);
+      /* Integrate pointer deltas so edge contact removes only outward motion;
+         tangential movement can still glide smoothly around the circle. */
+      var offset=clampMianDrag(MO.tX+dx,MO.tY+dy);
+      var gestureDistance=Math.sqrt(Math.pow(e.clientX-MO.startPx,2)+Math.pow(e.clientY-MO.startPy,2));
+      MO.dragExcess=Math.max(0,gestureDistance-MIAN_DRAG_RADIUS);
+      MO.tEdgeStretch=Math.min(MO.dragExcess*0.008,0.18);
       MO.tX=offset.x;MO.tY=offset.y;MO.angle=Math.atan2(offset.y,offset.x);kickMO();
-      MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;
-      paintMianGlass();
     }
   });
   mian.addEventListener('pointerup',function(e){
     if(!MO.holding||e.pointerId!==MO.pointerId)return;
     var wasDrag=MO.dragging;
+    if(wasDrag){MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;MO.edgeStretch=MO.tEdgeStretch;MO.edgeStretchV=0;}
     MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.tEdgeStretch=0;MO.dragExcess=0;MO.dragVelX=0;MO.dragVelY=0;
     kickMO();setMianLift(false);
     if(!wasDrag){if(window.__isMianOpen?.())window.__closeMian?.();else window.__openMian?.();}
@@ -429,11 +430,13 @@ function setupMian(){
   });
   mian.addEventListener('pointercancel',function(e){
     if(e.pointerId!==MO.pointerId)return;
+    if(MO.dragging){MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;MO.edgeStretch=MO.tEdgeStretch;MO.edgeStretchV=0;}
     MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.tEdgeStretch=0;MO.dragExcess=0;MO.dragVelX=0;MO.dragVelY=0;
     kickMO();setMianLift(false);syncMianOpenState();
   });
   mian.addEventListener('lostpointercapture',function(){
     if(!MO.holding)return;
+    if(MO.dragging){MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;MO.edgeStretch=MO.tEdgeStretch;MO.edgeStretchV=0;}
     MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.tEdgeStretch=0;MO.dragExcess=0;MO.dragVelX=0;MO.dragVelY=0;
     kickMO();setMianLift(false);syncMianOpenState();
   });
