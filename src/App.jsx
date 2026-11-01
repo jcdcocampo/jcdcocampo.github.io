@@ -1108,7 +1108,7 @@ export default function App() {
     }
     const onTouchCancel = (event) => {
       const gesture = pageSwipeGesture.current
-      if (gesture && Array.from(event.changedTouches).some((touch) => touch.identifier === gesture.pointerId)) cancelPageSwipe()
+      if (gesture && Array.from(event.changedTouches).some((touch) => touch.identifier === gesture.pointerId)) onPageSwipePointerUp({ pointerId: gesture.pointerId })
     }
     const onClickCapture = (event) => {
       if (performance.now() > suppressPageSwipeClickUntil.current) return
