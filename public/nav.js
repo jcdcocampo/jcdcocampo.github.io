@@ -108,9 +108,12 @@ function mindLoop(ts){
   MO.sXv=0;
   paintMianGlass();
   var mind=document.getElementById('mind');
-  var stable=Math.abs(MO.xV)<0.04&&Math.abs(MO.yV)<0.04&&Math.abs(MO.sXv)<0.002&&Math.abs(MO.hSv)<0.002&&!MO.holding;
+  var stable=Math.abs(MO.x)<0.15&&Math.abs(MO.y)<0.15&&Math.abs(MO.xV)<0.04&&Math.abs(MO.yV)<0.04&&Math.abs(MO.hS-1)<0.003&&Math.abs(MO.sXv)<0.002&&Math.abs(MO.hSv)<0.002&&!MO.holding;
   if(!stable) MO.raf=requestAnimationFrame(mindLoop);
-  else{MO.raf=null;mind.style.transform='none';}
+  else{
+    MO.raf=null;mind.style.transform='none';
+    if(!M.open){mind.style.opacity='0';mind.style.pointerEvents='none';}
+  }
 }
 
 function kick(){if(!G.raf)G.raf=requestAnimationFrame(animLoop);}
@@ -119,7 +122,8 @@ function snapTo(id){var b=document.querySelector('[data-nav="'+id+'"]');if(!b)re
 
 function syncMianOpenState(){
   M.open=!!(window.__isMianOpen&&window.__isMianOpen());
-  updateMian();
+  var mico=document.getElementById('mico');
+  if(mico)mico.setAttribute('stroke',M.open?'#007aff':'rgba(0,0,0,.38)');
 }
 
 /* ── Rest pill: instant position snap (no position CSS transition to avoid mismatch) ── */
