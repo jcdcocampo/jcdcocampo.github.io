@@ -20,15 +20,21 @@ var restPillRevealTimer=null,restPillRipple=null;
 /* ── Mian state ── */
 var M={open:false,tapSx:0,tapSy:0};
 /* ── Mian indicator physics ── */
-var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,sX:1,sXv:0,edgeStretch:0,edgeStretchV:0,tEdgeStretch:0,dragExcess:0,holding:false,holdStart:0,dragging:false,pointerId:null,lastPx:0,lastPy:0,startPx:0,startPy:0,startOffsetX:0,startOffsetY:0,dragVelX:0,dragVelY:0,angle:0,raf:null};
+var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,sX:1,sXv:0,edgeStretch:0,edgeStretchV:0,tEdgeStretch:0,dragExcess:0,holding:false,holdStart:0,dragging:false,pointerId:null,lastPx:0,lastPy:0,startPx:0,startPy:0,startOffsetX:0,startOffsetY:0,dragVelX:0,dragVelY:0,angle:0,lastFrameTs:0,raf:null};
 
-var SK=0.20,SD=0.67,HK=0.13,HD=0.73;var MIAN_DRAG_RADIUS=12,MIAN_DRAG_ELASTIC_MAX=4,MIAN_DRAG_ELASTIC_RATE=0.25;
+var HK=0.13,HD=0.73,MIAN_DRAG_RADIUS=16;
 function clampMianDrag(x,y,radius){
   var distance=Math.sqrt(x*x+y*y);
   if(distance<=radius||distance===0)return {x:x,y:y,excess:0};
   /* Keep position bounded while excess drag remains visible as glass stretch. */
   var ratio=radius/distance;
   return {x:x*ratio,y:y*ratio,excess:distance-radius};
+}
+function advanceMianSpring(value,velocity,target,dt,frequency){
+  var offset=value-target;
+  var impulse=velocity+frequency*offset;
+  var decay=Math.exp(-frequency*dt);
+  return {value:target+(offset+impulse*dt)*decay,velocity:(velocity-frequency*impulse*dt)*decay};
 }
 /* ── Pill shadow presets ── */
 var PSH={
@@ -92,26 +98,27 @@ function animLoop(ts){
 
 /* ── Mian indicator loop: constrained spring + hold swell + drag stretch ── */
 function mindLoop(ts){
+  var dt=MO.lastFrameTs?Math.min((ts-MO.lastFrameTs)/1000,0.05):1/60;
+  MO.lastFrameTs=ts;
   /* Track the active pointer directly; only the release uses the spring. */
   if(MO.dragging){
     MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;
     MO.edgeStretch=MO.tEdgeStretch;MO.edgeStretchV=0;
   } else {
-    var lxf=(MO.tX-MO.x)*SK;MO.xV=MO.xV*SD+lxf;MO.x+=MO.xV;
-    var lyf=(MO.tY-MO.y)*SK;MO.yV=MO.yV*SD+lyf;MO.y+=MO.yV;
-    var edgeForce=(MO.tEdgeStretch-MO.edgeStretch)*SK;
-    MO.edgeStretchV=MO.edgeStretchV*SD+edgeForce;MO.edgeStretch+=MO.edgeStretchV;
+    var spring=advanceMianSpring(MO.x,MO.xV,MO.tX,dt,18);MO.x=spring.value;MO.xV=spring.velocity;
+    spring=advanceMianSpring(MO.y,MO.yV,MO.tY,dt,18);MO.y=spring.value;MO.yV=spring.velocity;
+    spring=advanceMianSpring(MO.edgeStretch,MO.edgeStretchV,MO.tEdgeStretch,dt,18);MO.edgeStretch=spring.value;MO.edgeStretchV=spring.velocity;
   }
   /* Hold swell — same parameters as nav oval */
   if(MO.holding){var el=(ts-MO.holdStart)/1000;MO.tHS=1+0.18*(1-Math.exp(-el*2.4));}
-  var hf=(MO.tHS-MO.hS)*HK;MO.hSv=MO.hSv*HD+hf;MO.hS+=MO.hSv;
+  var swell=advanceMianSpring(MO.hS,MO.hSv,MO.tHS,dt,16);MO.hS=swell.value;MO.hSv=swell.velocity;
   /* Stretch follows the current offset, so reversing direction has no velocity lag. */
   var displacement=Math.sqrt(MO.x*MO.x+MO.y*MO.y);
   MO.sX=1+Math.min(displacement*0.004+MO.edgeStretch,0.35);
   MO.sXv=0;
   paintMianGlass();
   var mind=document.getElementById('mind');
-  var stable=Math.abs(MO.x)<0.15&&Math.abs(MO.y)<0.15&&Math.abs(MO.xV)<0.04&&Math.abs(MO.yV)<0.04&&Math.abs(MO.hS-1)<0.003&&Math.abs(MO.edgeStretch)<0.003&&Math.abs(MO.edgeStretchV)<0.002&&Math.abs(MO.sXv)<0.002&&Math.abs(MO.hSv)<0.002&&!MO.holding;
+  var stable=Math.abs(MO.x)<0.12&&Math.abs(MO.y)<0.12&&Math.abs(MO.xV)<0.5&&Math.abs(MO.yV)<0.5&&Math.abs(MO.hS-1)<0.002&&Math.abs(MO.edgeStretch)<0.002&&Math.abs(MO.edgeStretchV)<0.5&&Math.abs(MO.sXv)<0.002&&Math.abs(MO.hSv)<0.02&&!MO.holding;
   if(!stable) MO.raf=requestAnimationFrame(mindLoop);
   else{
     MO.raf=null;mind.style.transform='none';
@@ -395,7 +402,7 @@ function setupMian(){
     MO.pointerId=e.pointerId;M.tapSx=e.clientX;M.tapSy=e.clientY;
     /* Press feedback is temporary; only the chat panel controls M.open. */
     var mind=document.getElementById('mind');if(mind)mind.style.opacity='1';
-    MO.holding=true;MO.holdStart=performance.now();MO.tHS=1;MO.hS=1;MO.hSv=0;
+    MO.holding=true;MO.holdStart=performance.now();MO.lastFrameTs=0;MO.tHS=1;MO.hS=1;MO.hSv=0;
     MO.tX=MO.x;MO.tY=MO.y;MO.sX=1;MO.sXv=0;MO.dragging=false;
     MO.dragVelX=0;MO.dragVelY=0;
     MO.lastPx=e.clientX;MO.lastPy=e.clientY;MO.startPx=e.clientX;MO.startPy=e.clientY;
@@ -413,8 +420,7 @@ function setupMian(){
       /* Integrate pointer deltas so edge contact removes only outward motion;
          tangential movement can still glide smoothly around the circle. */
       var gestureDistance=Math.sqrt(Math.pow(e.clientX-MO.startPx,2)+Math.pow(e.clientY-MO.startPy,2));
-      var elasticTravel=Math.min(Math.max(gestureDistance-MIAN_DRAG_RADIUS,0)*MIAN_DRAG_ELASTIC_RATE,MIAN_DRAG_ELASTIC_MAX);
-      var offset=clampMianDrag(MO.tX+dx,MO.tY+dy,MIAN_DRAG_RADIUS+elasticTravel);
+      var offset=clampMianDrag(MO.tX+dx,MO.tY+dy,MIAN_DRAG_RADIUS);
       MO.dragExcess=Math.max(0,gestureDistance-MIAN_DRAG_RADIUS);
       MO.tEdgeStretch=Math.min(MO.dragExcess*0.008,0.18);
       MO.tX=offset.x;MO.tY=offset.y;MO.angle=Math.atan2(offset.y,offset.x);kickMO();
