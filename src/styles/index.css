@@ -2245,6 +2245,8 @@ html { scroll-behavior: auto !important; }
 .licenses-filters button { text-transform: capitalize; }
 .hero-location { flex-wrap: nowrap; white-space: nowrap; }
 .hero-location-place { display: inline-flex; align-items: center; gap: 6px; }
+.hero-location-country,
+.hero-location-country-mobile { margin-left: -6px; }
 .hero-location-country-mobile { display: none; }
 .hero-location-separator { padding-inline: 2px; color: rgba(110,110,115,.65); }
 .hero-location-time { font-variant-numeric: tabular-nums; }
@@ -2266,15 +2268,19 @@ html { scroll-behavior: auto !important; }
    their resting color on touch-first devices so the pressed tint never sticks. */
 @media (hover: none), (pointer: coarse) {
   .carousel-arrow,
-  .carousel-arrow:hover,
-  .carousel-arrow:active {
+  .carousel-arrow:hover {
     transform: none !important;
     background: #fff !important;
   }
+  .carousel-arrow:active {
+    background: #e5e5ea !important;
+  }
   .experience-heading .carousel-arrow,
-  .experience-heading .carousel-arrow:hover,
-  .experience-heading .carousel-arrow:active {
+  .experience-heading .carousel-arrow:hover {
     background: rgba(255,255,255,.14) !important;
+  }
+  .experience-heading .carousel-arrow:active {
+    background: rgba(255,255,255,.26) !important;
   }
 }
 
