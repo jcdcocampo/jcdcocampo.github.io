@@ -26,8 +26,8 @@ var SK=0.20,SD=0.67,HK=0.13,HD=0.73;var MIAN_MAX_R=20;
 function softenMianDrag(x,y){
   var distance=Math.sqrt(x*x+y*y);
   if(distance<=MIAN_MAX_R||distance===0)return {x:x,y:y};
-  var softened=MIAN_MAX_R+(distance-MIAN_MAX_R)*0.35;
-  var ratio=softened/distance;
+  /* Clamp by vector length so every direction has the same circular limit. */
+  var ratio=MIAN_MAX_R/distance;
   return {x:x*ratio,y:y*ratio};
 }
 /* ── Pill shadow presets ── */
