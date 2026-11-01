@@ -1070,8 +1070,9 @@ export default function App() {
     const onTouchStart = (event) => {
       if (event.touches.length > 1) {
         pageSwipeTouchBlocked.current = true
-        if (pageSwipeGesture.current?.axis === 'x' && !pendingPageSwipe.current) settlePageSwipe()
-        else if (pageSwipeGesture.current) pageSwipeGesture.current = null
+        // Drop any active drag or snap animation and restore the current page
+        // immediately. A second touch must not leave the track between tabs.
+        cancelPageSwipe()
         return
       }
       if (pageSwipeTouchBlocked.current || pageSwipeAnimation.current || pendingPageSwipe.current) return
@@ -1120,6 +1121,9 @@ export default function App() {
       if (event.touches.length === 0) pageSwipeTouchBlocked.current = false
       if (pageSwipeGesture.current) settlePageSwipe()
     }
+    const unlockMultiTouch = (event) => {
+      if (event.touches.length === 0) pageSwipeTouchBlocked.current = false
+    }
     const onClickCapture = (event) => {
       if (performance.now() > suppressPageSwipeClickUntil.current) return
       suppressPageSwipeClickUntil.current = 0
@@ -1131,12 +1135,16 @@ export default function App() {
     viewport.addEventListener('touchend', onTouchEnd, { passive: true })
     viewport.addEventListener('touchcancel', onTouchCancel, { passive: true })
     viewport.addEventListener('click', onClickCapture, true)
+    window.addEventListener('touchend', unlockMultiTouch, true)
+    window.addEventListener('touchcancel', unlockMultiTouch, true)
     return () => {
       viewport.removeEventListener('touchstart', onTouchStart)
       viewport.removeEventListener('touchmove', onTouchMove)
       viewport.removeEventListener('touchend', onTouchEnd)
       viewport.removeEventListener('touchcancel', onTouchCancel)
       viewport.removeEventListener('click', onClickCapture, true)
+      window.removeEventListener('touchend', unlockMultiTouch, true)
+      window.removeEventListener('touchcancel', unlockMultiTouch, true)
     }
   }, [currentPage, isMobileViewport, pageSwipeX])
   const navigateTo = (event, destination) => {
