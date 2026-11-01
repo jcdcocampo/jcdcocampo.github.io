@@ -22,7 +22,7 @@ var M={open:false,tapSx:0,tapSy:0};
 /* ── Mian indicator physics ── */
 var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,dragStretch:0,dragStretchV:0,tDragStretch:0,holding:false,holdStart:0,dragging:false,pointerId:null,lastPx:0,lastPy:0,startPx:0,startPy:0,lastFrameTs:0,raf:null};
 
-var HK=0.13,HD=0.73,MIAN_DRAG_RADIUS=7;
+var HK=0.13,HD=0.73,MIAN_DRAG_RADIUS=11;
 function clampMianDrag(x,y,radius){
   var distance=Math.sqrt(x*x+y*y);
   if(distance<=radius||distance===0)return {x:x,y:y,excess:0};
@@ -67,8 +67,8 @@ function paintMianButton(){
   var background=document.getElementById('mian-bg');
   var foreground=document.getElementById('mian-foreground');
   if(!background||!foreground)return;
-  var sx=Math.max(1,Math.min(1.09,MO.hS*(1+MO.dragStretch)));
-  var sy=Math.max(0.96,Math.min(1.06,MO.hS*(1-MO.dragStretch*0.28)));
+  var sx=Math.max(1,Math.min(1.15,MO.hS*(1+MO.dragStretch)));
+  var sy=Math.max(0.96,Math.min(1.14,MO.hS*(1-MO.dragStretch*0.28)));
   var tx=MO.x.toFixed(2),ty=MO.y.toFixed(2);
   var angle=(Math.atan2(MO.y,MO.x)*180/Math.PI).toFixed(1);
   var noPos=Math.abs(MO.x)<0.1&&Math.abs(MO.y)<0.1;
@@ -121,7 +121,7 @@ function mindLoop(ts){
     spring=advanceMianSpring(MO.dragStretch,MO.dragStretchV,MO.tDragStretch,dt,18,0.84);MO.dragStretch=spring.value;MO.dragStretchV=spring.velocity;
   }
   /* Keep the button's own press swell subtle and duration-driven. */
-  if(MO.holding){var el=(ts-MO.holdStart)/1000;MO.tHS=1+0.05*(1-Math.exp(-el*2.4));}
+  if(MO.holding){var el=(ts-MO.holdStart)/1000;MO.tHS=1+0.12*(1-Math.exp(-el*2.4));}
   var swell=advanceMianSpring(MO.hS,MO.hSv,MO.tHS,dt,16);MO.hS=swell.value;MO.hSv=swell.velocity;
   paintMianButton();
   var stable=Math.abs(MO.x)<0.12&&Math.abs(MO.y)<0.12&&Math.abs(MO.xV)<0.5&&Math.abs(MO.yV)<0.5&&Math.abs(MO.dragStretch)<0.002&&Math.abs(MO.dragStretchV)<0.02&&Math.abs(MO.hS-1)<0.002&&Math.abs(MO.hSv)<0.02&&!MO.holding;
