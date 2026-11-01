@@ -3318,4 +3318,12 @@ html { scroll-behavior: auto !important; }
   .social-button.is-touch-pressed .social-logo-hover {
     opacity: 1 !important;
   }
+
+  .social-button:active .social-logo-default {
+    opacity: 0 !important;
+  }
+
+  .social-button:active .social-logo-hover {
+    opacity: 1 !important;
+  }
 }
