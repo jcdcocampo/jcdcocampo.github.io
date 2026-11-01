@@ -69,7 +69,7 @@ function animLoop(ts){
   G.iLv=G.iL-prevL;G.iWv=G.iW-prevW;
   if(G.holding&&G.holdPending&&Math.abs(G.iL-G.tL)<0.75&&Math.abs(G.iW-G.tW)<0.75){G.holdPending=false;G.holdStart=ts;}
   var liquidActive=G.holding&&!G.holdPending;
-  var tSX=liquidActive&&G.dragging?1+Math.min(Math.abs(G.dragVel)*0.055,0.42):1;
+  var tSX=liquidActive&&G.dragging?1+Math.min(Math.abs(G.dragVel)*0.055,0.55):1;
   if(liquidActive){
     var sf=(tSX-G.sX)*0.22;G.sXv=G.sXv*0.66+sf;G.sX+=G.sXv;
     var el=(ts-G.holdStart)/1000;G.tHS=1+G.holdStrength*(1-Math.exp(-el*2.4));
@@ -324,7 +324,9 @@ function setupPill(){
     ind.style.transition='opacity 0.18s ease';wl.style.transition='';
     G.holding=true;G.holdPending=true;G.holdStart=performance.now();
     var pressure=typeof e.pressure==='number'&&e.pressure>0?e.pressure:0.5;
-    G.holdStrength=0.18+Math.max(0,Math.min(1,pressure))*0.3;
+    /* At normal pressure, restore the original 45% swell; firmer presses add
+       a little more while lighter presses keep a gentler response. */
+    G.holdStrength=0.35+Math.max(0,Math.min(1,pressure))*0.2;
     G.tHS=1;G.hS=1;G.hSv=0;G.sX=1;G.sXv=0;
     G.lastPx=e.clientX;G.startPx=e.clientX;G.dragVel=0;G.dragging=false;
     var pressed=e.target.closest&&e.target.closest('[data-nav]');
