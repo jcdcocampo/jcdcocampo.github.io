@@ -15,7 +15,7 @@ function portfolioRouteUrl(route){
 var curId=window.__navActive||'home';
 
 /* ── Nav physics ── */
-var G={iL:0,iLv:0,tL:0,iW:74,iWv:0,tW:74,iTop:5,iH:54,sX:1,sXv:0,hS:1,hSv:0,tHS:1,holding:false,holdPending:false,mouseEase:false,holdStart:0,dragging:false,dragVel:0,lastPx:0,startPx:0,raf:null,baseW:74};
+var G={iL:0,iLv:0,tL:0,iW:74,iWv:0,tW:74,iTop:5,iH:54,sX:1,sXv:0,hS:1,hSv:0,tHS:1,holding:false,holdPending:false,holdStart:0,dragging:false,dragVel:0,lastPx:0,startPx:0,raf:null,baseW:74};
 var restPillRevealTimer=null,restPillRipple=null;
 /* ── Mian state ── */
 var M={open:false,tapSx:0,tapSy:0};
@@ -63,9 +63,10 @@ function paintMianGlass(){
 
 /* ── Nav anim loop — ONLY runs during active drag/hold, not for settle ── */
 function animLoop(ts){
-  var followK=G.mouseEase?0.12:SK,followD=G.mouseEase?0.72:SD;
-  var lf=(G.tL-G.iL)*followK;G.iLv=G.iLv*followD+lf;G.iL+=G.iLv;
-  var wf=(G.tW-G.iW)*followK;G.iWv=G.iWv*followD+wf;G.iW+=G.iWv;
+  /* Exponential ease follows the target without spring momentum or overshoot. */
+  var prevL=G.iL,prevW=G.iW;
+  G.iL+=(G.tL-G.iL)*0.22;G.iW+=(G.tW-G.iW)*0.22;
+  G.iLv=G.iL-prevL;G.iWv=G.iW-prevW;
   var tSX=G.dragging?1+Math.min(Math.abs(G.dragVel)*0.055,0.55):1;
   var sf=(tSX-G.sX)*0.22;G.sXv=G.sXv*0.66+sf;G.sX+=G.sXv;
   if(G.holding&&G.holdPending&&Math.abs(G.iL-G.tL)<0.75&&Math.abs(G.iW-G.tW)<0.75){G.holdPending=false;G.holdStart=ts;}
@@ -316,20 +317,14 @@ function setupPill(){
       }
     }
     ind.style.transition='opacity 0.18s ease';wl.style.transition='';
-    G.holding=true;G.holdPending=e.pointerType==='mouse';G.mouseEase=e.pointerType==='mouse';G.holdStart=performance.now();G.tHS=1;G.hS=1;G.hSv=0;G.sX=1;G.sXv=0;
+    G.holding=true;G.holdPending=true;G.holdStart=performance.now();G.tHS=1;G.hS=1;G.hSv=0;G.sX=1;G.sXv=0;
     G.lastPx=e.clientX;G.startPx=e.clientX;G.dragVel=0;G.dragging=false;
     var pressed=e.target.closest&&e.target.closest('[data-nav]');
     pressedId=pressed?pressed.dataset.nav:getItemAt(e.clientX-pill.getBoundingClientRect().left);
-    /* Touch gets an immediate response. A mouse press eases to the target
-       first, then starts its hold swell once the glass arrives. */
+    /* Ease the glass to the pressed tab before starting its hold swell. */
     var targetButton=document.querySelector('.nb[data-nav="'+pressedId+'"]');
     if(targetButton){
       G.tL=targetButton.offsetLeft;G.tW=targetButton.offsetWidth;
-      if(!G.holdPending){
-        G.iL=G.tL;G.iW=G.tW;G.iLv=G.iWv=0;
-        ind.style.left=G.iL+'px';ind.style.width=G.iW+'px';
-        updateClip(1,1);
-      }
     }
     pill.setPointerCapture(e.pointerId);pill.style.cursor='grabbing';
     setInteracting(true);
@@ -346,7 +341,7 @@ function setupPill(){
     G.tL=Math.max(minLeft,Math.min(maxLeft,rx-bw/2));G.tW=bw;kick();
   });
   pill.addEventListener('pointerup',function(e){
-    G.holding=false;G.holdPending=false;G.mouseEase=false;G.tHS=1;G.dragging=false;G.dragVel=0;pill.style.cursor='grab';
+    G.holding=false;G.holdPending=false;G.tHS=1;G.dragging=false;G.dragVel=0;pill.style.cursor='grab';
     var target=getItemAt(G.tL+G.tW/2)||pressedId||curId;
     pressedId=null;
     setPillLift(false); /* lower pill */
@@ -360,7 +355,7 @@ function setupPill(){
   });
   pill.addEventListener('lostpointercapture',function(){
     if(G.holding){
-      G.holding=false;G.holdPending=false;G.mouseEase=false;G.tHS=1;G.dragging=false;G.dragVel=0;pill.style.cursor='grab';
+      G.holding=false;G.holdPending=false;G.tHS=1;G.dragging=false;G.dragVel=0;pill.style.cursor='grab';
       setPillLift(false);setActive(curId);
     }
   });
