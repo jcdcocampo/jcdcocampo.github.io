@@ -2339,6 +2339,9 @@ else setTimeout(init,0);
         panel.style.setProperty('--cb-opening-scale-y', Math.min(1, fabRect.height / panelRect.height).toFixed(4));
       }
       panel.style.transform = '';
+      // Commit the button-sized closed state before .cb-open changes the
+      // transform; otherwise browsers can coalesce both styles and snap open.
+      panel.getBoundingClientRect();
       panel.style.transition = previousTransition;
     }
 

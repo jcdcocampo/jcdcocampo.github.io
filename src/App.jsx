@@ -666,7 +666,7 @@ function FloatingNavigation() {
     if (!window.__portfolioNavPromise) {
       window.__portfolioNavPromise = new Promise((resolve) => {
         const script = document.createElement('script')
-        script.src = '/nav.js?v=mian-chat-window-motion-20261102-1'
+        script.src = '/nav.js?v=mian-chat-window-motion-20261102-2'
         script.async = true
         script.onload = () => { window.__portfolioNavReady = true; resolve() }
         script.onerror = resolve
