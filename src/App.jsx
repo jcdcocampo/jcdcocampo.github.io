@@ -666,7 +666,7 @@ function FloatingNavigation() {
     if (!window.__portfolioNavPromise) {
       window.__portfolioNavPromise = new Promise((resolve) => {
         const script = document.createElement('script')
-        script.src = '/nav.js?v=nav-pill-edge-refraction-20261102-2'
+        script.src = '/nav.js?v=nav-pill-edge-refraction-20261102-1'
         script.async = true
         script.onload = () => { window.__portfolioNavReady = true; resolve() }
         script.onerror = resolve
@@ -690,7 +690,6 @@ function FloatingNavigation() {
           <div id="wl" className="portfolio-nav-blue-layer" aria-hidden="true">
             {navItems.map(({ id, label, Icon }) => <div className="bw" key={id}><Icon size={20} strokeWidth={2} /><span>{label}</span></div>)}
           </div>
-          <div id="nav-glass-refraction-layer" aria-hidden="true" />
         </div>
       </nav>
       <div id="mian" className="mian-button" role="button" tabIndex={0} aria-label="Chat with Mian" onKeyDown={(event) => {
