@@ -910,7 +910,6 @@ export default function App() {
   const pageSwipeX = useMotionValue(isMobileViewport && initialSwipeIndex >= 0 ? -initialSwipeIndex * window.innerWidth : 0)
   const pageSwipeViewportRef = useRef(null)
   const pageSwipeGesture = useRef(null)
-  const pageSwipeTouchBlocked = useRef(false)
   const [swipeHeaderCompact, setSwipeHeaderCompact] = useState(false)
   const pageSwipeAnimation = useRef(null)
   const pendingPageSwipe = useRef(null)
@@ -1068,15 +1067,9 @@ export default function App() {
     const viewport = pageSwipeViewportRef.current
     if (!viewport || !isMobileViewport || !mobileSwipePages.includes(currentPage)) return
     const onTouchStart = (event) => {
-      if (event.touches.length > 1) {
-        pageSwipeTouchBlocked.current = true
-        // Drop any active drag or snap animation and restore the current page
-        // immediately. A second touch must not leave the track between tabs.
-        cancelPageSwipe()
-        return
-      }
-      if (pageSwipeTouchBlocked.current || pageSwipeAnimation.current || pendingPageSwipe.current) return
-      pageSwipeGesture.current = null
+      // Lock the gesture to the first finger. Additional fingers never replace
+      // or cancel its pointer, and cannot start another swipe after it lifts.
+      if (event.touches.length !== 1 || pageSwipeGesture.current || pageSwipeAnimation.current || pendingPageSwipe.current) return
       suppressPageSwipeClickUntil.current = 0
       if (isPageSwipeExcluded(event.target, viewport)) return
       const touch = event.touches[0]
@@ -1108,21 +1101,14 @@ export default function App() {
       pageSwipeX.set(gesture.baseX + boundedDx)
     }
     const onTouchEnd = (event) => {
-      if (pageSwipeTouchBlocked.current) {
-        if (event.touches.length === 0) pageSwipeTouchBlocked.current = false
-        return
-      }
       const gesture = pageSwipeGesture.current
       if (!gesture || !Array.from(event.changedTouches).some((touch) => touch.identifier === gesture.pointerId)) return
       if (gesture.axis === 'x') suppressPageSwipeClickUntil.current = performance.now() + 500
       onPageSwipePointerUp({ pointerId: gesture.pointerId })
     }
     const onTouchCancel = (event) => {
-      if (event.touches.length === 0) pageSwipeTouchBlocked.current = false
-      if (pageSwipeGesture.current) settlePageSwipe()
-    }
-    const unlockMultiTouch = (event) => {
-      if (event.touches.length === 0) pageSwipeTouchBlocked.current = false
+      const gesture = pageSwipeGesture.current
+      if (gesture && Array.from(event.changedTouches).some((touch) => touch.identifier === gesture.pointerId)) settlePageSwipe()
     }
     const onClickCapture = (event) => {
       if (performance.now() > suppressPageSwipeClickUntil.current) return
@@ -1135,16 +1121,12 @@ export default function App() {
     viewport.addEventListener('touchend', onTouchEnd, { passive: true })
     viewport.addEventListener('touchcancel', onTouchCancel, { passive: true })
     viewport.addEventListener('click', onClickCapture, true)
-    window.addEventListener('touchend', unlockMultiTouch, true)
-    window.addEventListener('touchcancel', unlockMultiTouch, true)
     return () => {
       viewport.removeEventListener('touchstart', onTouchStart)
       viewport.removeEventListener('touchmove', onTouchMove)
       viewport.removeEventListener('touchend', onTouchEnd)
       viewport.removeEventListener('touchcancel', onTouchCancel)
       viewport.removeEventListener('click', onClickCapture, true)
-      window.removeEventListener('touchend', unlockMultiTouch, true)
-      window.removeEventListener('touchcancel', unlockMultiTouch, true)
     }
   }, [currentPage, isMobileViewport, pageSwipeX])
   const navigateTo = (event, destination) => {
