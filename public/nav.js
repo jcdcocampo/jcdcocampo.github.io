@@ -15,7 +15,7 @@ function portfolioRouteUrl(route){
 var curId=window.__navActive||'home';
 
 /* ── Nav physics ── */
-var G={iL:0,iLv:0,tL:0,iW:74,iWv:0,tW:74,iTop:5,iH:54,sX:1,sXv:0,hS:1,hSv:0,tHS:1,holding:false,holdPending:false,holdStart:0,holdStrength:0.33,dragging:false,dragVel:0,lastPx:0,startPx:0,raf:null,baseW:74};
+var G={iL:0,iLv:0,tL:0,iW:74,iWv:0,tW:74,iTop:5,iH:54,sX:1,sXv:0,hS:1,hSv:0,tHS:1,holding:false,holdStart:0,holdStrength:0.33,dragging:false,dragVel:0,lastPx:0,startPx:0,raf:null,baseW:74};
 var restPillRevealTimer=null,restPillRipple=null;
 /* ── Mian state ── */
 var M={open:false,tapSx:0,tapSy:0};
@@ -67,8 +67,7 @@ function animLoop(ts){
   var prevL=G.iL,prevW=G.iW;
   G.iL+=(G.tL-G.iL)*0.14;G.iW+=(G.tW-G.iW)*0.14;
   G.iLv=G.iL-prevL;G.iWv=G.iW-prevW;
-  if(G.holding&&G.holdPending&&Math.abs(G.iL-G.tL)<0.75&&Math.abs(G.iW-G.tW)<0.75){G.holdPending=false;G.holdStart=ts;}
-  var liquidActive=G.holding&&!G.holdPending;
+  var liquidActive=G.holding;
   var tSX=liquidActive&&G.dragging?1+Math.min(Math.abs(G.dragVel)*0.055,0.55):1;
   if(liquidActive){
     var sf=(tSX-G.sX)*0.22;G.sXv=G.sXv*0.66+sf;G.sX+=G.sXv;
@@ -322,7 +321,7 @@ function setupPill(){
       }
     }
     ind.style.transition='opacity 0.18s ease';wl.style.transition='';
-    G.holding=true;G.holdPending=true;G.holdStart=performance.now();
+    G.holding=true;G.holdStart=performance.now();
     var pressure=typeof e.pressure==='number'&&e.pressure>0?e.pressure:0.5;
     /* At normal pressure, restore the original 45% swell; firmer presses add
        a little more while lighter presses keep a gentler response. */
@@ -331,7 +330,7 @@ function setupPill(){
     G.lastPx=e.clientX;G.startPx=e.clientX;G.dragVel=0;G.dragging=false;
     var pressed=e.target.closest&&e.target.closest('[data-nav]');
     pressedId=pressed?pressed.dataset.nav:getItemAt(e.clientX-pill.getBoundingClientRect().left);
-    /* Ease the glass to the pressed tab before starting its hold swell. */
+    /* The swell starts immediately while the position eases to this tab. */
     var targetButton=document.querySelector('.nb[data-nav="'+pressedId+'"]');
     if(targetButton){
       G.tL=targetButton.offsetLeft;G.tW=targetButton.offsetWidth;
@@ -347,14 +346,13 @@ function setupPill(){
     var dx=e.clientX-G.lastPx;G.dragVel=G.dragVel*0.55+dx*0.45;G.lastPx=e.clientX;
     if(!G.dragging&&Math.abs(e.clientX-G.startPx)>7){
       G.dragging=true;
-      if(G.holdPending){G.holdPending=false;G.holdStart=performance.now();}
     }
     var pr=pill.getBoundingClientRect(),rx=e.clientX-pr.left,bw=G.baseW;
     var minLeft=5,maxLeft=pr.width-5-bw;
     G.tL=Math.max(minLeft,Math.min(maxLeft,rx-bw/2));G.tW=bw;kick();
   });
   pill.addEventListener('pointerup',function(e){
-    G.holding=false;G.holdPending=false;G.tHS=1;G.dragging=false;G.dragVel=0;pill.style.cursor='grab';
+    G.holding=false;G.tHS=1;G.dragging=false;G.dragVel=0;pill.style.cursor='grab';
     var target=getItemAt(G.tL+G.tW/2)||pressedId||curId;
     pressedId=null;
     setPillLift(false); /* lower pill */
@@ -368,7 +366,7 @@ function setupPill(){
   });
   pill.addEventListener('lostpointercapture',function(){
     if(G.holding){
-      G.holding=false;G.holdPending=false;G.tHS=1;G.dragging=false;G.dragVel=0;pill.style.cursor='grab';
+      G.holding=false;G.tHS=1;G.dragging=false;G.dragVel=0;pill.style.cursor='grab';
       setPillLift(false);setActive(curId);
     }
   });
@@ -474,6 +472,17 @@ function syncNavOverlayGeometry(){
       copyIcon.style.top=(sourceIconRect.top-copyIconRect.top)+'px';
       copyIcon.style.width=sourceIconRect.width+'px';
       copyIcon.style.height=sourceIconRect.height+'px';
+    }
+    var sourceLabel=button.querySelector('span');
+    var copyLabel=copy.querySelector('span');
+    if(sourceLabel&&copyLabel){
+      var exactLabel=sourceLabel.cloneNode(true);
+      copyLabel.replaceWith(exactLabel);
+      var sourceLabelRect=sourceLabel.getBoundingClientRect();
+      var copyLabelRect=exactLabel.getBoundingClientRect();
+      exactLabel.style.position='relative';
+      exactLabel.style.left=(sourceLabelRect.left-copyLabelRect.left)+'px';
+      exactLabel.style.top=(sourceLabelRect.top-copyLabelRect.top)+'px';
     }
   });
 }
