@@ -3293,3 +3293,29 @@ html { scroll-behavior: auto !important; }
     margin-top: 4px !important;
   }
 }
+
+/* Touch social links should open on their first tap; don't let sticky :hover
+   consume that tap as a separate logo-swap interaction. */
+@media (hover: none), (pointer: coarse) {
+  .social-button:hover {
+    transform: none !important;
+  }
+
+  .social-button:hover .social-logo-default,
+  .social-button:focus-visible:not(.is-touch-pressed) .social-logo-default {
+    opacity: 1 !important;
+  }
+
+  .social-button:hover .social-logo-hover,
+  .social-button:focus-visible:not(.is-touch-pressed) .social-logo-hover {
+    opacity: 0 !important;
+  }
+
+  .social-button.is-touch-pressed .social-logo-default {
+    opacity: 0 !important;
+  }
+
+  .social-button.is-touch-pressed .social-logo-hover {
+    opacity: 1 !important;
+  }
+}
