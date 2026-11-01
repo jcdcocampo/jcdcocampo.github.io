@@ -30,11 +30,21 @@ function clampMianDrag(x,y,radius){
   var ratio=radius/distance;
   return {x:x*ratio,y:y*ratio,excess:distance-radius};
 }
-function advanceMianSpring(value,velocity,target,dt,frequency){
+function advanceMianSpring(value,velocity,target,dt,frequency,damping){
   var offset=value-target;
-  var impulse=velocity+frequency*offset;
-  var decay=Math.exp(-frequency*dt);
-  return {value:target+(offset+impulse*dt)*decay,velocity:(velocity-frequency*impulse*dt)*decay};
+  var zeta=damping===undefined?1:damping;
+  if(zeta>=1){
+    var impulse=velocity+frequency*offset;
+    var decay=Math.exp(-frequency*dt);
+    return {value:target+(offset+impulse*dt)*decay,velocity:(velocity-frequency*impulse*dt)*decay};
+  }
+  var dampedFrequency=frequency*Math.sqrt(1-zeta*zeta);
+  var sineTerm=(velocity+zeta*frequency*offset)/dampedFrequency;
+  var angle=dampedFrequency*dt,cos=Math.cos(angle),sin=Math.sin(angle);
+  var decay=Math.exp(-zeta*frequency*dt);
+  var position=(offset*cos+sineTerm*sin)*decay;
+  var speed=(( -offset*dampedFrequency*sin+sineTerm*dampedFrequency*cos)-zeta*frequency*(offset*cos+sineTerm*sin))*decay;
+  return {value:target+position,velocity:speed};
 }
 /* ── Pill shadow presets ── */
 var PSH={
@@ -105,9 +115,9 @@ function mindLoop(ts){
     MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;
     MO.edgeStretch=MO.tEdgeStretch;MO.edgeStretchV=0;
   } else {
-    var spring=advanceMianSpring(MO.x,MO.xV,MO.tX,dt,18);MO.x=spring.value;MO.xV=spring.velocity;
-    spring=advanceMianSpring(MO.y,MO.yV,MO.tY,dt,18);MO.y=spring.value;MO.yV=spring.velocity;
-    spring=advanceMianSpring(MO.edgeStretch,MO.edgeStretchV,MO.tEdgeStretch,dt,18);MO.edgeStretch=spring.value;MO.edgeStretchV=spring.velocity;
+    var spring=advanceMianSpring(MO.x,MO.xV,MO.tX,dt,18,0.78);MO.x=spring.value;MO.xV=spring.velocity;
+    spring=advanceMianSpring(MO.y,MO.yV,MO.tY,dt,18,0.78);MO.y=spring.value;MO.yV=spring.velocity;
+    spring=advanceMianSpring(MO.edgeStretch,MO.edgeStretchV,MO.tEdgeStretch,dt,18,0.84);MO.edgeStretch=spring.value;MO.edgeStretchV=spring.velocity;
   }
   /* Hold swell — same parameters as nav oval */
   if(MO.holding){var el=(ts-MO.holdStart)/1000;MO.tHS=1+0.18*(1-Math.exp(-el*2.4));}
