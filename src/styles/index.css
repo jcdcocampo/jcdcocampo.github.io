@@ -762,9 +762,9 @@ html { scroll-behavior: smooth; scroll-padding-top: 32px; }
   }
   .experience-card { min-height: 340px; }
   .education-feature { min-height: 0; }
-  .education-photo-link { height: 238px; }
-  .education-photo-link .education-photo { min-height: 238px; height: 238px; }
-  .education-copy { min-height: 224px; padding: 22px; }
+  .education-photo-link { height: auto; aspect-ratio: 1.65 / 1; }
+  .education-photo-link .education-photo { min-height: 0; height: 100%; }
+  .education-copy { min-height: 0; padding: 22px; }
   .education-copy time { padding-top: 20px; margin-top: auto; }
   .education-grid { grid-template-columns: 1fr; gap: 12px; }
   .education-card { display: grid; grid-template-columns: 38% 1fr; min-height: 132px; }
