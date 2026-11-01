@@ -22,13 +22,13 @@ var M={open:false,tapSx:0,tapSy:0};
 /* ── Mian indicator physics ── */
 var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,sX:1,sXv:0,edgeStretch:0,edgeStretchV:0,tEdgeStretch:0,dragExcess:0,holding:false,holdStart:0,dragging:false,pointerId:null,lastPx:0,lastPy:0,startPx:0,startPy:0,startOffsetX:0,startOffsetY:0,dragVelX:0,dragVelY:0,angle:0,raf:null};
 
-var SK=0.20,SD=0.67,HK=0.13,HD=0.73;var MIAN_DRAG_RADIUS=12;
-function clampMianDrag(x,y){
+var SK=0.20,SD=0.67,HK=0.13,HD=0.73;var MIAN_DRAG_RADIUS=12,MIAN_DRAG_ELASTIC_MAX=4,MIAN_DRAG_ELASTIC_RATE=0.25;
+function clampMianDrag(x,y,radius){
   var distance=Math.sqrt(x*x+y*y);
-  if(distance<=MIAN_DRAG_RADIUS||distance===0)return {x:x,y:y,excess:0};
+  if(distance<=radius||distance===0)return {x:x,y:y,excess:0};
   /* Keep position bounded while excess drag remains visible as glass stretch. */
-  var ratio=MIAN_DRAG_RADIUS/distance;
-  return {x:x*ratio,y:y*ratio,excess:distance-MIAN_DRAG_RADIUS};
+  var ratio=radius/distance;
+  return {x:x*ratio,y:y*ratio,excess:distance-radius};
 }
 /* ── Pill shadow presets ── */
 var PSH={
@@ -412,8 +412,9 @@ function setupMian(){
     if(MO.dragging){
       /* Integrate pointer deltas so edge contact removes only outward motion;
          tangential movement can still glide smoothly around the circle. */
-      var offset=clampMianDrag(MO.tX+dx,MO.tY+dy);
       var gestureDistance=Math.sqrt(Math.pow(e.clientX-MO.startPx,2)+Math.pow(e.clientY-MO.startPy,2));
+      var elasticTravel=Math.min(Math.max(gestureDistance-MIAN_DRAG_RADIUS,0)*MIAN_DRAG_ELASTIC_RATE,MIAN_DRAG_ELASTIC_MAX);
+      var offset=clampMianDrag(MO.tX+dx,MO.tY+dy,MIAN_DRAG_RADIUS+elasticTravel);
       MO.dragExcess=Math.max(0,gestureDistance-MIAN_DRAG_RADIUS);
       MO.tEdgeStretch=Math.min(MO.dragExcess*0.008,0.18);
       MO.tX=offset.x;MO.tY=offset.y;MO.angle=Math.atan2(offset.y,offset.x);kickMO();
