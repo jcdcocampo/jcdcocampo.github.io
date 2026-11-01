@@ -20,17 +20,15 @@ var restPillRevealTimer=null,restPillRipple=null;
 /* ── Mian state ── */
 var M={open:false,tapSx:0,tapSy:0};
 /* ── Mian indicator physics ── */
-var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,sX:1,sXv:0,holding:false,holdStart:0,dragging:false,pointerId:null,lastPx:0,lastPy:0,startPx:0,startPy:0,startOffsetX:0,startOffsetY:0,dragVelX:0,dragVelY:0,angle:0,raf:null};
+var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,sX:1,sXv:0,edgeStretch:0,edgeStretchV:0,tEdgeStretch:0,dragExcess:0,holding:false,holdStart:0,dragging:false,pointerId:null,lastPx:0,lastPy:0,startPx:0,startPy:0,startOffsetX:0,startOffsetY:0,dragVelX:0,dragVelY:0,angle:0,raf:null};
 
-var SK=0.20,SD=0.67,HK=0.13,HD=0.73;var MIAN_DRAG_FREE_R=8,MIAN_DRAG_MAX_R=14;
-function softenMianDrag(x,y){
+var SK=0.20,SD=0.67,HK=0.13,HD=0.73;var MIAN_DRAG_RADIUS=12;
+function clampMianDrag(x,y){
   var distance=Math.sqrt(x*x+y*y);
-  if(distance<=MIAN_DRAG_FREE_R||distance===0)return {x:x,y:y};
-  /* Keep direct tracking, then add smooth resistance toward a nearby cap. */
-  var room=MIAN_DRAG_MAX_R-MIAN_DRAG_FREE_R;
-  var softened=MIAN_DRAG_FREE_R+room*(1-Math.exp(-(distance-MIAN_DRAG_FREE_R)/room));
-  var ratio=softened/distance;
-  return {x:x*ratio,y:y*ratio};
+  if(distance<=MIAN_DRAG_RADIUS||distance===0)return {x:x,y:y,excess:0};
+  /* Keep position bounded while excess drag remains visible as glass stretch. */
+  var ratio=MIAN_DRAG_RADIUS/distance;
+  return {x:x*ratio,y:y*ratio,excess:distance-MIAN_DRAG_RADIUS};
 }
 /* ── Pill shadow presets ── */
 var PSH={
@@ -97,20 +95,23 @@ function mindLoop(ts){
   /* Track the active pointer directly; only the release uses the spring. */
   if(MO.dragging){
     MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;
+    MO.edgeStretch=MO.tEdgeStretch;MO.edgeStretchV=0;
   } else {
     var lxf=(MO.tX-MO.x)*SK;MO.xV=MO.xV*SD+lxf;MO.x+=MO.xV;
     var lyf=(MO.tY-MO.y)*SK;MO.yV=MO.yV*SD+lyf;MO.y+=MO.yV;
+    var edgeForce=(MO.tEdgeStretch-MO.edgeStretch)*SK;
+    MO.edgeStretchV=MO.edgeStretchV*SD+edgeForce;MO.edgeStretch+=MO.edgeStretchV;
   }
   /* Hold swell — same parameters as nav oval */
   if(MO.holding){var el=(ts-MO.holdStart)/1000;MO.tHS=1+0.18*(1-Math.exp(-el*2.4));}
   var hf=(MO.tHS-MO.hS)*HK;MO.hSv=MO.hSv*HD+hf;MO.hS+=MO.hSv;
   /* Stretch follows the current offset, so reversing direction has no velocity lag. */
   var displacement=Math.sqrt(MO.x*MO.x+MO.y*MO.y);
-  MO.sX=1+Math.min(displacement*0.004,0.2);
+  MO.sX=1+Math.min(displacement*0.004+MO.edgeStretch,0.35);
   MO.sXv=0;
   paintMianGlass();
   var mind=document.getElementById('mind');
-  var stable=Math.abs(MO.x)<0.15&&Math.abs(MO.y)<0.15&&Math.abs(MO.xV)<0.04&&Math.abs(MO.yV)<0.04&&Math.abs(MO.hS-1)<0.003&&Math.abs(MO.sXv)<0.002&&Math.abs(MO.hSv)<0.002&&!MO.holding;
+  var stable=Math.abs(MO.x)<0.15&&Math.abs(MO.y)<0.15&&Math.abs(MO.xV)<0.04&&Math.abs(MO.yV)<0.04&&Math.abs(MO.hS-1)<0.003&&Math.abs(MO.edgeStretch)<0.003&&Math.abs(MO.edgeStretchV)<0.002&&Math.abs(MO.sXv)<0.002&&Math.abs(MO.hSv)<0.002&&!MO.holding;
   if(!stable) MO.raf=requestAnimationFrame(mindLoop);
   else{
     MO.raf=null;mind.style.transform='none';
@@ -303,7 +304,7 @@ function updateMian(){
   mico.setAttribute('stroke',M.open?'#007aff':'rgba(0,0,0,.38)');
   if(!M.open){
     MO.x=0;MO.xV=0;MO.tX=0;MO.y=0;MO.yV=0;MO.tY=0;
-    MO.hS=1;MO.hSv=0;MO.tHS=1;MO.sX=1;MO.sXv=0;
+    MO.hS=1;MO.hSv=0;MO.tHS=1;MO.sX=1;MO.sXv=0;MO.edgeStretch=0;MO.edgeStretchV=0;MO.tEdgeStretch=0;MO.dragExcess=0;
     MO.holding=false;MO.dragging=false;MO.dragVelX=0;MO.dragVelY=0;
     if(MO.raf){cancelAnimationFrame(MO.raf);MO.raf=null;}
     mind.style.transform='none';
@@ -410,7 +411,9 @@ function setupMian(){
     var totalX=MO.startOffsetX+e.clientX-MO.startPx,totalY=MO.startOffsetY+e.clientY-MO.startPy;
     if(!MO.dragging&&(Math.abs(e.clientX-MO.startPx)>2||Math.abs(e.clientY-MO.startPy)>2))MO.dragging=true;
     if(MO.dragging){
-      var offset=softenMianDrag(totalX,totalY);
+      var offset=clampMianDrag(totalX,totalY);
+      MO.dragExcess=offset.excess;
+      MO.tEdgeStretch=Math.min(offset.excess*0.008,0.18);
       MO.tX=offset.x;MO.tY=offset.y;MO.angle=Math.atan2(offset.y,offset.x);kickMO();
       MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;
       paintMianGlass();
@@ -419,19 +422,19 @@ function setupMian(){
   mian.addEventListener('pointerup',function(e){
     if(!MO.holding||e.pointerId!==MO.pointerId)return;
     var wasDrag=MO.dragging;
-    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.dragVelX=0;MO.dragVelY=0;
+    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.tEdgeStretch=0;MO.dragExcess=0;MO.dragVelX=0;MO.dragVelY=0;
     kickMO();setMianLift(false);
     if(!wasDrag){if(window.__isMianOpen?.())window.__closeMian?.();else window.__openMian?.();}
     else syncMianOpenState();
   });
   mian.addEventListener('pointercancel',function(e){
     if(e.pointerId!==MO.pointerId)return;
-    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.dragVelX=0;MO.dragVelY=0;
+    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.tEdgeStretch=0;MO.dragExcess=0;MO.dragVelX=0;MO.dragVelY=0;
     kickMO();setMianLift(false);syncMianOpenState();
   });
   mian.addEventListener('lostpointercapture',function(){
     if(!MO.holding)return;
-    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.dragVelX=0;MO.dragVelY=0;
+    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;MO.tEdgeStretch=0;MO.dragExcess=0;MO.dragVelX=0;MO.dragVelY=0;
     kickMO();setMianLift(false);syncMianOpenState();
   });
 }
