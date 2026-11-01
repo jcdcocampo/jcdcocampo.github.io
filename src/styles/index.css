@@ -2955,8 +2955,8 @@ html { scroll-behavior: auto !important; }
 }
 #mico { position: relative; z-index: 4; color: rgba(0,0,0,.36); pointer-events: none; }
 .mian-button:focus-visible { outline: 2px solid var(--blue); outline-offset: 5px; }
-html.portfolio-page-scrolled .portfolio-nav-pill,
-html.portfolio-page-scrolled .mian-button {
+html.portfolio-page-scrolling .portfolio-nav-pill,
+html.portfolio-page-scrolling .mian-button {
   background: rgba(255,255,255,.72);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
