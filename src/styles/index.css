@@ -2899,7 +2899,22 @@ html { scroll-behavior: auto !important; }
   backdrop-filter: none;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.82), inset 0 2px 0 rgba(255,255,255,.96), inset 0 -1px 0 rgba(91,157,220,.16), 0 0 0 .5px rgba(125,190,245,.24), 0 0 18px rgba(117,190,255,.18), 0 3px 10px rgba(82,160,235,.12);
 }
-.portfolio-nav-glass-indicator::after {
+#nav-glass-refraction-layer {
+  position: absolute;
+  z-index: 4;
+  top: 5px;
+  left: 5px;
+  width: 74px;
+  height: 54px;
+  overflow: hidden;
+  border-radius: 9999px;
+  opacity: 0;
+  pointer-events: none;
+  background: transparent;
+  transition: opacity .18s ease;
+  will-change: left, width, transform, opacity;
+}
+#nav-glass-refraction-layer::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -2908,7 +2923,7 @@ html { scroll-behavior: auto !important; }
   background: radial-gradient(ellipse at center, transparent 66%, rgba(255,255,255,.1) 79%, rgba(255,255,255,.34) 94%, rgba(35,75,118,.18) 100%);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.76), inset 0 -1px 1px rgba(22,57,98,.15);
 }
-html.supports-nav-glass-refraction #pill.is-glass-active #ind {
+html.supports-nav-glass-refraction #pill.is-glass-active #nav-glass-refraction-layer {
   -webkit-backdrop-filter: url(#nav-glass-displacement);
   backdrop-filter: url(#nav-glass-displacement);
 }

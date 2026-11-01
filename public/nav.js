@@ -95,6 +95,14 @@ function updateClip(sx,sy){
   wl.style.transform='none';
 }
 
+function syncNavGlassRefraction(){
+  var ind=document.getElementById('ind'),layer=document.getElementById('nav-glass-refraction-layer');
+  if(!ind||!layer)return;
+  layer.style.left=ind.style.left;
+  layer.style.width=ind.style.width;
+  layer.style.transform=ind.style.transform;
+}
+
 function paintMianButton(){
   var background=document.getElementById('mian-bg');
   var foreground=document.getElementById('mian-foreground');
@@ -137,10 +145,11 @@ function animLoop(ts){
      scales around its center so the extra height grows evenly in both directions. */
   var sy=Math.max(0.5,Math.min(2.0,G.hS/Math.pow(Math.max(G.sX,0.65),0.5)));
   ind.style.transform=(Math.abs(sx-1)<0.004&&Math.abs(sy-1)<0.004)?'none':'scaleX('+sx.toFixed(3)+') scaleY('+sy.toFixed(3)+')';
+  syncNavGlassRefraction();
   updateClip(sx,sy);
   var stable=Math.abs(G.iLv)<0.04&&Math.abs(G.iWv)<0.04&&Math.abs(G.sXv)<0.002&&Math.abs(G.hSv)<0.002&&!G.dragging&&!G.holding;
   if(!stable)G.raf=requestAnimationFrame(animLoop);
-  else{G.raf=null;ind.style.left=G.tL+'px';ind.style.width=G.tW+'px';ind.style.transform='none';updateClip(1,1);}
+  else{G.raf=null;ind.style.left=G.tL+'px';ind.style.width=G.tW+'px';ind.style.transform='none';syncNavGlassRefraction();updateClip(1,1);}
 }
 
 /* ── Mian indicator loop: constrained spring + hold swell + drag stretch ── */
@@ -206,8 +215,10 @@ function setInteracting(on){
   var ind=document.getElementById('ind');
   var rp=document.getElementById('rpill');
   var pill=document.getElementById('pill');
+  var refract=document.getElementById('nav-glass-refraction-layer');
   ind.style.opacity=on?'1':'0';
   rp.style.opacity=on?'0':'1';
+  if(refract)refract.style.opacity=on?'1':'0';
   if(pill)pill.classList.toggle('is-glass-active',!!on);
   if(!on){
     /* Snap clip to active item so blue icon appears correctly over gray pill */
@@ -252,7 +263,8 @@ function setActive(id,fromRelease){
   var wl=document.getElementById('wl');
   if(wl&&wl.style.display==='none')wl.style.display='';
   /* Ensure indicator is visible */
-  var indEl=document.getElementById('ind');if(indEl)indEl.style.opacity='1';
+  var indEl=document.getElementById('ind'),refraction=document.getElementById('nav-glass-refraction-layer');
+  if(indEl)indEl.style.opacity='1';if(refraction)refraction.style.opacity='1';
   /* Hide gray pill INSTANTLY (no fade) as the white glass leaves the origin.
      It will be re-positioned and faded back in once the slide completes. */
   var rpEl=document.getElementById('rpill');
@@ -273,6 +285,7 @@ function setActive(id,fromRelease){
     if(G.raf){cancelAnimationFrame(G.raf);G.raf=null;}
     G.dragging=false;G.holding=false;G.iL=G.tL=b.offsetLeft;G.iW=G.tW=b.offsetWidth;
     ind.style.transition='none';ind.style.left=G.iL+'px';ind.style.width=G.iW+'px';ind.style.transform='none';
+    if(refraction){refraction.style.transition='none';refraction.style.left=G.iL+'px';refraction.style.width=G.iW+'px';refraction.style.transform='none';}
     if(wl)wl.style.transition='none';updateClip(1,1);setRpill(id);
     if(wl)wl.style.transition='';ind.style.transition='';
     var settledTitle=document.getElementById('pgt'),settledSub=document.getElementById('pgs');
@@ -281,12 +294,14 @@ function setActive(id,fromRelease){
   if(b){
     var ease='0.187s cubic-bezier(0.65,0,0.35,1)';
     ind.style.transition='left '+ease+',width '+ease+',transform '+(fromRelease?'0.32s cubic-bezier(.34,1.56,.64,1)':'0s')+',opacity 0.18s ease';
+    if(refraction)refraction.style.transition=ind.style.transition;
     if(wl) wl.style.transition='clip-path '+ease;
     G.tL=b.offsetLeft;G.tW=b.offsetWidth;G.iL=b.offsetLeft;G.iW=b.offsetWidth;
     G.iLv=0;G.iWv=0;
     ind.style.left=b.offsetLeft+'px';
     ind.style.width=b.offsetWidth+'px';
     ind.style.transform='none';
+    syncNavGlassRefraction();
     updateClip(1,1);
   }
   /* After glide finishes: move gray pill to target, restore fade, then show it */
@@ -310,6 +325,7 @@ function setActive(id,fromRelease){
       setInteracting(false);
     }
     ind.style.transition='opacity 0.18s ease';
+    if(refraction)refraction.style.transition=ind.style.transition;
     if(wl) wl.style.transition='';
   },210);
   var pg=document.getElementById('pgt'),ps=document.getElementById('pgs');
@@ -332,6 +348,7 @@ window.__setPortfolioNavSwipeProgress=function(fromId,toId,progress){
   G.iL=G.tL=left;G.iW=G.tW=width;
   ind.style.transition='none';ind.style.left=left+'px';ind.style.width=width+'px';
   ind.style.transform='scaleX('+(1+Math.sin(progress*Math.PI)*0.07).toFixed(3)+')';
+  syncNavGlassRefraction();
   updateClip(1+Math.sin(progress*Math.PI)*0.07,1);
   if(wl)wl.style.transition='none';
 };
@@ -340,6 +357,7 @@ window.__resetPortfolioNavSwipe=function(){
   if(!b||!ind)return;
   G.dragging=false;G.holding=false;G.iL=G.tL=b.offsetLeft;G.iW=G.tW=b.offsetWidth;
   ind.style.transition='none';ind.style.left=G.iL+'px';ind.style.width=G.iW+'px';ind.style.transform='none';
+  syncNavGlassRefraction();
   if(wl)wl.style.transition='none';updateClip(1,1);setInteracting(false);
   if(wl)wl.style.transition='';ind.style.transition='';
 };
