@@ -972,6 +972,7 @@ export default function App() {
       velocityX: 0,
       axis: null,
       baseX: pageSwipeBase(),
+      pageBaseX: pageSwipeBase(),
     }
     try { event.currentTarget.setPointerCapture(event.pointerId) } catch {}
   }
@@ -1025,7 +1026,7 @@ export default function App() {
     const gesture = pageSwipeGesture.current
     if (!gesture || gesture.pointerId !== event.pointerId) return
     if (gesture.axis === 'x') suppressPageSwipeClickUntil.current = performance.now() + 500
-    const offset = pageSwipeX.get() - gesture.baseX
+    const offset = pageSwipeX.get() - (gesture.pageBaseX ?? gesture.baseX)
     const velocity = gesture.velocityX * 1000
     const width = window.innerWidth
     const shouldChangePage = Math.abs(offset) >= width * 0.2 || (Math.abs(velocity) >= 650 && Math.abs(offset) >= 28)
@@ -1066,14 +1067,29 @@ export default function App() {
   useEffect(() => {
     const viewport = pageSwipeViewportRef.current
     if (!viewport || !isMobileViewport || !mobileSwipePages.includes(currentPage)) return
+    const handoffTouch = (gesture, touch) => {
+      // Continue from the exact rendered offset; only the touch anchor changes.
+      gesture.pointerId = touch.identifier
+      gesture.startX = touch.clientX
+      gesture.startY = touch.clientY
+      gesture.lastX = touch.clientX
+      gesture.lastTime = performance.now()
+      gesture.baseX = pageSwipeX.get()
+      gesture.velocityX = 0
+    }
     const onTouchStart = (event) => {
-      // Only the first single-finger contact can start a swipe. Extra contacts
-      // are ignored without changing or locking the active gesture.
-      if (event.touches.length !== 1 || pageSwipeGesture.current || pageSwipeAnimation.current || pendingPageSwipe.current) return
+      const gesture = pageSwipeGesture.current
+      if (gesture && event.touches.length > 1 && !pageSwipeAnimation.current && !pendingPageSwipe.current) {
+        const addedTouch = event.changedTouches[event.changedTouches.length - 1]
+        if (addedTouch) handoffTouch(gesture, addedTouch)
+        return
+      }
+      if (event.touches.length !== 1 || gesture || pageSwipeAnimation.current || pendingPageSwipe.current) return
       suppressPageSwipeClickUntil.current = 0
       if (isPageSwipeExcluded(event.target, viewport)) return
       const touch = event.touches[0]
-      pageSwipeGesture.current = { pointerId: touch.identifier, startX: touch.clientX, startY: touch.clientY, lastX: touch.clientX, lastTime: performance.now(), velocityX: 0, axis: null, baseX: pageSwipeBase() }
+      const baseX = pageSwipeBase()
+      pageSwipeGesture.current = { pointerId: touch.identifier, startX: touch.clientX, startY: touch.clientY, lastX: touch.clientX, lastTime: performance.now(), velocityX: 0, axis: null, baseX, pageBaseX: baseX }
     }
     const onTouchMove = (event) => {
       const gesture = pageSwipeGesture.current
@@ -1097,21 +1113,32 @@ export default function App() {
       gesture.lastX = touch.clientX
       gesture.lastTime = now
       const index = mobileSwipePages.indexOf(currentPage)
-      const atEdge = (dx < 0 && index === mobileSwipePages.length - 1) || (dx > 0 && index === 0)
-      const boundedDx = atEdge
-        ? Math.sign(dx) * Math.min(Math.abs(dx) * 0.2, window.innerWidth * 0.16)
-        : Math.max(-window.innerWidth, Math.min(window.innerWidth, dx))
-      pageSwipeX.set(gesture.baseX + boundedDx)
+      const pageBaseX = gesture.pageBaseX ?? gesture.baseX
+      const totalDx = gesture.baseX + dx - pageBaseX
+      const atEdge = (totalDx < 0 && index === mobileSwipePages.length - 1) || (totalDx > 0 && index === 0)
+      const boundedTotalDx = atEdge
+        ? Math.sign(totalDx) * Math.min(Math.abs(totalDx) * 0.2, window.innerWidth * 0.16)
+        : Math.max(-window.innerWidth, Math.min(window.innerWidth, totalDx))
+      pageSwipeX.set(pageBaseX + boundedTotalDx)
     }
     const onTouchEnd = (event) => {
       const gesture = pageSwipeGesture.current
       if (!gesture || !Array.from(event.changedTouches).some((touch) => touch.identifier === gesture.pointerId)) return
+      if (event.touches.length > 0) {
+        handoffTouch(gesture, event.touches[event.touches.length - 1])
+        return
+      }
       if (gesture.axis === 'x') suppressPageSwipeClickUntil.current = performance.now() + 500
       onPageSwipePointerUp({ pointerId: gesture.pointerId })
     }
     const onTouchCancel = (event) => {
       const gesture = pageSwipeGesture.current
-      if (gesture && Array.from(event.changedTouches).some((touch) => touch.identifier === gesture.pointerId)) onPageSwipePointerUp({ pointerId: gesture.pointerId })
+      if (!gesture || !Array.from(event.changedTouches).some((touch) => touch.identifier === gesture.pointerId)) return
+      if (event.touches.length > 0) {
+        handoffTouch(gesture, event.touches[event.touches.length - 1])
+        return
+      }
+      onPageSwipePointerUp({ pointerId: gesture.pointerId })
     }
     const onClickCapture = (event) => {
       if (performance.now() > suppressPageSwipeClickUntil.current) return
