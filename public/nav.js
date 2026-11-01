@@ -63,15 +63,15 @@ function paintMianGlass(){
 
 /* ── Nav anim loop — ONLY runs during active drag/hold, not for settle ── */
 function animLoop(ts){
-  /* Exponential ease follows the target without spring momentum or overshoot. */
-  var prevL=G.iL,prevW=G.iW;
-  G.iL+=(G.tL-G.iL)*0.22;G.iW+=(G.tW-G.iW)*0.22;
+  /* The same slow, no-overshoot ease is used for mouse and touch. */
+  var prevL=G.iL,prevW=G.iW,prevSX=G.sX,prevHS=G.hS;
+  G.iL+=(G.tL-G.iL)*0.14;G.iW+=(G.tW-G.iW)*0.14;
   G.iLv=G.iL-prevL;G.iWv=G.iW-prevW;
-  var tSX=G.dragging?1+Math.min(Math.abs(G.dragVel)*0.055,0.55):1;
-  var sf=(tSX-G.sX)*0.22;G.sXv=G.sXv*0.66+sf;G.sX+=G.sXv;
+  var tSX=G.dragging?1+Math.min(Math.abs(G.dragVel)*0.02,0.08):1;
+  G.sX+=(tSX-G.sX)*0.16;G.sXv=G.sX-prevSX;
   if(G.holding&&G.holdPending&&Math.abs(G.iL-G.tL)<0.75&&Math.abs(G.iW-G.tW)<0.75){G.holdPending=false;G.holdStart=ts;}
-  if(G.holding&&!G.holdPending){var el=(ts-G.holdStart)/1000;G.tHS=1+0.45*(1-Math.exp(-el*2.4));}
-  var hf=(G.tHS-G.hS)*HK;G.hSv=G.hSv*HD+hf;G.hS+=G.hSv;
+  if(G.holding&&!G.holdPending){var el=(ts-G.holdStart)/1000;G.tHS=1+0.1*(1-Math.exp(-el*2.4));}
+  G.hS+=(G.tHS-G.hS)*0.16;G.hSv=G.hS-prevHS;
   var ind=document.getElementById('ind');
   ind.style.left=G.iL.toFixed(2)+'px';
   ind.style.width=G.iW.toFixed(2)+'px';
@@ -345,7 +345,7 @@ function setupPill(){
     var target=getItemAt(G.tL+G.tW/2)||pressedId||curId;
     pressedId=null;
     setPillLift(false); /* lower pill */
-    setActive(target,true);  /* spring glass to target, then ripple into the gray pill */
+    setActive(target,true);  /* ease glass to target, then ripple into the gray pill */
     /* Let the React app handle page changes without leaving its route model. */
     if(NAV_URLS[target])setTimeout(function(){
       if(typeof window.__portfolioNavigate==='function')window.__portfolioNavigate(target);
