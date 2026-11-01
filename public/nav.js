@@ -318,13 +318,16 @@ function setupPill(){
     G.lastPx=e.clientX;G.startPx=e.clientX;G.dragVel=0;G.dragging=false;
     var pressed=e.target.closest&&e.target.closest('[data-nav]');
     pressedId=pressed?pressed.dataset.nav:getItemAt(e.clientX-pill.getBoundingClientRect().left);
-    /* Start the active glass under the pointer, rather than leaving it on the
-       previously selected page while the hold swell activates. */
-    var pr=pill.getBoundingClientRect(),bw=G.baseW;
-    G.tL=Math.max(5,Math.min(pr.width-5-bw,e.clientX-pr.left-bw/2));
-    G.tW=bw;
-    /* Glass stays at curId during hold — no spring travel, no overshoot.
-       CSS transition in setActive handles the exact slide to target on release. */
+    /* Snap the full glass overlay onto the pressed tab before its hold swell
+       starts, so it never grows over the previously active tab. */
+    var targetButton=document.querySelector('.nb[data-nav="'+pressedId+'"]');
+    if(targetButton){
+      G.iL=G.tL=targetButton.offsetLeft;
+      G.iW=G.tW=targetButton.offsetWidth;
+      G.iLv=G.iWv=0;
+      ind.style.left=G.iL+'px';ind.style.width=G.iW+'px';
+      updateClip(1,1);
+    }
     pill.setPointerCapture(e.pointerId);pill.style.cursor='grabbing';
     setInteracting(true);
     setPillLift(true);
