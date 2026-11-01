@@ -3295,47 +3295,23 @@ html { scroll-behavior: auto !important; }
   }
 }
 
-/* Match the email button on touch: show feedback only while pressed, then
-   return to the static logo. Sticky mobile :hover must not hold the full mark. */
-@media (hover: none), (pointer: coarse) {
-  .social-button:hover {
-    transform: none !important;
-  }
-
-  .social-button:hover .social-logo-default,
-  .social-button:focus-visible:not(:active) .social-logo-default {
-    opacity: 1 !important;
-  }
-
-  .social-button:hover .social-logo-hover,
-  .social-button:focus-visible:not(:active) .social-logo-hover {
-    opacity: 0 !important;
-  }
-
-  .social-button:active .social-logo-default {
-    opacity: 0 !important;
-  }
-
-  .social-button:active .social-logo-hover {
-    opacity: 1 !important;
-  }
+/* Touch devices get a stable static logo instead of a hover-swap layer. This
+   keeps Safari from treating the first tap as a hover interaction. */
+html.has-touch-input .social-button,
+html.has-touch-input .social-button:hover {
+  transform: none !important;
+  background-color: transparent !important;
 }
 
-/* Use the actual input that touched the link instead of the device's primary
-   pointer (which may be a trackpad on iPad). Keep hover neutral after touch,
-   while retaining a momentary pressed-color response. */
-html.has-touch-input .social-button:hover .social-logo-default {
+html.has-touch-input .social-button .social-logo-default {
+  display: block !important;
   opacity: 1 !important;
 }
 
-html.has-touch-input .social-button:hover .social-logo-hover {
-  opacity: 0 !important;
+html.has-touch-input .social-button .social-logo-hover {
+  display: none !important;
 }
 
-html.has-touch-input .social-button:active .social-logo-default {
-  opacity: 0 !important;
-}
-
-html.has-touch-input .social-button:active .social-logo-hover {
-  opacity: 1 !important;
+html.has-touch-input .social-button:active {
+  background-color: rgba(0, 122, 255, .14) !important;
 }
