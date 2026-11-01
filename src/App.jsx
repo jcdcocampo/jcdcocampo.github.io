@@ -317,7 +317,7 @@ function Hero() {
         <p className="hero-location"><span className="hero-location-place"><MapPin size={16} aria-hidden="true" /> <span>Metro Manila</span><span className="hero-location-country">, Philippines</span></span><span className="hero-location-separator" aria-hidden="true">|</span><span className="hero-location-time"><time>{phtTime}</time> PHT</span></p>
         <div className="hero-actions" id="section-social" data-command-section="Contact and Social Links">
           <a className="email-button" href={email}>Send Email</a>
-          {socials.map(({ label, href, src, hoverSrc }) => <a className="social-button" data-page-swipe-ignore key={label} href={href} target="_self" aria-label={`${label} profile`}><img className="social-logo-default" src={src} alt="" /><img className="social-logo-hover" src={hoverSrc} alt="" onError={(event) => { event.currentTarget.style.display = 'none' }} /></a>)}
+          {socials.map(({ label, href, src, hoverSrc }) => <a className="social-button" data-page-swipe-ignore key={label} href={href} target="_self" aria-label={`${label} profile`} onPointerDown={(event) => { document.documentElement.classList.toggle('has-touch-input', event.pointerType !== 'mouse') }} onTouchStart={() => document.documentElement.classList.add('has-touch-input')}><img className="social-logo-default" src={src} alt="" /><img className="social-logo-hover" src={hoverSrc} alt="" onError={(event) => { event.currentTarget.style.display = 'none' }} /></a>)}
         </div>
       </div>
     </div>

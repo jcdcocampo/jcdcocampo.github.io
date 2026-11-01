@@ -3320,3 +3320,22 @@ html { scroll-behavior: auto !important; }
     opacity: 1 !important;
   }
 }
+
+/* Use the actual input that touched the link instead of the device's primary
+   pointer (which may be a trackpad on iPad). Keep hover neutral after touch,
+   while retaining a momentary pressed-color response. */
+html.has-touch-input .social-button:hover .social-logo-default {
+  opacity: 1 !important;
+}
+
+html.has-touch-input .social-button:hover .social-logo-hover {
+  opacity: 0 !important;
+}
+
+html.has-touch-input .social-button:active .social-logo-default {
+  opacity: 0 !important;
+}
+
+html.has-touch-input .social-button:active .social-logo-hover {
+  opacity: 1 !important;
+}
