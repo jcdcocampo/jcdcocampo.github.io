@@ -2929,7 +2929,6 @@ html { scroll-behavior: auto !important; }
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  overflow: hidden;
   background: #fff;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
