@@ -323,7 +323,42 @@ function updateMian(){
 function setupPill(){
   var pill=document.getElementById('pill');
   var pressedId=null;
+  var activePointerId=null;
+  var activeTouches=new Map();
+  function navTargetAt(x,y,fallback){
+    var hit=fallback&&fallback.closest&&fallback.closest('[data-nav]');
+    if(!hit){var element=document.elementFromPoint(x,y);hit=element&&element.closest&&element.closest('[data-nav]');}
+    return hit?hit.dataset.nav:getItemAt(x-pill.getBoundingClientRect().left);
+  }
+  function handoffPointer(pointerId,point,target){
+    activePointerId=pointerId;
+    G.lastPx=G.startPx=point.x;G.dragVel=0;G.dragging=false;
+    pressedId=navTargetAt(point.x,point.y,target)||pressedId;
+    var nextButton=pressedId&&document.querySelector('.nb[data-nav="'+pressedId+'"]');
+    if(nextButton){G.tL=nextButton.offsetLeft;G.tW=nextButton.offsetWidth;}
+    try{pill.setPointerCapture(pointerId);}catch(error){}
+    pill.style.cursor='grabbing';
+    setInteracting(true);setPillLift(true);kick();
+  }
+  function cancelActivePointer(){
+    activePointerId=null;pressedId=null;
+    G.holding=false;G.tHS=1;G.dragging=false;G.dragVel=0;pill.style.cursor='grab';
+    setPillLift(false);setActive(curId);kick();
+  }
+  function handoffToRemainingTouch(){
+    var remaining=Array.from(activeTouches.entries()).pop();
+    if(!remaining)return false;
+    handoffPointer(remaining[0],remaining[1]);
+    return true;
+  }
   pill.addEventListener('pointerdown',function(e){
+    if(e.pointerType==='touch')activeTouches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(G.holding){
+      if(e.pointerType==='touch'&&e.pointerId!==activePointerId)handoffPointer(e.pointerId,{x:e.clientX,y:e.clientY},e.target);
+      e.preventDefault();
+      return;
+    }
+    activePointerId=e.pointerId;
     syncNavOverlayGeometry();
     /* Strip CSS transitions — JS physics runs during drag */
     var ind=document.getElementById('ind');var wl=document.getElementById('wl');
@@ -361,8 +396,9 @@ function setupPill(){
     kick();e.preventDefault();
   });
   pill.addEventListener('pointermove',function(e){
-    /* Only move oval while holding — no hover follow */
-    if(!G.holding)return;
+    if(e.pointerType==='touch'&&activeTouches.has(e.pointerId))activeTouches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    /* Only the latest handed-off pointer drives the active pill. */
+    if(!G.holding||e.pointerId!==activePointerId)return;
     var dx=e.clientX-G.lastPx;G.dragVel=G.dragVel*0.55+dx*0.45;G.lastPx=e.clientX;
     if(!G.dragging&&Math.abs(e.clientX-G.startPx)>7){
       G.dragging=true;
@@ -372,6 +408,13 @@ function setupPill(){
     G.tL=Math.max(minLeft,Math.min(maxLeft,rx-bw/2));G.tW=bw;kick();
   });
   pill.addEventListener('pointerup',function(e){
+    if(e.pointerType==='touch')activeTouches.delete(e.pointerId);
+    if(!G.holding||e.pointerId!==activePointerId)return;
+    if(e.pointerType==='touch'&&handoffToRemainingTouch()){
+      e.preventDefault();
+      return;
+    }
+    activePointerId=null;activeTouches.clear();
     G.holding=false;G.tHS=1;G.dragging=false;G.dragVel=0;pill.style.cursor='grab';
     var target=getItemAt(G.tL+G.tW/2)||pressedId||curId;
     pressedId=null;
@@ -384,11 +427,17 @@ function setupPill(){
     },180);
     kick();
   });
-  pill.addEventListener('lostpointercapture',function(){
-    if(G.holding){
-      G.holding=false;G.tHS=1;G.dragging=false;G.dragVel=0;pill.style.cursor='grab';
-      setPillLift(false);setActive(curId);
-    }
+  pill.addEventListener('pointercancel',function(e){
+    if(e.pointerType==='touch')activeTouches.delete(e.pointerId);
+    if(!G.holding||e.pointerId!==activePointerId)return;
+    if(e.pointerType==='touch'&&handoffToRemainingTouch())return;
+    cancelActivePointer();activeTouches.clear();
+  });
+  pill.addEventListener('lostpointercapture',function(e){
+    if(!G.holding||e.pointerId!==activePointerId)return;
+    activeTouches.delete(e.pointerId);
+    if(handoffToRemainingTouch())return;
+    cancelActivePointer();activeTouches.clear();
   });
 }
 
