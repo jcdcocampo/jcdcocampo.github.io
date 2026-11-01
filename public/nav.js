@@ -20,7 +20,7 @@ var restPillRevealTimer=null,restPillRipple=null;
 /* ── Mian state ── */
 var M={open:false,tapSx:0,tapSy:0};
 /* ── Mian indicator physics ── */
-var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,dragStretch:0,dragStretchV:0,tDragStretch:0,holding:false,holdStart:0,dragging:false,pointerId:null,lastPx:0,lastPy:0,startPx:0,startPy:0,lastFrameTs:0,raf:null};
+var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,dragStretch:0,dragStretchV:0,tDragStretch:0,dragPath:0,holding:false,holdStart:0,dragging:false,pointerId:null,lastPx:0,lastPy:0,startPx:0,startPy:0,lastFrameTs:0,raf:null};
 
 var HK=0.13,HD=0.73,MIAN_DRAG_RADIUS=4;
 function clampMianDrag(x,y,radius){
@@ -402,7 +402,7 @@ function setupMian(){
     /* Press feedback is temporary; only the chat panel controls M.open. */
     var mind=document.getElementById('mind');if(mind)mind.style.opacity='1';
     MO.holding=true;MO.holdStart=performance.now();MO.lastFrameTs=0;MO.tHS=1;MO.hS=1;MO.hSv=0;
-    MO.tX=MO.x;MO.tY=MO.y;MO.tDragStretch=0;MO.dragging=false;
+    MO.tX=MO.x;MO.tY=MO.y;MO.tDragStretch=0;MO.dragPath=0;MO.dragging=false;
     MO.lastPx=e.clientX;MO.lastPy=e.clientY;MO.startPx=e.clientX;MO.startPy=e.clientY;
     try{mian.setPointerCapture(e.pointerId);}catch(error){}
     setMianLift(true);kickMO();e.preventDefault();
@@ -415,8 +415,8 @@ function setupMian(){
     if(MO.dragging){
       /* Move the button itself a little, with a circular travel limit. */
       var offset=clampMianDrag(MO.tX+dx,MO.tY+dy,MIAN_DRAG_RADIUS);
-      var dragDistance=Math.sqrt(Math.pow(e.clientX-MO.startPx,2)+Math.pow(e.clientY-MO.startPy,2));
-      MO.tDragStretch=Math.min(Math.max(dragDistance-2,0)*0.0012,0.07);
+      MO.dragPath+=Math.sqrt(dx*dx+dy*dy);
+      MO.tDragStretch=Math.min(MO.dragPath*0.0012,0.07);
       MO.tX=offset.x;MO.tY=offset.y;kickMO();
     }
   });
