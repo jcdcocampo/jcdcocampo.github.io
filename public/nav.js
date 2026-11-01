@@ -69,13 +69,17 @@ function paintMianButton(){
   if(!background||!foreground)return;
   var sx=Math.max(1,Math.min(1.15,MO.hS*(1+MO.dragStretch)));
   var sy=Math.max(0.96,Math.min(1.14,MO.hS*(1-MO.dragStretch*0.28)));
+  var iconSx=Math.max(1,Math.min(1.18,MO.hS*(1+MO.dragStretch*2.2)));
+  var iconSy=Math.max(0.94,Math.min(1.14,MO.hS*(1-MO.dragStretch*0.75)));
   var tx=MO.x.toFixed(2),ty=MO.y.toFixed(2);
   var angle=(Math.atan2(MO.y,MO.x)*180/Math.PI).toFixed(1);
   var noPos=Math.abs(MO.x)<0.1&&Math.abs(MO.y)<0.1;
-  var transform=Math.abs(sx-1)<0.003&&Math.abs(sy-1)<0.003&&noPos?'none':
+  var surfaceTransform=Math.abs(sx-1)<0.003&&Math.abs(sy-1)<0.003&&noPos?'none':
     'translate3d('+tx+'px,'+ty+'px,0) rotate('+angle+'deg) scaleX('+sx.toFixed(3)+') scaleY('+sy.toFixed(3)+') rotate(-'+angle+'deg)';
-  background.style.transform=transform;
-  foreground.style.transform=transform;
+  var iconTransform=Math.abs(iconSx-1)<0.003&&Math.abs(iconSy-1)<0.003&&noPos?'none':
+    'translate3d('+tx+'px,'+ty+'px,0) rotate('+angle+'deg) scaleX('+iconSx.toFixed(3)+') scaleY('+iconSy.toFixed(3)+') rotate(-'+angle+'deg)';
+  background.style.transform=surfaceTransform;
+  foreground.style.transform=iconTransform;
 }
 
 /* ── Nav anim loop — ONLY runs during active drag/hold, not for settle ── */
