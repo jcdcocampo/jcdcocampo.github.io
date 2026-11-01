@@ -15,7 +15,7 @@ function portfolioRouteUrl(route){
 var curId=window.__navActive||'home';
 
 /* ── Nav physics ── */
-var G={iL:0,iLv:0,tL:0,iW:74,iWv:0,tW:74,iTop:5,iH:54,sX:1,sXv:0,hS:1,hSv:0,tHS:1,holding:false,holdPending:false,holdStart:0,dragging:false,dragVel:0,lastPx:0,startPx:0,raf:null,baseW:74};
+var G={iL:0,iLv:0,tL:0,iW:74,iWv:0,tW:74,iTop:5,iH:54,sX:1,sXv:0,hS:1,hSv:0,tHS:1,holding:false,holdPending:false,holdStart:0,holdStrength:0.33,dragging:false,dragVel:0,lastPx:0,startPx:0,raf:null,baseW:74};
 var restPillRevealTimer=null,restPillRipple=null;
 /* ── Mian state ── */
 var M={open:false,tapSx:0,tapSy:0};
@@ -63,15 +63,20 @@ function paintMianGlass(){
 
 /* ── Nav anim loop — ONLY runs during active drag/hold, not for settle ── */
 function animLoop(ts){
-  /* The same slow, no-overshoot ease is used for mouse and touch. */
-  var prevL=G.iL,prevW=G.iW,prevSX=G.sX,prevHS=G.hS;
+  /* Travel uses a calm, one-way ease for mouse and touch. */
+  var prevL=G.iL,prevW=G.iW;
   G.iL+=(G.tL-G.iL)*0.14;G.iW+=(G.tW-G.iW)*0.14;
   G.iLv=G.iL-prevL;G.iWv=G.iW-prevW;
-  var tSX=G.dragging?1+Math.min(Math.abs(G.dragVel)*0.02,0.08):1;
-  G.sX+=(tSX-G.sX)*0.16;G.sXv=G.sX-prevSX;
   if(G.holding&&G.holdPending&&Math.abs(G.iL-G.tL)<0.75&&Math.abs(G.iW-G.tW)<0.75){G.holdPending=false;G.holdStart=ts;}
-  if(G.holding&&!G.holdPending){var el=(ts-G.holdStart)/1000;G.tHS=1+0.1*(1-Math.exp(-el*2.4));}
-  G.hS+=(G.tHS-G.hS)*0.16;G.hSv=G.hS-prevHS;
+  var liquidActive=G.holding&&!G.holdPending;
+  var tSX=liquidActive&&G.dragging?1+Math.min(Math.abs(G.dragVel)*0.055,0.42):1;
+  if(liquidActive){
+    var sf=(tSX-G.sX)*0.22;G.sXv=G.sXv*0.66+sf;G.sX+=G.sXv;
+    var el=(ts-G.holdStart)/1000;G.tHS=1+G.holdStrength*(1-Math.exp(-el*2.4));
+    var hf=(G.tHS-G.hS)*HK;G.hSv=G.hSv*HD+hf;G.hS+=G.hSv;
+  } else {
+    G.sX=1;G.sXv=0;G.hS=1;G.hSv=0;G.tHS=1;
+  }
   var ind=document.getElementById('ind');
   ind.style.left=G.iL.toFixed(2)+'px';
   ind.style.width=G.iW.toFixed(2)+'px';
@@ -215,7 +220,7 @@ function setActive(id,fromRelease){
   }
   if(b){
     var ease='0.187s cubic-bezier(0.65,0,0.35,1)';
-    ind.style.transition='left '+ease+',width '+ease+',opacity 0.18s ease';
+    ind.style.transition='left '+ease+',width '+ease+',transform '+(fromRelease?'0.32s cubic-bezier(.34,1.56,.64,1)':'0s')+',opacity 0.18s ease';
     if(wl) wl.style.transition='clip-path '+ease;
     G.tL=b.offsetLeft;G.tW=b.offsetWidth;G.iL=b.offsetLeft;G.iW=b.offsetWidth;
     G.iLv=0;G.iWv=0;
@@ -317,7 +322,10 @@ function setupPill(){
       }
     }
     ind.style.transition='opacity 0.18s ease';wl.style.transition='';
-    G.holding=true;G.holdPending=true;G.holdStart=performance.now();G.tHS=1;G.hS=1;G.hSv=0;G.sX=1;G.sXv=0;
+    G.holding=true;G.holdPending=true;G.holdStart=performance.now();
+    var pressure=typeof e.pressure==='number'&&e.pressure>0?e.pressure:0.5;
+    G.holdStrength=0.18+Math.max(0,Math.min(1,pressure))*0.3;
+    G.tHS=1;G.hS=1;G.hSv=0;G.sX=1;G.sXv=0;
     G.lastPx=e.clientX;G.startPx=e.clientX;G.dragVel=0;G.dragging=false;
     var pressed=e.target.closest&&e.target.closest('[data-nav]');
     pressedId=pressed?pressed.dataset.nav:getItemAt(e.clientX-pill.getBoundingClientRect().left);
@@ -335,7 +343,10 @@ function setupPill(){
     /* Only move oval while holding — no hover follow */
     if(!G.holding)return;
     var dx=e.clientX-G.lastPx;G.dragVel=G.dragVel*0.55+dx*0.45;G.lastPx=e.clientX;
-    if(!G.dragging&&Math.abs(e.clientX-G.startPx)>7)G.dragging=true;
+    if(!G.dragging&&Math.abs(e.clientX-G.startPx)>7){
+      G.dragging=true;
+      if(G.holdPending){G.holdPending=false;G.holdStart=performance.now();}
+    }
     var pr=pill.getBoundingClientRect(),rx=e.clientX-pr.left,bw=G.baseW;
     var minLeft=5,maxLeft=pr.width-5-bw;
     G.tL=Math.max(minLeft,Math.min(maxLeft,rx-bw/2));G.tW=bw;kick();
