@@ -1381,7 +1381,7 @@ else setTimeout(init,0);
       left: auto;
       transform-origin: 50% 50%;
       /* The panel grows from the Mian button, like a compact app presentation. */
-      transform: scale(0.12, 0.1);
+      transform: scale(var(--cb-opening-scale-x, .12), var(--cb-opening-scale-y, .1));
       width: 380px;
       max-width: calc(100vw - 32px);
       height: 560px;
@@ -1390,8 +1390,7 @@ else setTimeout(init,0);
       --corner-radius: 32px;
       border-radius: 32px;
       corner-shape: squircle;
-      box-shadow: none;
-      filter: drop-shadow(0 10px 24px rgba(0,0,0,.2));
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -1401,19 +1400,23 @@ else setTimeout(init,0);
       opacity: 0;
       pointer-events: none;
       transition:
-        transform 0.46s cubic-bezier(0.2, 0.78, 0.24, 1),
-        opacity 0.18s ease-out,
-        filter 0.32s ease-out;
+        transform 0.34s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 0.34s ease;
     }
     .cb-panel.cb-open {
       opacity: 1;
       transform: scale(1);
-      filter: drop-shadow(0 16px 36px rgba(0,0,0,.22));
+      box-shadow: 0 16px 36px rgba(0,0,0,.18);
       pointer-events: auto;
+      transition:
+        transform 0.52s cubic-bezier(0.22, 0.78, 0.22, 1),
+        opacity 0.3s cubic-bezier(0.22, 0.78, 0.22, 1),
+        box-shadow 0.42s ease;
     }
-    .cb-panel { filter: drop-shadow(0 8px 20px rgba(0,0,0,.12)); }
     @media (prefers-reduced-motion: reduce) {
-      .cb-panel { transition-duration: 0.01ms; }
+      .cb-panel,
+      .cb-panel.cb-open { transition-duration: 0.01ms; }
     }
 
     /* Desktop/tablet: panel above Mian (bottom-right) */
@@ -1422,7 +1425,7 @@ else setTimeout(init,0);
         left: auto;
         right: 32px;
         bottom: calc(32px + 60px + 16px);
-        transform: scale(0.12, 0.1);
+        transform: scale(var(--cb-opening-scale-x, .12), var(--cb-opening-scale-y, .1));
       }
       .cb-siri-ring {
         left: auto;
@@ -1925,7 +1928,7 @@ else setTimeout(init,0);
         left: 8px;
         right: 8px;
         max-width: none;
-        transform: scale(0.12, 0.1);
+        transform: scale(var(--cb-opening-scale-x, .12), var(--cb-opening-scale-y, .1));
       }
       .cb-fab { bottom: 16px; right: 16px; width: 56px; height: 56px; }
       .cb-fab svg { width: 30px; height: 30px; }
@@ -2318,7 +2321,10 @@ else setTimeout(init,0);
     }
 
     function setPanelOriginToFab() {
-      const fabRect = fab.getBoundingClientRect();
+      // The legacy chatbot FAB is display:none; anchor to the visible Mian
+      // control so the panel grows from the button on both desktop and mobile.
+      const trigger = document.getElementById('mian') || fab;
+      const fabRect = trigger.getBoundingClientRect();
       const fabX = fabRect.left + fabRect.width / 2;
       const fabY = fabRect.top + fabRect.height / 2;
       // Measure the panel at its natural size so the transition expands from
@@ -2328,6 +2334,10 @@ else setTimeout(init,0);
       panel.style.transform = 'none';
       const panelRect = panel.getBoundingClientRect();
       panel.style.transformOrigin = (fabX - panelRect.left) + 'px ' + (fabY - panelRect.top) + 'px';
+      if (fabRect.width > 0 && fabRect.height > 0 && panelRect.width > 0 && panelRect.height > 0) {
+        panel.style.setProperty('--cb-opening-scale-x', Math.min(1, fabRect.width / panelRect.width).toFixed(4));
+        panel.style.setProperty('--cb-opening-scale-y', Math.min(1, fabRect.height / panelRect.height).toFixed(4));
+      }
       panel.style.transform = '';
       panel.style.transition = previousTransition;
     }
