@@ -3294,29 +3294,21 @@ html { scroll-behavior: auto !important; }
   }
 }
 
-/* Touch social links should open on their first tap; don't let sticky :hover
-   consume that tap as a separate logo-swap interaction. */
+/* Match the email button on touch: show feedback only while pressed, then
+   return to the static logo. Sticky mobile :hover must not hold the full mark. */
 @media (hover: none), (pointer: coarse) {
   .social-button:hover {
     transform: none !important;
   }
 
   .social-button:hover .social-logo-default,
-  .social-button:focus-visible:not(.is-touch-pressed) .social-logo-default {
+  .social-button:focus-visible:not(:active) .social-logo-default {
     opacity: 1 !important;
   }
 
   .social-button:hover .social-logo-hover,
-  .social-button:focus-visible:not(.is-touch-pressed) .social-logo-hover {
+  .social-button:focus-visible:not(:active) .social-logo-hover {
     opacity: 0 !important;
-  }
-
-  .social-button.is-touch-pressed .social-logo-default {
-    opacity: 0 !important;
-  }
-
-  .social-button.is-touch-pressed .social-logo-hover {
-    opacity: 1 !important;
   }
 
   .social-button:active .social-logo-default {
