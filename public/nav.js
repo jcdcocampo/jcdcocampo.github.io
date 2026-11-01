@@ -458,6 +458,7 @@ function syncNavOverlayGeometry(){
     copy.style.boxSizing='border-box';
     copy.style.padding=style.padding;
     copy.style.margin='0';
+    var copyRect=copy.getBoundingClientRect();
     var sourceIcon=button.querySelector('svg');
     var copyIcon=copy.querySelector('svg');
     if(sourceIcon&&copyIcon){
@@ -466,12 +467,12 @@ function syncNavOverlayGeometry(){
       copyIcon=exactIcon;
       copyIcon.style.transform='none';
       var sourceIconRect=sourceIcon.getBoundingClientRect();
-      var copyIconRect=copyIcon.getBoundingClientRect();
-      copyIcon.style.position='relative';
-      copyIcon.style.left=(sourceIconRect.left-copyIconRect.left)+'px';
-      copyIcon.style.top=(sourceIconRect.top-copyIconRect.top)+'px';
+      copyIcon.style.position='absolute';
+      copyIcon.style.left=(sourceIconRect.left-copyRect.left)+'px';
+      copyIcon.style.top=(sourceIconRect.top-copyRect.top)+'px';
       copyIcon.style.width=sourceIconRect.width+'px';
       copyIcon.style.height=sourceIconRect.height+'px';
+      copyIcon.style.margin='0';
     }
     var sourceLabel=button.querySelector('span');
     var copyLabel=copy.querySelector('span');
@@ -479,10 +480,20 @@ function syncNavOverlayGeometry(){
       var exactLabel=sourceLabel.cloneNode(true);
       copyLabel.replaceWith(exactLabel);
       var sourceLabelRect=sourceLabel.getBoundingClientRect();
-      var copyLabelRect=exactLabel.getBoundingClientRect();
-      exactLabel.style.position='relative';
-      exactLabel.style.left=(sourceLabelRect.left-copyLabelRect.left)+'px';
-      exactLabel.style.top=(sourceLabelRect.top-copyLabelRect.top)+'px';
+      var sourceLabelStyle=getComputedStyle(sourceLabel);
+      exactLabel.style.position='absolute';
+      exactLabel.style.left=(sourceLabelRect.left-copyRect.left)+'px';
+      exactLabel.style.top=(sourceLabelRect.top-copyRect.top)+'px';
+      exactLabel.style.width=sourceLabelRect.width+'px';
+      exactLabel.style.height=sourceLabelRect.height+'px';
+      exactLabel.style.display='block';
+      exactLabel.style.margin='0';
+      exactLabel.style.padding='0';
+      exactLabel.style.font=sourceLabelStyle.font;
+      exactLabel.style.letterSpacing=sourceLabelStyle.letterSpacing;
+      exactLabel.style.lineHeight=sourceLabelStyle.lineHeight;
+      exactLabel.style.textAlign=sourceLabelStyle.textAlign;
+      exactLabel.style.whiteSpace=sourceLabelStyle.whiteSpace;
     }
   });
 }
