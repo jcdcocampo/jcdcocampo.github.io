@@ -910,6 +910,8 @@ export default function App() {
   const pageSwipeX = useMotionValue(isMobileViewport && initialSwipeIndex >= 0 ? -initialSwipeIndex * window.innerWidth : 0)
   const pageSwipeViewportRef = useRef(null)
   const pageSwipeGesture = useRef(null)
+  const pageSwipeTouchBlocked = useRef(false)
+  const activePageSwipeTouches = useRef(0)
   const [swipeHeaderCompact, setSwipeHeaderCompact] = useState(false)
   const pageSwipeAnimation = useRef(null)
   const pendingPageSwipe = useRef(null)
@@ -949,6 +951,11 @@ export default function App() {
     setShowSwipeNeighbors(false)
     pageSwipeX.set(pageSwipeBase())
     window.__resetPortfolioNavSwipe?.()
+  }
+  const unlockPageSwipeWhenSettled = () => {
+    if (activePageSwipeTouches.current === 0 && !pageSwipeAnimation.current && !pendingPageSwipe.current) {
+      pageSwipeTouchBlocked.current = false
+    }
   }
   useEffect(() => pageSwipeX.on('change', (x) => {
     if (!pageSwipeNavTracking.current) return
@@ -1018,6 +1025,7 @@ export default function App() {
       pageSwipeNavTracking.current = false
       setShowSwipeNeighbors(false)
       window.__resetPortfolioNavSwipe?.()
+      unlockPageSwipeWhenSettled()
     })
   }
   const onPageSwipePointerUp = (event) => {
@@ -1051,6 +1059,7 @@ export default function App() {
       pageSwipeAnimation.current = null
       pageSwipeNavTracking.current = false
       pendingPageSwipe.current = null
+      unlockPageSwipeWhenSettled()
       pageScrollPositions.current[currentPage] = window.scrollY
       swipeRouteChange.current = true
       committingPageSwipe.current = true
@@ -1067,9 +1076,16 @@ export default function App() {
     const viewport = pageSwipeViewportRef.current
     if (!viewport || !isMobileViewport || !mobileSwipePages.includes(currentPage)) return
     const onTouchStart = (event) => {
+      activePageSwipeTouches.current = event.touches.length
+      if (event.touches.length > 1) {
+        // Keep the first finger in control of its current snap, but require a
+        // fully settled page and a complete lift before accepting another swipe.
+        pageSwipeTouchBlocked.current = true
+        return
+      }
       // Lock the gesture to the first finger. Additional fingers never replace
       // or cancel its pointer, and cannot start another swipe after it lifts.
-      if (event.touches.length !== 1 || pageSwipeGesture.current || pageSwipeAnimation.current || pendingPageSwipe.current) return
+      if (pageSwipeTouchBlocked.current || pageSwipeGesture.current || pageSwipeAnimation.current || pendingPageSwipe.current) return
       suppressPageSwipeClickUntil.current = 0
       if (isPageSwipeExcluded(event.target, viewport)) return
       const touch = event.touches[0]
@@ -1101,14 +1117,21 @@ export default function App() {
       pageSwipeX.set(gesture.baseX + boundedDx)
     }
     const onTouchEnd = (event) => {
+      activePageSwipeTouches.current = event.touches.length
       const gesture = pageSwipeGesture.current
-      if (!gesture || !Array.from(event.changedTouches).some((touch) => touch.identifier === gesture.pointerId)) return
+      if (!gesture || !Array.from(event.changedTouches).some((touch) => touch.identifier === gesture.pointerId)) {
+        unlockPageSwipeWhenSettled()
+        return
+      }
       if (gesture.axis === 'x') suppressPageSwipeClickUntil.current = performance.now() + 500
       onPageSwipePointerUp({ pointerId: gesture.pointerId })
+      unlockPageSwipeWhenSettled()
     }
     const onTouchCancel = (event) => {
+      activePageSwipeTouches.current = event.touches.length
       const gesture = pageSwipeGesture.current
       if (gesture && Array.from(event.changedTouches).some((touch) => touch.identifier === gesture.pointerId)) settlePageSwipe()
+      unlockPageSwipeWhenSettled()
     }
     const onClickCapture = (event) => {
       if (performance.now() > suppressPageSwipeClickUntil.current) return
