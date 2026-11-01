@@ -22,7 +22,7 @@ var M={open:false,tapSx:0,tapSy:0};
 /* ── Mian indicator physics ── */
 var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,sX:1,sXv:0,holding:false,holdStart:0,dragging:false,pointerId:null,lastPx:0,lastPy:0,startPx:0,startPy:0,startOffsetX:0,startOffsetY:0,dragVelX:0,dragVelY:0,angle:0,raf:null};
 
-var SK=0.20,SD=0.67,HK=0.13,HD=0.73;var MIAN_MAX_R=28;
+var SK=0.20,SD=0.67,HK=0.13,HD=0.73;var MIAN_MAX_R=20;
 function softenMianDrag(x,y){
   var distance=Math.sqrt(x*x+y*y);
   if(distance<=MIAN_MAX_R||distance===0)return {x:x,y:y};
@@ -386,7 +386,8 @@ function setupMian(){
   mian.addEventListener('pointerdown',function(e){
     if(MO.holding)return;
     MO.pointerId=e.pointerId;M.tapSx=e.clientX;M.tapSy=e.clientY;
-    if(!M.open){M.open=true;updateMian();}
+    /* Press feedback is temporary; only the chat panel controls M.open. */
+    var mind=document.getElementById('mind');if(mind)mind.style.opacity='1';
     MO.holding=true;MO.holdStart=performance.now();MO.tHS=1;MO.hS=1;MO.hSv=0;
     MO.tX=MO.x;MO.tY=MO.y;MO.sX=1;MO.sXv=0;MO.dragging=false;
     MO.dragVelX=0;MO.dragVelY=0;
