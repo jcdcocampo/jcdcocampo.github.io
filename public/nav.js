@@ -16,15 +16,19 @@ var curId=window.__navActive||'home';
 
 /* Chromium can distort the live backdrop directly with an SVG displacement
    filter. Other engines keep the lightweight CSS edge treatment below. */
-function setupNavGlassRefraction(){
-  var ua=navigator.userAgent||'';
-  var chromium=/Chrome|Chromium|Edg|OPR/.test(ua)&&!/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
-  if(!chromium||!window.CSS||!CSS.supports('backdrop-filter','url(#nav-glass-displacement)'))return;
-  var canvas=document.createElement('canvas');canvas.width=148;canvas.height=108;
+var navGlassMapImage=null,navGlassMapKey='';
+function updateNavGlassMap(width,height){
+  if(!navGlassMapImage)return;
+  width=Math.max(54,Number(width)||74);height=Math.max(54,Number(height)||54);
+  var key=width.toFixed(2)+'x'+height.toFixed(2);
+  if(key===navGlassMapKey)return;
+  navGlassMapKey=key;
+  var scale=2,w=Math.round(width*scale),h=Math.round(height*scale),r=Math.min(w,h)/2;
+  var canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
   var ctx=canvas.getContext('2d');if(!ctx)return;
-  var image=ctx.createImageData(canvas.width,canvas.height),data=image.data;
+  var image=ctx.createImageData(w,h),data=image.data;
   for(var p=0;p<data.length;p+=4){data[p]=128;data[p+1]=128;data[p+2]=128;data[p+3]=255;}
-  var w=canvas.width,h=canvas.height,r=h/2,segmentStart=r,segmentEnd=w-r,edgeBand=13;
+  var segmentStart=r,segmentEnd=w-r,edgeBand=Math.min(13*scale,r*.8);
   for(var y=0;y<h;y++)for(var x=0;x<w;x++){
     var nx=Math.max(segmentStart,Math.min(segmentEnd,x)),qx=x-nx,qy=y-r;
     var distance=Math.sqrt(qx*qx+qy*qy),depth=r-distance;
@@ -35,13 +39,21 @@ function setupNavGlassRefraction(){
     data[i+1]=Math.max(0,Math.min(255,Math.round(128-qy/distance*fade*127)));
   }
   ctx.putImageData(image,0,0);
+  var mapUrl=canvas.toDataURL('image/png');
+  navGlassMapImage.setAttribute('href',mapUrl);
+  navGlassMapImage.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href',mapUrl);
+}
+function setupNavGlassRefraction(){
+  var ua=navigator.userAgent||'';
+  var chromium=/Chrome|Chromium|Edg|OPR/.test(ua)&&!/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  if(!chromium||!window.CSS||!CSS.supports('backdrop-filter','url(#nav-glass-displacement)'))return;
   var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.setAttribute('width','0');svg.setAttribute('height','0');svg.setAttribute('aria-hidden','true');
   svg.style.cssText='position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
   svg.innerHTML='<defs><filter id="nav-glass-displacement" x="-8%" y="-12%" width="116%" height="124%" color-interpolation-filters="sRGB"><feImage id="nav-glass-map" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="map"/><feDisplacementMap in="SourceGraphic" in2="map" scale="9" xChannelSelector="R" yChannelSelector="G"/></filter></defs>';
-  var map=svg.querySelector('#nav-glass-map'),mapUrl=canvas.toDataURL('image/png');
-  map.setAttribute('href',mapUrl);map.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href',mapUrl);
+  navGlassMapImage=svg.querySelector('#nav-glass-map');
   document.body.appendChild(svg);
+  updateNavGlassMap(74,54);
   document.documentElement.classList.add('supports-nav-glass-refraction');
 }
 setupNavGlassRefraction();
@@ -178,7 +190,7 @@ function mindLoop(ts){
 
 function kick(){if(!G.raf)G.raf=requestAnimationFrame(animLoop);}
 function kickMO(){if(!MO.raf)MO.raf=requestAnimationFrame(mindLoop);}
-function snapTo(id){var b=document.querySelector('[data-nav="'+id+'"]');if(!b)return;G.tL=b.offsetLeft;G.tW=b.offsetWidth;kick();}
+function snapTo(id){var b=document.querySelector('[data-nav="'+id+'"]');if(!b)return;G.tL=b.offsetLeft;G.tW=b.offsetWidth;updateNavGlassMap(b.offsetWidth,b.offsetHeight);kick();}
 
 function syncMianOpenState(){
   M.open=!!(window.__isMianOpen&&window.__isMianOpen());
@@ -292,6 +304,7 @@ function setActive(id,fromRelease){
     if(settledTitle)settledTitle.textContent=PAGES[id].t;if(settledSub)settledSub.textContent=PAGES[id].s;
   }
   if(b){
+    updateNavGlassMap(b.offsetWidth,b.offsetHeight);
     var ease='0.187s cubic-bezier(0.65,0,0.35,1)';
     ind.style.transition='left '+ease+',width '+ease+',transform '+(fromRelease?'0.32s cubic-bezier(.34,1.56,.64,1)':'0s')+',opacity 0.18s ease';
     if(refraction)refraction.style.transition=ind.style.transition;
