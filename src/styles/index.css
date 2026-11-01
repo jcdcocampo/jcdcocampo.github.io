@@ -2920,8 +2920,7 @@ html { scroll-behavior: auto !important; }
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 66%, rgba(255,255,255,.1) 79%, rgba(255,255,255,.34) 94%, rgba(35,75,118,.18) 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.76), inset 0 -1px 1px rgba(22,57,98,.15);
+  background: radial-gradient(ellipse at center, transparent 70%, rgba(255,255,255,.035) 86%, rgba(255,255,255,.12) 100%);
 }
 html.supports-nav-glass-refraction #pill.is-glass-active #nav-glass-refraction-layer {
   -webkit-backdrop-filter: url(#nav-glass-displacement);
