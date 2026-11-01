@@ -2888,7 +2888,7 @@ html { scroll-behavior: auto !important; }
 }
 .portfolio-nav-rest-pill,
 .portfolio-nav-glass-indicator { position: absolute; z-index: 0; top: 5px; left: 5px; width: 74px; height: 54px; border-radius: 9999px; pointer-events: none; }
-.portfolio-nav-rest-pill { background: rgba(0,0,0,.1); }
+.portfolio-nav-rest-pill { background: #e5e5ea; }
 .portfolio-nav-container,
 .mian-button { opacity: 0; }
 .portfolio-nav-glass-indicator {
