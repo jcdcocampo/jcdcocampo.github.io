@@ -697,7 +697,9 @@ function FloatingNavigation() {
         event.preventDefault()
         window.__isMianOpen?.() ? window.__closeMian?.() : window.__openMian?.()
       }}>
-        <div id="mind" className="mian-glass-indicator" />
+        <div id="mian-bg" className="mian-button-background">
+          <div id="mind" className="mian-glass-indicator" />
+        </div>
         <MessageCircle id="mico" size={24} strokeWidth={2} aria-hidden="true" />
       </div>
     </div>

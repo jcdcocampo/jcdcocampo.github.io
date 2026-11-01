@@ -2929,15 +2929,24 @@ html { scroll-behavior: auto !important; }
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #fff;
+  background: transparent;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-  box-shadow: 0 0 0 1px rgba(0,0,0,.055), 0 6px 24px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.95);
-  transition: box-shadow .24s ease;
+  box-shadow: none;
   cursor: pointer;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+}
+.mian-button-background {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: inherit;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.055), 0 6px 24px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.95);
+  transform-origin: center;
+  will-change: transform;
 }
 .mian-glass-indicator {
   position: absolute;

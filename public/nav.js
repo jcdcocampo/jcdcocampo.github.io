@@ -64,13 +64,13 @@ function updateClip(sx,sy){
 }
 
 function paintMianButton(){
-  var mian=document.getElementById('mian');
-  if(!mian)return;
+  var background=document.getElementById('mian-bg');
+  if(!background)return;
   var scale=Math.max(1,Math.min(1.06,MO.hS*(1+Math.min(Math.sqrt(MO.x*MO.x+MO.y*MO.y)*0.0004,0.004))));
   var tx=MO.x.toFixed(2),ty=MO.y.toFixed(2);
   var noPos=Math.abs(MO.x)<0.1&&Math.abs(MO.y)<0.1;
-  if(Math.abs(scale-1)<0.003&&noPos)mian.style.transform='none';
-  else mian.style.transform='translate3d('+tx+'px,'+ty+'px,0) scale('+scale.toFixed(3)+')';
+  if(Math.abs(scale-1)<0.003&&noPos)background.style.transform='none';
+  else background.style.transform='translate3d('+tx+'px,'+ty+'px,0) scale('+scale.toFixed(3)+')';
 }
 
 /* ── Nav anim loop — ONLY runs during active drag/hold, not for settle ── */
@@ -120,7 +120,7 @@ function mindLoop(ts){
   var stable=Math.abs(MO.x)<0.12&&Math.abs(MO.y)<0.12&&Math.abs(MO.xV)<0.5&&Math.abs(MO.yV)<0.5&&Math.abs(MO.hS-1)<0.002&&Math.abs(MO.hSv)<0.02&&!MO.holding;
   if(!stable) MO.raf=requestAnimationFrame(mindLoop);
   else{
-    MO.raf=null;document.getElementById('mian').style.transform='none';
+    MO.raf=null;document.getElementById('mian-bg').style.transform='none';
   }
 }
 
@@ -187,10 +187,10 @@ function setPillLift(on){
 
 /* ── Mian lift: same behaviour on Mian circle ── */
 function setMianLift(on){
-  var mian=document.getElementById('mian');
-  if(!mian)return;
-  mian.style.transition=on?'box-shadow .22s ease,background .45s':'box-shadow .38s ease,background .45s';
-  mian.style.boxShadow=on?PSH.lUp:PSH.lRest;
+  var background=document.getElementById('mian-bg');
+  if(!background)return;
+  background.style.transition=on?'box-shadow .22s ease,background .45s':'box-shadow .38s ease,background .45s';
+  background.style.boxShadow=on?PSH.lUp:PSH.lRest;
 }
 
 function getItemAt(rx){var best=null,bd=Infinity;document.querySelectorAll('.nb').forEach(function(b){var c=b.offsetLeft+b.offsetWidth/2,d=Math.abs(rx-c);if(d<bd){bd=d;best=b.dataset.nav;}});return best;}
