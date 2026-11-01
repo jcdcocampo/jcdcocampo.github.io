@@ -569,9 +569,9 @@ html { scroll-behavior: smooth; scroll-padding-top: 32px; }
 .view-all, .credential-button { background: #e5e5ea !important; color: #1d1d1f !important; transition: background-color .2s ease !important; }
 .view-all:hover, .credential-button:hover { background: #d5d5da !important; color: #1d1d1f !important; transform: none !important; }
 .eyebrow, .projects-library-tag {
-  min-height: 28px;
+  min-height: 0;
   box-sizing: border-box;
-  padding: 0 12px;
+  padding: 5px 10px;
   font-size: 11px;
   line-height: 1;
 }
