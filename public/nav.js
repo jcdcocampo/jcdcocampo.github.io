@@ -1379,9 +1379,9 @@ else setTimeout(init,0);
       bottom: calc(32px + 60px + 16px);
       right: 32px;
       left: auto;
-      transform-origin: bottom right;
-      /* Closed: squished at bottom-right corner */
-      transform: translateY(24px) scaleY(0.08) scaleX(0.88);
+      transform-origin: 50% 50%;
+      /* The panel grows from the Mian button, like a compact app presentation. */
+      transform: scale(0.12, 0.1);
       width: 380px;
       max-width: calc(100vw - 32px);
       height: 560px;
@@ -1398,25 +1398,22 @@ else setTimeout(init,0);
       z-index: 9999;
       font-family: var(--sf, -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif);
       color: var(--text-primary, #1c1c1e);
-      transform-origin: bottom right;
       opacity: 0;
-      transform: translateY(16px) scale(0.96);
       pointer-events: none;
-      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+      transition:
+        transform 0.46s cubic-bezier(0.2, 0.78, 0.24, 1),
+        opacity 0.18s ease-out,
+        filter 0.32s ease-out;
     }
     .cb-panel.cb-open {
       opacity: 1;
-      transform: translateY(0) scaleY(1) scaleX(1);
+      transform: scale(1);
+      filter: drop-shadow(0 16px 36px rgba(0,0,0,.22));
       pointer-events: auto;
     }
-    /* Closing: override transition with faster collapse */
-    .cb-panel.cb-closing {
-      transform: translateY(20px) scaleY(0.06) scaleX(0.9) !important;
-      opacity: 0 !important;
-      transition:
-        transform 0.32s cubic-bezier(0.55, 0, 0.45, 1),
-        opacity 0.22s ease !important;
-      pointer-events: none !important;
+    .cb-panel { filter: drop-shadow(0 8px 20px rgba(0,0,0,.12)); }
+    @media (prefers-reduced-motion: reduce) {
+      .cb-panel { transition-duration: 0.01ms; }
     }
 
     /* Desktop/tablet: panel above Mian (bottom-right) */
@@ -1425,14 +1422,7 @@ else setTimeout(init,0);
         left: auto;
         right: 32px;
         bottom: calc(32px + 60px + 16px);
-        transform: translateY(24px) scaleY(0.08) scaleX(0.88);
-        transform-origin: bottom right;
-      }
-      .cb-panel.cb-open {
-        transform: translateY(0) scaleY(1) scaleX(1);
-      }
-      .cb-panel.cb-closing {
-        transform: translateY(20px) scaleY(0.06) scaleX(0.9) !important;
+        transform: scale(0.12, 0.1);
       }
       .cb-siri-ring {
         left: auto;
@@ -1935,14 +1925,7 @@ else setTimeout(init,0);
         left: 8px;
         right: 8px;
         max-width: none;
-        transform-origin: bottom right;
-        transform: translateY(24px) scaleY(0.08) scaleX(0.88);
-      }
-      .cb-panel.cb-open {
-        transform: translateY(0) scaleY(1) scaleX(1);
-      }
-      .cb-panel.cb-closing {
-        transform: translateY(20px) scaleY(0.06) scaleX(0.9) !important;
+        transform: scale(0.12, 0.1);
       }
       .cb-fab { bottom: 16px; right: 16px; width: 56px; height: 56px; }
       .cb-fab svg { width: 30px; height: 30px; }
@@ -2334,7 +2317,24 @@ else setTimeout(init,0);
       window.scrollTo(0, __cbLockY);
     }
 
+    function setPanelOriginToFab() {
+      const fabRect = fab.getBoundingClientRect();
+      const fabX = fabRect.left + fabRect.width / 2;
+      const fabY = fabRect.top + fabRect.height / 2;
+      // Measure the panel at its natural size so the transition expands from
+      // the actual button position on both desktop and mobile layouts.
+      const previousTransition = panel.style.transition;
+      panel.style.transition = 'none';
+      panel.style.transform = 'none';
+      const panelRect = panel.getBoundingClientRect();
+      panel.style.transformOrigin = (fabX - panelRect.left) + 'px ' + (fabY - panelRect.top) + 'px';
+      panel.style.transform = '';
+      panel.style.transition = previousTransition;
+    }
+
     function openPanel() {
+      if (isPanelOpen()) return;
+      setPanelOriginToFab();
       panel.classList.add('cb-open');
       fab.classList.add('cb-hidden');
       glowManager.show();
@@ -2356,14 +2356,11 @@ else setTimeout(init,0);
     }
 
     function closePanel() {
-      // Spring-close: add cb-closing for collapse animation, then remove cb-open
-      panel.classList.add('cb-closing');
+      if (!isPanelOpen()) return;
       panel.classList.remove('cb-open');
       fab.classList.remove('cb-hidden');
       glowManager.hide();
       cbUnlockScroll();
-      // After collapse animation, remove cb-closing so panel is clean for next open
-      setTimeout(function() { panel.classList.remove('cb-closing'); }, 360);
       // Sync Mian indicator — dismiss glass
       if (typeof M !== 'undefined' && M.open) { M.open = false; if (typeof updateMian === 'function') updateMian(); if (typeof setMianLift === 'function') setMianLift(false); }
     }
