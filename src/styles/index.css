@@ -770,7 +770,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 32px; }
   .project-feature > .photo { min-height: 0; aspect-ratio: 1.65; }
   .project-feature > .photo img { object-fit: contain; background: #fff; }
   .project-feature-copy { min-height: 152px; padding: 19px 22px; }
-  .project-feature-copy h3 { font-size: 30px; }
+  .project-feature-copy h3 { font-size: 22px; }
   .certification-track { grid-auto-columns: 82vw; gap: 12px; padding-inline: 9vw; scroll-padding-inline: 9vw; }
   .certification-card { scroll-snap-align: center; }
   .certificate-pagination { margin-top: 5px; }

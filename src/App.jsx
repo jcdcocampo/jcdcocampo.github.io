@@ -368,7 +368,7 @@ const projects = [
 function Projects({ onViewAll, onMianClick, onProjectClick }) {
   return <section className="section projects-section" id="projects" data-command-section="Projects"><div className="container">
     <SectionTitle>Projects</SectionTitle>
-    <a className="project-feature feature-card squircle-card" href={portfolioPathForPage('mian')} onClick={(event) => onMianClick(event)} aria-label="Mian: An Intelligent Portfolio Assistant"><Photo src="/images/projects/mian-hero.jpg" alt="Mian intelligent portfolio assistant" /><div className="project-feature-copy"><span className="eyebrow blue">Personal AI</span><h3>Mian:<br />An Intelligent<br />Portfolio Assistant</h3></div></a>
+    <a className="project-feature feature-card squircle-card" href={portfolioPathForPage('mian')} onClick={(event) => onMianClick(event)} aria-label="Mian: An Intelligent Portfolio Assistant"><Photo src="/images/projects/mian-hero.jpg" alt="Mian intelligent portfolio assistant" /><div className="project-feature-copy"><span className="eyebrow blue">Personal AI</span><h3>Mian: An Intelligent Portfolio Assistant</h3></div></a>
     <div className="projects-grid">{projects.map(p => <a className="project-card secondary-card squircle-card" href={portfolioPathForPage(`project:${p.slug}`)} onClick={(event) => onProjectClick(event, p.slug)} key={p.name}><Photo src={p.image} alt={p.name} /><div className="project-card-copy"><span className={`eyebrow ${p.tone || 'purple'}`}>{p.tag}</span><h3>{p.name}</h3><p>{p.organization}</p></div></a>)}</div>
     <ViewAll href={portfolioPathForPage('projects')} onClick={onViewAll} />
   </div></section>
