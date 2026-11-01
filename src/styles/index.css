@@ -3173,7 +3173,7 @@ html { scroll-behavior: auto !important; }
 
 /* Mobile tab navigation behaves as a true three-position carousel. */
 @media (max-width: 767px) {
-  .page-swipe-viewport { position: relative; width: 100%; overflow: clip; }
+  .page-swipe-viewport { position: relative; width: 100%; overflow: clip; touch-action: pan-y; }
   .page-swipe-track { position: relative; display: block; width: 400vw; min-height: 100svh; will-change: transform; }
   .page-swipe-panel { width: 100vw; min-height: 100svh; }
   .page-swipe-panel:not(.page-swipe-current) { position: absolute; top: 0; left: calc(var(--panel-index) * 100vw); pointer-events: none; }

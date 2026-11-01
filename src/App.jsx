@@ -1078,6 +1078,9 @@ export default function App() {
     const onTouchMove = (event) => {
       const gesture = pageSwipeGesture.current
       if (!gesture) return
+      // Keep a second finger from invoking the browser's native pinch gesture;
+      // the page swipe continues to follow only its original touch identifier.
+      if (event.touches.length > 1 && event.cancelable) event.preventDefault()
       const touch = Array.from(event.touches).find((item) => item.identifier === gesture.pointerId)
       if (!touch) return
       const dx = touch.clientX - gesture.startX
