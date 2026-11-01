@@ -2894,10 +2894,10 @@ html { scroll-behavior: auto !important; }
 .portfolio-nav-glass-indicator {
   z-index: 1;
   opacity: 0;
-  background: rgba(0,122,255,.13);
+  background: rgba(0,122,255,.055);
   -webkit-backdrop-filter: blur(16px) saturate(400%) brightness(1.15);
   backdrop-filter: blur(16px) saturate(400%) brightness(1.15);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.68), inset 0 1.5px 0 rgba(255,255,255,.92), inset 0 -.5px 0 rgba(0,0,0,.07), 0 0 0 .5px rgba(255,255,255,.5), 0 0 18px rgba(0,122,255,.18), 0 3px 12px rgba(0,122,255,.13);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.58), inset 0 1.5px 0 rgba(255,255,255,.82), inset 0 -.5px 0 rgba(0,0,0,.055), 0 0 0 .5px rgba(255,255,255,.42), 0 0 16px rgba(0,122,255,.09), 0 3px 10px rgba(0,122,255,.07);
 }
 .nb,
 .bw {
@@ -2945,10 +2945,10 @@ html { scroll-behavior: auto !important; }
   inset: 0;
   will-change: transform, opacity;
   border-radius: inherit;
-  background: rgba(0,122,255,.13);
+  background: rgba(0,122,255,.055);
   -webkit-backdrop-filter: blur(16px) saturate(400%) brightness(1.15);
   backdrop-filter: blur(16px) saturate(400%) brightness(1.15);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.68), inset 0 1.5px 0 rgba(255,255,255,.92), inset 0 -.5px 0 rgba(0,0,0,.07), 0 0 0 .5px rgba(255,255,255,.5), 0 0 18px rgba(0,122,255,.18), 0 3px 12px rgba(0,122,255,.13);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.58), inset 0 1.5px 0 rgba(255,255,255,.82), inset 0 -.5px 0 rgba(0,0,0,.055), 0 0 0 .5px rgba(255,255,255,.42), 0 0 16px rgba(0,122,255,.09), 0 3px 10px rgba(0,122,255,.07);
   opacity: 0;
   pointer-events: none;
   transition: opacity .18s ease;
