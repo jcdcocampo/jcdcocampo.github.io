@@ -22,7 +22,7 @@ var M={open:false,tapSx:0,tapSy:0};
 /* ── Mian indicator physics ── */
 var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,dragStretch:0,dragStretchV:0,tDragStretch:0,holding:false,holdStart:0,dragging:false,pointerId:null,lastPx:0,lastPy:0,startPx:0,startPy:0,lastFrameTs:0,raf:null};
 
-var HK=0.13,HD=0.73,MIAN_DRAG_RADIUS=11;
+var HK=0.13,HD=0.73,MIAN_DRAG_RADIUS=4;
 function clampMianDrag(x,y,radius){
   var distance=Math.sqrt(x*x+y*y);
   if(distance<=radius||distance===0)return {x:x,y:y,excess:0};
@@ -67,10 +67,10 @@ function paintMianButton(){
   var background=document.getElementById('mian-bg');
   var foreground=document.getElementById('mian-foreground');
   if(!background||!foreground)return;
-  var sx=Math.max(1,Math.min(1.15,MO.hS*(1+MO.dragStretch)));
-  var sy=Math.max(0.96,Math.min(1.14,MO.hS*(1-MO.dragStretch*0.28)));
-  var iconSx=Math.max(1,Math.min(1.18,MO.hS*(1+MO.dragStretch*2.2)));
-  var iconSy=Math.max(0.94,Math.min(1.14,MO.hS*(1-MO.dragStretch*0.75)));
+  var sx=Math.max(1,Math.min(1.18,MO.hS*(1+MO.dragStretch)));
+  var sy=Math.max(0.94,Math.min(1.14,MO.hS*(1-MO.dragStretch*0.4)));
+  var iconSx=Math.max(1,Math.min(1.22,MO.hS*(1+MO.dragStretch*2.2)));
+  var iconSy=Math.max(0.91,Math.min(1.14,MO.hS*(1-MO.dragStretch*0.8)));
   var tx=MO.x.toFixed(2),ty=MO.y.toFixed(2);
   var angle=(Math.atan2(MO.y,MO.x)*180/Math.PI).toFixed(1);
   var noPos=Math.abs(MO.x)<0.1&&Math.abs(MO.y)<0.1;
@@ -416,7 +416,7 @@ function setupMian(){
       /* Move the button itself a little, with a circular travel limit. */
       var offset=clampMianDrag(MO.tX+dx,MO.tY+dy,MIAN_DRAG_RADIUS);
       var dragDistance=Math.sqrt(Math.pow(e.clientX-MO.startPx,2)+Math.pow(e.clientY-MO.startPy,2));
-      MO.tDragStretch=Math.min(Math.max(dragDistance-2,0)*0.0008,0.035);
+      MO.tDragStretch=Math.min(Math.max(dragDistance-2,0)*0.0012,0.07);
       MO.tX=offset.x;MO.tY=offset.y;kickMO();
     }
   });
