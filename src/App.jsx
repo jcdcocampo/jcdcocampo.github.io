@@ -666,7 +666,7 @@ function FloatingNavigation() {
     if (!window.__portfolioNavPromise) {
       window.__portfolioNavPromise = new Promise((resolve) => {
         const script = document.createElement('script')
-        script.src = '/nav.js?v=nav-pill-edge-refraction-20261102-4'
+        script.src = '/nav.js?v=nav-pill-edge-refraction-20261102-3'
         script.async = true
         script.onload = () => { window.__portfolioNavReady = true; resolve() }
         script.onerror = resolve

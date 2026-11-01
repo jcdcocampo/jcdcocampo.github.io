@@ -28,13 +28,12 @@ function updateNavGlassMap(width,height){
   var ctx=canvas.getContext('2d');if(!ctx)return;
   var image=ctx.createImageData(w,h),data=image.data;
   for(var p=0;p<data.length;p+=4){data[p]=128;data[p+1]=128;data[p+2]=128;data[p+3]=255;}
-  var segmentStart=r,segmentEnd=w-r,edgeBand=Math.min(9*scale,r*.55);
+  var segmentStart=r,segmentEnd=w-r,edgeBand=Math.min(13*scale,r*.8);
   for(var y=0;y<h;y++)for(var x=0;x<w;x++){
     var nx=Math.max(segmentStart,Math.min(segmentEnd,x)),qx=x-nx,qy=y-r;
     var distance=Math.sqrt(qx*qx+qy*qy),depth=r-distance;
     if(depth<0||depth>edgeBand||distance<0.001)continue;
-    /* Keep the center completely neutral; only a soft, narrow rim refracts. */
-    var fade=Math.pow(1-depth/edgeBand,1.8)*0.42;
+    var fade=Math.pow(1-depth/edgeBand,1.6)*0.46;
     var i=(y*w+x)*4;
     data[i]=Math.max(0,Math.min(255,Math.round(128-qx/distance*fade*127)));
     data[i+1]=Math.max(0,Math.min(255,Math.round(128-qy/distance*fade*127)));
@@ -51,7 +50,7 @@ function setupNavGlassRefraction(){
   var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.setAttribute('width','0');svg.setAttribute('height','0');svg.setAttribute('aria-hidden','true');
   svg.style.cssText='position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
-  svg.innerHTML='<defs><filter id="nav-glass-displacement" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB"><feImage id="nav-glass-map" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="map"/><feDisplacementMap in="SourceGraphic" in2="map" scale="6" xChannelSelector="R" yChannelSelector="G"/></filter></defs>';
+  svg.innerHTML='<defs><filter id="nav-glass-displacement" x="-8%" y="-12%" width="116%" height="124%" color-interpolation-filters="sRGB"><feImage id="nav-glass-map" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="map"/><feDisplacementMap in="SourceGraphic" in2="map" scale="9" xChannelSelector="R" yChannelSelector="G"/></filter></defs>';
   navGlassMapImage=svg.querySelector('#nav-glass-map');
   document.body.appendChild(svg);
   updateNavGlassMap(74,54);
