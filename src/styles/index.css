@@ -2245,18 +2245,36 @@ html { scroll-behavior: auto !important; }
 .licenses-filters button { text-transform: capitalize; }
 .hero-location { flex-wrap: nowrap; white-space: nowrap; }
 .hero-location-place { display: inline-flex; align-items: center; gap: 6px; }
+.hero-location-country-mobile { display: none; }
 .hero-location-separator { padding-inline: 2px; color: rgba(110,110,115,.65); }
 .hero-location-time { font-variant-numeric: tabular-nums; }
 @media (max-width: 767px) {
   .issuer-name-full { display: none; }
   .issuer-name-mobile { display: inline; }
-  .hero-location-country,
+  .hero-location-country { display: none; }
+  .hero-location-country-mobile { display: inline; }
   .hero-location-separator,
   .hero-location-time { display: none; }
   .hero::after {
     bottom: -1px !important;
     height: 210px !important;
     background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.08) 60%, rgba(0,0,0,.58) 88%, #000 100%) !important;
+  }
+}
+
+/* Touch browsers can keep :hover active after a tap. Keep carousel arrows at
+   their resting color on touch-first devices so the pressed tint never sticks. */
+@media (hover: none), (pointer: coarse) {
+  .carousel-arrow,
+  .carousel-arrow:hover,
+  .carousel-arrow:active {
+    transform: none !important;
+    background: #fff !important;
+  }
+  .experience-heading .carousel-arrow,
+  .experience-heading .carousel-arrow:hover,
+  .experience-heading .carousel-arrow:active {
+    background: rgba(255,255,255,.14) !important;
   }
 }
 
