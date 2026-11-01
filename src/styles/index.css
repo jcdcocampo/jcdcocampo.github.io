@@ -35,7 +35,7 @@ button { font: inherit; -webkit-tap-highlight-color: transparent; }
 .photo:hover img, a:hover > .photo img, .education-card:hover .photo img, .project-card:hover .photo img { transform: scale(1.035); }
 .logo-frame { display: inline-grid; width: 42px; height: 42px; flex: 0 0 auto; place-items: center; overflow: hidden; border-radius: 14px; }
 .logo-frame img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.eyebrow { display: inline-flex; width: fit-content; align-items: center; border-radius: 999px; padding: 4px 9px; background: #111; color: white; font-size: 11px; line-height: 1; font-weight: 700; letter-spacing: -.01em; text-transform: uppercase; }
+.eyebrow { display: inline-flex; width: fit-content; min-height: 28px; box-sizing: border-box; align-items: center; justify-content: center; border-radius: 999px; padding: 0 12px; background: #111; color: white; font-size: 11px; line-height: 1; font-weight: 700; letter-spacing: -.01em; text-transform: uppercase; }
 .eyebrow.blue { background: #007aff; }
 .eyebrow.red { background: #f20d18; }
 .eyebrow.purple { background: #bf00d7; }
@@ -88,7 +88,6 @@ button { font: inherit; -webkit-tap-highlight-color: transparent; }
 .education-card .photo { aspect-ratio: 1.55; }
 .education-card .photo img { object-position: center; }
 .education-card-copy { min-height: 112px; padding: 16px 19px 20px; }
-.education-card-copy .eyebrow { font-size: 10px; }
 .education-card-copy h3 { margin: 9px 0 0; font-size: clamp(17px, 1.65vw, 22px); line-height: 1.04; letter-spacing: -.035em; }
 
 .projects-section { background: #ededf0; }
@@ -193,7 +192,6 @@ button { font: inherit; -webkit-tap-highlight-color: transparent; }
   .education-card .photo { aspect-ratio: 1.18; }
   .education-card-copy { min-height: 104px; padding: 12px; }
   .education-card-copy h3 { font-size: 15px; }
-  .education-card-copy .eyebrow { font-size: 9px; padding: 4px 6px; }
   .project-feature { min-height: 0; }
   .project-feature > .photo { min-height: 250px; }
   .project-feature-copy { min-height: 225px; padding: 24px; }
@@ -570,7 +568,13 @@ html { scroll-behavior: smooth; scroll-padding-top: 32px; }
 .email-button:hover, .footer-email-button:hover { background: #2990ff !important; color: #fff !important; transform: none !important; }
 .view-all, .credential-button { background: #e5e5ea !important; color: #1d1d1f !important; transition: background-color .2s ease !important; }
 .view-all:hover, .credential-button:hover { background: #d5d5da !important; color: #1d1d1f !important; transform: none !important; }
-.eyebrow { padding: 5px 10px; line-height: 1; }
+.eyebrow, .projects-library-tag {
+  min-height: 28px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  font-size: 11px;
+  line-height: 1;
+}
 
 /* Certificate gallery: manual horizontal browsing, edge-to-edge track, one card per arrow. */
 .certification-section { overflow: visible; }
@@ -2356,16 +2360,12 @@ html { scroll-behavior: auto !important; }
 .projects-library-card-copy { min-width: 0; align-self: stretch; justify-content: center; padding: clamp(24px, 4vw, 48px); color: #f5f5f7; }
 .projects-library-tag {
   display: inline-flex;
-  min-height: 28px;
   align-items: center;
   justify-content: center;
-  padding: 5px 12px;
   border-radius: 999px;
   color: #123b69;
-  font-size: 11px;
   font-weight: 650;
   letter-spacing: .01em;
-  line-height: 1;
   text-transform: none;
 }
 .projects-library-tag.is-personal { background: #dcecff; color: #164b83; }
