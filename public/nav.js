@@ -1,7 +1,7 @@
 var PAGES={home:{t:'JC Ocampo',s:'Electronics Engineer · Manila, PH'},experience:{t:'Experience',s:'Roles, internships, and work history'},projects:{t:'Projects',s:'IEEE research, robots, and AI apps'},certs:{t:'Certifications',s:'PRC · Cisco · Google Cloud'}};
-var NAV_URLS={home:'/',experience:'/experience',projects:'/projects',certs:'/licenses-and-certifications'};
+var NAV_URLS={home:'/',experience:'/experience',projects:'/projects',certs:'/licenses-and-certificates'};
 function portfolioRouteUrl(route){
-  if(route==='licenses'||route==='certs')return '/licenses-and-certifications';
+  if(route==='licenses'||route==='certs')return '/licenses-and-certificates';
   if(route==='mian')return '/projects/mian';
   if(route==='privacy')return '/privacy-policy';
   if(route==='terms')return '/terms-and-conditions';

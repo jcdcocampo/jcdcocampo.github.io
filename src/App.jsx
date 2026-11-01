@@ -232,7 +232,7 @@ function portfolioPathForPage(page) {
   return ({
     experience: '/experience',
     projects: '/projects',
-    licenses: '/licenses-and-certifications',
+    licenses: '/licenses-and-certificates',
     mian: '/projects/mian',
     privacy: '/privacy-policy',
     terms: '/terms-and-conditions',
@@ -256,7 +256,7 @@ function portfolioPageFromLocation() {
   const staticRoutes = {
     '/experience': 'experience',
     '/projects': 'projects',
-    '/licenses-and-certifications': 'licenses',
+    '/licenses-and-certificates': 'licenses',
     '/privacy-policy': 'privacy',
     '/terms-and-conditions': 'terms',
   }
