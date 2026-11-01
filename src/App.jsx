@@ -700,7 +700,9 @@ function FloatingNavigation() {
         <div id="mian-bg" className="mian-button-background">
           <div id="mind" className="mian-glass-indicator" />
         </div>
-        <MessageCircle id="mico" size={24} strokeWidth={2} aria-hidden="true" />
+        <div id="mian-foreground" className="mian-button-foreground" aria-hidden="true">
+          <MessageCircle id="mico" size={24} strokeWidth={2} />
+        </div>
       </div>
     </div>
   </>, document.body)

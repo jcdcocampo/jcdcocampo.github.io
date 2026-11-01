@@ -20,7 +20,7 @@ var restPillRevealTimer=null,restPillRipple=null;
 /* ── Mian state ── */
 var M={open:false,tapSx:0,tapSy:0};
 /* ── Mian indicator physics ── */
-var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,holding:false,holdStart:0,dragging:false,pointerId:null,lastPx:0,lastPy:0,startPx:0,startPy:0,lastFrameTs:0,raf:null};
+var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,dragStretch:0,dragStretchV:0,tDragStretch:0,holding:false,holdStart:0,dragging:false,pointerId:null,lastPx:0,lastPy:0,startPx:0,startPy:0,lastFrameTs:0,raf:null};
 
 var HK=0.13,HD=0.73,MIAN_DRAG_RADIUS=7;
 function clampMianDrag(x,y,radius){
@@ -65,12 +65,17 @@ function updateClip(sx,sy){
 
 function paintMianButton(){
   var background=document.getElementById('mian-bg');
-  if(!background)return;
-  var scale=Math.max(1,Math.min(1.06,MO.hS*(1+Math.min(Math.sqrt(MO.x*MO.x+MO.y*MO.y)*0.0004,0.004))));
+  var foreground=document.getElementById('mian-foreground');
+  if(!background||!foreground)return;
+  var sx=Math.max(1,Math.min(1.09,MO.hS*(1+MO.dragStretch)));
+  var sy=Math.max(0.96,Math.min(1.06,MO.hS*(1-MO.dragStretch*0.28)));
   var tx=MO.x.toFixed(2),ty=MO.y.toFixed(2);
+  var angle=(Math.atan2(MO.y,MO.x)*180/Math.PI).toFixed(1);
   var noPos=Math.abs(MO.x)<0.1&&Math.abs(MO.y)<0.1;
-  if(Math.abs(scale-1)<0.003&&noPos)background.style.transform='none';
-  else background.style.transform='translate3d('+tx+'px,'+ty+'px,0) scale('+scale.toFixed(3)+')';
+  var transform=Math.abs(sx-1)<0.003&&Math.abs(sy-1)<0.003&&noPos?'none':
+    'translate3d('+tx+'px,'+ty+'px,0) rotate('+angle+'deg) scaleX('+sx.toFixed(3)+') scaleY('+sy.toFixed(3)+') rotate(-'+angle+'deg)';
+  background.style.transform=transform;
+  foreground.style.transform=transform;
 }
 
 /* ── Nav anim loop — ONLY runs during active drag/hold, not for settle ── */
@@ -109,18 +114,20 @@ function mindLoop(ts){
   /* Track the active pointer directly; only the release uses the spring. */
   if(MO.dragging){
     MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;
+    MO.dragStretch=MO.tDragStretch;MO.dragStretchV=0;
   } else {
     var spring=advanceMianSpring(MO.x,MO.xV,MO.tX,dt,18,0.78);MO.x=spring.value;MO.xV=spring.velocity;
     spring=advanceMianSpring(MO.y,MO.yV,MO.tY,dt,18,0.78);MO.y=spring.value;MO.yV=spring.velocity;
+    spring=advanceMianSpring(MO.dragStretch,MO.dragStretchV,MO.tDragStretch,dt,18,0.84);MO.dragStretch=spring.value;MO.dragStretchV=spring.velocity;
   }
   /* Keep the button's own press swell subtle and duration-driven. */
   if(MO.holding){var el=(ts-MO.holdStart)/1000;MO.tHS=1+0.05*(1-Math.exp(-el*2.4));}
   var swell=advanceMianSpring(MO.hS,MO.hSv,MO.tHS,dt,16);MO.hS=swell.value;MO.hSv=swell.velocity;
   paintMianButton();
-  var stable=Math.abs(MO.x)<0.12&&Math.abs(MO.y)<0.12&&Math.abs(MO.xV)<0.5&&Math.abs(MO.yV)<0.5&&Math.abs(MO.hS-1)<0.002&&Math.abs(MO.hSv)<0.02&&!MO.holding;
+  var stable=Math.abs(MO.x)<0.12&&Math.abs(MO.y)<0.12&&Math.abs(MO.xV)<0.5&&Math.abs(MO.yV)<0.5&&Math.abs(MO.dragStretch)<0.002&&Math.abs(MO.dragStretchV)<0.02&&Math.abs(MO.hS-1)<0.002&&Math.abs(MO.hSv)<0.02&&!MO.holding;
   if(!stable) MO.raf=requestAnimationFrame(mindLoop);
   else{
-    MO.raf=null;document.getElementById('mian-bg').style.transform='none';
+    MO.raf=null;document.getElementById('mian-bg').style.transform='none';document.getElementById('mian-foreground').style.transform='none';
   }
 }
 
@@ -388,7 +395,7 @@ function setupMian(){
     /* Press feedback is temporary; only the chat panel controls M.open. */
     var mind=document.getElementById('mind');if(mind)mind.style.opacity='1';
     MO.holding=true;MO.holdStart=performance.now();MO.lastFrameTs=0;MO.tHS=1;MO.hS=1;MO.hSv=0;
-    MO.tX=MO.x;MO.tY=MO.y;MO.dragging=false;
+    MO.tX=MO.x;MO.tY=MO.y;MO.tDragStretch=0;MO.dragging=false;
     MO.lastPx=e.clientX;MO.lastPy=e.clientY;MO.startPx=e.clientX;MO.startPy=e.clientY;
     try{mian.setPointerCapture(e.pointerId);}catch(error){}
     setMianLift(true);kickMO();e.preventDefault();
@@ -401,14 +408,16 @@ function setupMian(){
     if(MO.dragging){
       /* Move the button itself a little, with a circular travel limit. */
       var offset=clampMianDrag(MO.tX+dx,MO.tY+dy,MIAN_DRAG_RADIUS);
+      var dragDistance=Math.sqrt(Math.pow(e.clientX-MO.startPx,2)+Math.pow(e.clientY-MO.startPy,2));
+      MO.tDragStretch=Math.min(Math.max(dragDistance-2,0)*0.0008,0.035);
       MO.tX=offset.x;MO.tY=offset.y;kickMO();
     }
   });
   mian.addEventListener('pointerup',function(e){
     if(!MO.holding||e.pointerId!==MO.pointerId)return;
     var wasDrag=MO.dragging;
-    if(wasDrag){MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;}
-    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;
+    if(wasDrag){MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;MO.dragStretch=MO.tDragStretch;MO.dragStretchV=0;}
+    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.tDragStretch=0;MO.dragging=false;MO.tX=0;MO.tY=0;
     var mind=document.getElementById('mind');if(mind)mind.style.opacity='0';
     kickMO();setMianLift(false);
     if(!wasDrag){if(window.__isMianOpen?.())window.__closeMian?.();else window.__openMian?.();}
@@ -416,15 +425,15 @@ function setupMian(){
   });
   mian.addEventListener('pointercancel',function(e){
     if(e.pointerId!==MO.pointerId)return;
-    if(MO.dragging){MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;}
-    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;
+    if(MO.dragging){MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;MO.dragStretch=MO.tDragStretch;MO.dragStretchV=0;}
+    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.tDragStretch=0;MO.dragging=false;MO.tX=0;MO.tY=0;
     var mind=document.getElementById('mind');if(mind)mind.style.opacity='0';
     kickMO();setMianLift(false);syncMianOpenState();
   });
   mian.addEventListener('lostpointercapture',function(){
     if(!MO.holding)return;
-    if(MO.dragging){MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;}
-    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.dragging=false;MO.tX=0;MO.tY=0;
+    if(MO.dragging){MO.x=MO.tX;MO.y=MO.tY;MO.xV=0;MO.yV=0;MO.dragStretch=MO.tDragStretch;MO.dragStretchV=0;}
+    MO.holding=false;MO.pointerId=null;MO.tHS=1;MO.tDragStretch=0;MO.dragging=false;MO.tX=0;MO.tY=0;
     var mind=document.getElementById('mind');if(mind)mind.style.opacity='0';
     kickMO();setMianLift(false);syncMianOpenState();
   });
