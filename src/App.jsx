@@ -910,6 +910,7 @@ export default function App() {
   const pageSwipeX = useMotionValue(isMobileViewport && initialSwipeIndex >= 0 ? -initialSwipeIndex * window.innerWidth : 0)
   const pageSwipeViewportRef = useRef(null)
   const pageSwipeGesture = useRef(null)
+  const pageSwipeTouchBlocked = useRef(false)
   const [swipeHeaderCompact, setSwipeHeaderCompact] = useState(false)
   const pageSwipeAnimation = useRef(null)
   const pendingPageSwipe = useRef(null)
@@ -960,6 +961,7 @@ export default function App() {
   }), [pageSwipeX])
   const onPageSwipePointerDown = (event) => {
     if (event.pointerType === 'touch' || !window.matchMedia('(max-width: 767px)').matches) return
+    if (pageSwipeAnimation.current || pendingPageSwipe.current || pageSwipeGesture.current) return
     if (!mobileSwipePages.includes(currentPage) || isPageSwipeExcluded(event.target, event.currentTarget)) return
     const now = performance.now()
     pageSwipeGesture.current = {
@@ -1049,6 +1051,7 @@ export default function App() {
       if (pageSwipeAnimation.current !== animation || pendingPageSwipe.current?.destination !== destination) return
       pageSwipeAnimation.current = null
       pageSwipeNavTracking.current = false
+      pendingPageSwipe.current = null
       pageScrollPositions.current[currentPage] = window.scrollY
       swipeRouteChange.current = true
       committingPageSwipe.current = true
@@ -1065,9 +1068,16 @@ export default function App() {
     const viewport = pageSwipeViewportRef.current
     if (!viewport || !isMobileViewport || !mobileSwipePages.includes(currentPage)) return
     const onTouchStart = (event) => {
+      if (event.touches.length > 1) {
+        pageSwipeTouchBlocked.current = true
+        if (pageSwipeGesture.current?.axis === 'x' && !pendingPageSwipe.current) settlePageSwipe()
+        else if (pageSwipeGesture.current) pageSwipeGesture.current = null
+        return
+      }
+      if (pageSwipeTouchBlocked.current || pageSwipeAnimation.current || pendingPageSwipe.current) return
       pageSwipeGesture.current = null
       suppressPageSwipeClickUntil.current = 0
-      if (event.touches.length !== 1 || isPageSwipeExcluded(event.target, viewport)) return
+      if (isPageSwipeExcluded(event.target, viewport)) return
       const touch = event.touches[0]
       pageSwipeGesture.current = { pointerId: touch.identifier, startX: touch.clientX, startY: touch.clientY, lastX: touch.clientX, lastTime: performance.now(), velocityX: 0, axis: null, baseX: pageSwipeBase() }
     }
@@ -1097,12 +1107,19 @@ export default function App() {
       pageSwipeX.set(gesture.baseX + boundedDx)
     }
     const onTouchEnd = (event) => {
+      if (pageSwipeTouchBlocked.current) {
+        if (event.touches.length === 0) pageSwipeTouchBlocked.current = false
+        return
+      }
       const gesture = pageSwipeGesture.current
       if (!gesture || !Array.from(event.changedTouches).some((touch) => touch.identifier === gesture.pointerId)) return
       if (gesture.axis === 'x') suppressPageSwipeClickUntil.current = performance.now() + 500
       onPageSwipePointerUp({ pointerId: gesture.pointerId })
     }
-    const onTouchCancel = () => { if (pageSwipeGesture.current) settlePageSwipe() }
+    const onTouchCancel = (event) => {
+      if (event.touches.length === 0) pageSwipeTouchBlocked.current = false
+      if (pageSwipeGesture.current) settlePageSwipe()
+    }
     const onClickCapture = (event) => {
       if (performance.now() > suppressPageSwipeClickUntil.current) return
       suppressPageSwipeClickUntil.current = 0
