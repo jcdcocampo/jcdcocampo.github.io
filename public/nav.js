@@ -318,6 +318,11 @@ function setupPill(){
     G.lastPx=e.clientX;G.startPx=e.clientX;G.dragVel=0;G.dragging=false;
     var pressed=e.target.closest&&e.target.closest('[data-nav]');
     pressedId=pressed?pressed.dataset.nav:getItemAt(e.clientX-pill.getBoundingClientRect().left);
+    /* Start the active glass under the pointer, rather than leaving it on the
+       previously selected page while the hold swell activates. */
+    var pr=pill.getBoundingClientRect(),bw=G.baseW;
+    G.tL=Math.max(5,Math.min(pr.width-5-bw,e.clientX-pr.left-bw/2));
+    G.tW=bw;
     /* Glass stays at curId during hold — no spring travel, no overshoot.
        CSS transition in setActive handles the exact slide to target on release. */
     pill.setPointerCapture(e.pointerId);pill.style.cursor='grabbing';
@@ -330,16 +335,13 @@ function setupPill(){
     if(!G.holding)return;
     var dx=e.clientX-G.lastPx;G.dragVel=G.dragVel*0.55+dx*0.45;G.lastPx=e.clientX;
     if(!G.dragging&&Math.abs(e.clientX-G.startPx)>7)G.dragging=true;
-    if(G.dragging){
-      var pr=pill.getBoundingClientRect(),rx=e.clientX-pr.left,bw=G.baseW;
-      var minLeft=5,maxLeft=pr.width-5-bw;
-      G.tL=Math.max(minLeft,Math.min(maxLeft,rx-bw/2));G.tW=bw;kick();
-    }
+    var pr=pill.getBoundingClientRect(),rx=e.clientX-pr.left,bw=G.baseW;
+    var minLeft=5,maxLeft=pr.width-5-bw;
+    G.tL=Math.max(minLeft,Math.min(maxLeft,rx-bw/2));G.tW=bw;kick();
   });
   pill.addEventListener('pointerup',function(e){
-    var wasDragged=G.dragging;
     G.holding=false;G.tHS=1;G.dragging=false;G.dragVel=0;pill.style.cursor='grab';
-    var target=(wasDragged?getItemAt(G.tL+G.tW/2):pressedId)||curId;
+    var target=getItemAt(G.tL+G.tW/2)||pressedId||curId;
     pressedId=null;
     setPillLift(false); /* lower pill */
     setActive(target,true);  /* spring glass to target, then ripple into the gray pill */
