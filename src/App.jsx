@@ -659,6 +659,12 @@ const navItems = [
 function FloatingNavigation() {
   const syncNavOnLoad = useRef(null)
   useEffect(() => {
+    const syncScrolledState = () => document.documentElement.classList.toggle('portfolio-page-scrolled', window.scrollY > 4)
+    syncScrolledState()
+    window.addEventListener('scroll', syncScrolledState, { passive: true })
+    return () => window.removeEventListener('scroll', syncScrolledState)
+  }, [])
+  useEffect(() => {
     const route = portfolioPageFromLocation()
     window.__navActive = route === 'licenses' ? 'certs' : route === 'mian' || route.startsWith('project:') ? 'projects' : route === 'privacy' || route === 'terms' || route === 'not-found' ? 'home' : route
     const setCurrentNav = () => window.__setPortfolioNavActive?.(window.__navActive)

@@ -2876,10 +2876,11 @@ html { scroll-behavior: auto !important; }
   gap: 1px;
   padding: 5px;
   border-radius: 9999px;
-  background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(245,245,255,.14));
-  -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.08);
-  backdrop-filter: blur(28px) saturate(180%) brightness(1.08);
-  box-shadow: 0 0 0 .5px rgba(255,255,255,.7), 0 0 0 1px rgba(0,0,0,.06), 0 6px 30px rgba(0,0,0,.1), inset 0 1.5px 0 #fff, inset 0 -.5px 0 rgba(0,0,0,.04);
+  background: #fff;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.055), 0 6px 24px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.95);
+  transition: background-color .24s ease, -webkit-backdrop-filter .24s ease, backdrop-filter .24s ease, box-shadow .24s ease;
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -2928,10 +2929,11 @@ html { scroll-behavior: auto !important; }
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(245,245,255,.14));
-  -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.08);
-  backdrop-filter: blur(28px) saturate(180%) brightness(1.08);
-  box-shadow: 0 0 0 .5px rgba(255,255,255,.8), 0 0 0 1px rgba(0,0,0,.06), 0 6px 30px rgba(0,0,0,.10), inset 0 1.5px 0 rgba(255,255,255,1), inset 0 -.5px 0 rgba(0,0,0,.04);
+  background: #fff;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.055), 0 6px 24px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.95);
+  transition: background-color .24s ease, -webkit-backdrop-filter .24s ease, backdrop-filter .24s ease, box-shadow .24s ease;
   cursor: pointer;
   touch-action: none;
   user-select: none;
@@ -2953,6 +2955,13 @@ html { scroll-behavior: auto !important; }
 }
 #mico { position: relative; z-index: 4; color: rgba(0,0,0,.36); pointer-events: none; }
 .mian-button:focus-visible { outline: 2px solid var(--blue); outline-offset: 5px; }
+html.portfolio-page-scrolled .portfolio-nav-pill,
+html.portfolio-page-scrolled .mian-button {
+  background: rgba(255,255,255,.72);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.68), 0 6px 24px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.82);
+}
 @media (max-width: 767px) {
   #navc { bottom: 24px; top: auto !important; }
   .mian-button {
