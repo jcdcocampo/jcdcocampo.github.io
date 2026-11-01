@@ -2876,9 +2876,9 @@ html { scroll-behavior: auto !important; }
   gap: 1px;
   padding: 5px;
   border-radius: 9999px;
-  background: #fff;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
+  background: rgba(255,255,255,.64);
+  -webkit-backdrop-filter: blur(14px) saturate(1.45);
+  backdrop-filter: blur(14px) saturate(1.45);
   box-shadow: 0 0 0 1px rgba(0,0,0,.055), 0 6px 24px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.95);
   transition: box-shadow .24s ease;
   cursor: grab;
@@ -2893,11 +2893,37 @@ html { scroll-behavior: auto !important; }
 .mian-button { opacity: 0; }
 .portfolio-nav-glass-indicator {
   z-index: 1;
+  overflow: hidden;
   opacity: 0;
-  background: linear-gradient(145deg, rgba(255,255,255,.76) 0%, rgba(220,240,255,.62) 24%, rgba(157,210,255,.42) 58%, rgba(205,232,255,.58) 100%);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.82), inset 0 2px 0 rgba(255,255,255,.96), inset 0 -1px 0 rgba(91,157,220,.16), 0 0 0 .5px rgba(125,190,245,.24), 0 0 18px rgba(117,190,255,.18), 0 3px 10px rgba(82,160,235,.12);
+  background: linear-gradient(145deg, rgba(255,255,255,.64) 0%, rgba(220,240,255,.49) 24%, rgba(157,210,255,.31) 58%, rgba(205,232,255,.45) 100%);
+  -webkit-backdrop-filter: blur(5px) saturate(1.7) contrast(1.04);
+  backdrop-filter: blur(5px) saturate(1.7) contrast(1.04);
+  box-shadow: inset 0 0 0 .7px rgba(255,255,255,.92), inset 0 1.5px 0 rgba(255,255,255,.98), inset 0 -1px 0 rgba(20,52,88,.18), 0 0 0 .5px rgba(125,190,245,.24), 0 0 18px rgba(117,190,255,.18), 0 3px 10px rgba(82,160,235,.12);
+}
+.portfolio-nav-glass-indicator::before,
+.portfolio-nav-glass-indicator::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.portfolio-nav-glass-indicator::before {
+  /* Soft lensing gathers around the rim; the center stays optically clear. */
+  background:
+    radial-gradient(ellipse at center, transparent 47%, rgba(255,255,255,.06) 61%, rgba(255,255,255,.27) 84%, rgba(23,54,91,.18) 100%),
+    linear-gradient(105deg, rgba(104,224,255,.24), transparent 20%, transparent 77%, rgba(255,135,202,.24));
+  filter: blur(.35px);
+}
+.portfolio-nav-glass-indicator::after {
+  /* Brighter upper specular edge, a deeper lower edge, and a faint prism fringe. */
+  background: linear-gradient(180deg, rgba(255,255,255,.22), transparent 35%, transparent 76%, rgba(19,48,84,.12));
+  box-shadow:
+    inset 0 0 0 .75px rgba(255,255,255,.9),
+    inset 0 1.5px 0 rgba(255,255,255,.96),
+    inset 0 -2px 2px rgba(17,45,80,.2),
+    inset 1px 0 2px rgba(91,222,255,.2),
+    inset -1px 0 2px rgba(255,120,198,.2);
 }
 .nb,
 .bw {
