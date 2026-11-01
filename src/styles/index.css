@@ -2880,7 +2880,7 @@ html { scroll-behavior: auto !important; }
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   box-shadow: 0 0 0 1px rgba(0,0,0,.055), 0 6px 24px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.95);
-  transition: background-color .24s ease, -webkit-backdrop-filter .24s ease, backdrop-filter .24s ease, box-shadow .24s ease;
+  transition: box-shadow .24s ease;
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -2933,7 +2933,7 @@ html { scroll-behavior: auto !important; }
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   box-shadow: 0 0 0 1px rgba(0,0,0,.055), 0 6px 24px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.95);
-  transition: background-color .24s ease, -webkit-backdrop-filter .24s ease, backdrop-filter .24s ease, box-shadow .24s ease;
+  transition: box-shadow .24s ease;
   cursor: pointer;
   touch-action: none;
   user-select: none;
@@ -2955,13 +2955,6 @@ html { scroll-behavior: auto !important; }
 }
 #mico { position: relative; z-index: 4; color: rgba(0,0,0,.36); pointer-events: none; }
 .mian-button:focus-visible { outline: 2px solid var(--blue); outline-offset: 5px; }
-html.portfolio-page-scrolling .portfolio-nav-pill,
-html.portfolio-page-scrolling .mian-button {
-  background: rgba(255,255,255,.72);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: 0 0 0 1px rgba(255,255,255,.68), 0 6px 24px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.82);
-}
 @media (max-width: 767px) {
   #navc { bottom: 24px; top: auto !important; }
   .mian-button {
