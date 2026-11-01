@@ -22,12 +22,14 @@ var M={open:false,tapSx:0,tapSy:0};
 /* ── Mian indicator physics ── */
 var MO={x:0,xV:0,tX:0,y:0,yV:0,tY:0,hS:1,hSv:0,tHS:1,sX:1,sXv:0,holding:false,holdStart:0,dragging:false,pointerId:null,lastPx:0,lastPy:0,startPx:0,startPy:0,startOffsetX:0,startOffsetY:0,dragVelX:0,dragVelY:0,angle:0,raf:null};
 
-var SK=0.20,SD=0.67,HK=0.13,HD=0.73;var MIAN_MAX_R=12;
+var SK=0.20,SD=0.67,HK=0.13,HD=0.73;var MIAN_DRAG_FREE_R=8,MIAN_DRAG_MAX_R=14;
 function softenMianDrag(x,y){
   var distance=Math.sqrt(x*x+y*y);
-  if(distance<=MIAN_MAX_R||distance===0)return {x:x,y:y};
-  /* Clamp by vector length so every direction has the same circular limit. */
-  var ratio=MIAN_MAX_R/distance;
+  if(distance<=MIAN_DRAG_FREE_R||distance===0)return {x:x,y:y};
+  /* Keep direct tracking, then add smooth resistance toward a nearby cap. */
+  var room=MIAN_DRAG_MAX_R-MIAN_DRAG_FREE_R;
+  var softened=MIAN_DRAG_FREE_R+room*(1-Math.exp(-(distance-MIAN_DRAG_FREE_R)/room));
+  var ratio=softened/distance;
   return {x:x*ratio,y:y*ratio};
 }
 /* ── Pill shadow presets ── */
